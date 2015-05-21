@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<pos>
+
+    <system>
+               <debug_verbose>1</debug_verbose>
+    </system>
+
+    <options>
+         <thumbLongestSide>100</thumbLongestSide>
+         <!-- your email. so clients can contact you -->
+         <supportEmail>info@justinwylliephotography.com</supportEmail>
+    </options>
+
+    <paypal>
+          <email>enquiries@mms-oxford.com</email>
+          <!-- use the PayPal ones https://developer.paypal.com/webapps/developer/docs/classic/api/currency_codes/ -->
+          <currency>GBP</currency>
+           <!-- use an html entity ref $ = &#36; £ = &#163; Euro = &#8364; -->
+          <currencySymbol>&#163;</currencySymbol>
+  
+    </paypal>
+
+    <delivery_and_terms>
+        <delivery_charges_explanation> 
+            Prints: there is no charge for delivery of prints. Framed prints: there is a delivery charge of  &#163;1.00 per framed print.        
+        </delivery_charges_explanation>  
+        <!-- if you don't want an 'agree to terms and conditions box' set requireAgreement to 0 -->
+        <terms_and_conditions requireAgreement="1">     
+            Items are dispatched within 14 days. 
+        </terms_and_conditions>
+
+        <charges>
+            <prints>0</prints>
+            <framed_prints>1</framed_prints>
+        </charges>
+
+
+    </delivery_and_terms>
+
+
+  
+    <clients>
+            <!-- directory is absolute system path to client images  -->
+            <!-- passwords must be unique -->
+            <client name="Margaret &amp; Geoff" password="Belfry" directory="/var/www/vhosts/justinwylliephotography.com/clients/smith" ecommerce="1">   </client>
+
+    
+    </clients>
+    
+  
+     <prices>
+     <!-- widescreen, standard35mm and squareformat elements required but may 
+     be empty if your images will not correspond to those sizes.  -->
+     
+     <!-- for each image the program calculates the ratio by dividing the longest side
+     by the shorter. according to the ratio it will show only print and frame options to match -->
+
+    <!-- note that the inches " symbol has to be represented by &quot; -->
+     
+         <widescreen>   <!-- ratio greater than 1.65 -->
+            <prints>
+                <print size="16&quot; x 9&quot;" price="30.00" mountedAdditionalCost="3.00" >     </print>
+            </prints>
+            
+            <framed_prints>
+                   <print size="16&quot; x 9&quot;" price="45.00" frameStyle="Light Oak" >       </print>
+                   <print size="16&quot; x 9&quot;" price="45.00" frameStyle="Medium Oak" >      </print>
+                   <print size="16&quot; x 9&quot;" price="45.00" frameStyle="Antique Pine" >     </print>
+            
+           </framed_prints>
+         
+         </widescreen>
+         
+         
+         
+         <standard35mm>  <!-- ratio greater than or equal to 1.375 and less than or equal to 1.65 -->
+         
+         
+            <prints>          
+                <!-- if you don't offer a mounted option remove the mountedAdditionalCost attribute TODO test this -->
+                <print size="6&quot; x 4&quot;" price="10.00" mountedAdditionalCost="3.00" >     </print>
+                <print size="12&quot; x 8&quot;" price="20.00" mountedAdditionalCost="3.00" > </print>
+                <print size="5&quot; x 7&quot;" price="10.00" mountedAdditionalCost="5.00" >     </print>
+                <print size="15&quot; x 20&quot;" price="20.00"  > </print>
+            </prints>
+            
+            <framed_prints>
+                    <!-- frameStyles is a comma separated list of the frame styles you offer for that size of print. do not use a space between entries -->
+                   <print size="6&quot; x 4&quot;" price="25.00" frameStyles="Light Oak,Medium Oak,Antique Pine" >    </print>
+                   <print size="12&quot; x 8&quot;" price="45.00" frameStyles="Light Oak,Medium Oak,Antique Pine" >   </print>
+            
+           </framed_prints>
+
+        </standard35mm>
+        
+        
+        
+        <squareFormat>     <!-- ratio less than 1.375 -->
+        
+            <prints>
+                <print size="10&quot; x 8&quot;" price="20.00" mountedAdditionalCost="3.00" >   </print>
+            </prints>
+            
+            <framed_prints>
+                   <print size="10&quot; x 8&quot;" price="45.00" frameStyle="Light Oak" >      </print>
+                   <print size="10&quot; x 8&quot;" price="45.00" frameStyle="Medium Oak" >     </print>
+                   <print size="10&quot; x 8&quot;" price="45.00" frameStyle="Antique Pine" >   </print>
+           </framed_prints>
+     
+       </squareFormat>
+       
+     
+     </prices>
+
+
+
+</pos>
+
+
