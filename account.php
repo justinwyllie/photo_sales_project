@@ -13,6 +13,7 @@ $clientArea->controller();
         ?>
 
         <script src="/lightbox2/js/lightbox-2.6.min.js"></script>
+        <script src="/client_area.js"></script>
         <link rel="stylesheet" href="client_area.css" type="text/css">
         <link href="/lightbox2/css/lightbox.css" rel="stylesheet" />
 
@@ -46,10 +47,11 @@ $clientArea->controller();
             </div><!-- end top bar -->
 
 
-
-            <?php
-                    $clientArea->run();
-            ?>
+            <div id="ca_content_area">
+                <?php
+                        $clientArea->run();
+                ?>
+            </div>
 
 
         </div>
