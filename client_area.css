@@ -1,0 +1,41 @@
+
+
+.print_login
+{
+    margin: 200px auto 0px auto;
+    width: 500px;
+}
+
+.print_login button
+{
+    margin-top:20px;
+}
+.login_error
+{
+
+    color: #ff0000;
+}
+.your_print_label
+{
+    float: left;
+    width: 240px;
+    margin-top: 10px;
+}
+.your_print_field
+{
+    float: left;
+    width: 240px;
+    margin-top: 10px;
+
+}
+
+.login_button
+{
+    margin-left: auto;
+    margin-right: auto;
+    width: 100px;
+}
+
+.clear {
+    clear: both;
+}
