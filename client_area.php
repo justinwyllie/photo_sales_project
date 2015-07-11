@@ -21,6 +21,11 @@ class ClientArea
 
     }
 
+    public function run()
+    {
+        call_user_func_array(array($this, $this->action), array());
+    }
+
     /**
      * Check that there is a session and an action
      * Act appropriately.
@@ -28,31 +33,25 @@ class ClientArea
      */
     public function controller()
     {
-        if (($_SERVER["REQUEST_METHOD"] === "GET")) {
-            $action = "login";
-        } elseif (($_SERVER["REQUEST_METHOD"] === "POST") && (isset($_POST["action"]))) {
-            $action = $_POST["action"];
+
+        if ((isset($_SESSION["user"])) && (!empty($_POST["action"])) && ($_POST["action"] !== "login")) {
+            $this->action = $_POST["action"];
+        } elseif ((isset($_SESSION["user"])) && (!empty($_POST["action"])) && ($_POST["action"] === "login")) {
+            $this->setLogin();
+        } elseif (isset($_SESSION["user"]) && (empty($_POST["action"])) ) {
+            $this->action = "showLoginScreen";
+        } elseif (!isset($_SESSION["user"])  && ($_SERVER["REQUEST_METHOD"] === "GET")  ) {
+            $this->action = "showLoginScreen";
+        } elseif (!isset($_SESSION["user"])  && ($_SERVER["REQUEST_METHOD"] === "POST")
+                && (!empty($_POST["action"])) && ($_POST["action"] === "login") ) {
+            $this->setLogin();
+        } elseif  (!isset($_SESSION["user"])  && ($_SERVER["REQUEST_METHOD"] === "POST")
+            && (!empty($_POST["action"])) && ($_POST["action"] !== "login") ) {
+            $this->loginMessage = $this->lang("sessionExpired");
+            $this->action = "showLoginScreen";
         } else {
             $this->action = "terminateScript";
-            return;
         }
-
-
-        if (!isset($_SESSION["user"])  &&  ($action === "login")) {
-            $loginResult = $this->doLogin();
-            if ($loginResult) {
-                $this->action = "showChoiceScreen";
-            } else {
-                $this->loginMessage = $this->lang("loginError");
-                $this->action = "showLoginScreen";
-            }
-        } elseif (!isset($_SESSION["user"])  &&  ($action !== "login")) {
-            $this->loginMessage = $this->lang("sessionExpired");
-            $this->action  = "showLoginScreen";
-        } else {
-            $this->action = $action;
-        }
-
     }
 
 
@@ -62,10 +61,7 @@ class ClientArea
         die();
     }
 
-    public function run()
-    {
-        call_user_func_array(array($this, $this->action), array());
-    }
+
 
     //TODO
     private function lang($field)
@@ -92,23 +88,42 @@ class ClientArea
     }
 
 
+    private function setLogin()
+    {
+        $loginResult = $this->doLogin();
+        if ($loginResult) {
+            $this->action = "showChoiceScreen";
+        } else {
+            $this->loginMessage = $this->lang("loginError");
+            $this->action = "showLoginScreen";
+        }
+    }
+
     private function doLogin()
     {
         $user = $_POST['login'];
         $password = $_POST['password'];
 
+        //TODO if they relogin in durring a session what happens to the state of their order?
+        //should we wipe it if they relog in? - probably yes to handle the unlikely event
+        //that a second user is using the same browser instance.
+
+        $this->clearSession();
 
         if (!empty($this->accounts[$user]) && !empty($password) && ($this->accounts[$user]["password"] === $password)) {
             $_SESSION["user"] = $user;
-            $ret = true;
+            return true;
         } else {
-            if (isset($_SESSION['user'])) {
-                unset($_SESSION['user']);
-            }
-            $ret = false;
+            return false;
         }
 
-        return $ret;
+     }
+
+    private function clearSession()
+    {
+        unset($_SESSION['user']);
+        //TODO make sure we clear all fields
+
     }
 
     private function showProofsScreen()
