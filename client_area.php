@@ -16,26 +16,64 @@
 class ClientArea
 {
     public $action;
+    private $options;
+    private $accounts;
 
 
     public function __construct()
     {
-        //TODO XML
 
-        $this->thumbsPerPage = 20;
 
+        $this->setOptions();
+        $this->setAccounts();
+
+        //the web page which includes this system
+        $this->containerPageUrl = "account.php";
+        //absolute path on your system to where the images are stored. Must be under web root. See Docs.
+        $this->clientAreaDiretory = "/var/www/vhosts/justinwylliephotography.com/httpdocs/client_area";
+        //url for the client area - url which matches above directory. Can the absolute or relative. See Docs.
+        $this->clientAreaUrl = "/client_area";
+
+
+    }
+
+    //TODO XML
+    private function setAccounts()
+    {
 
         $accounts = array();
         $accounts['nascimento']["password"] = "test";
         $accounts['nascimento']["proofs_on"] = true;
         $accounts['nascimento']["prints_on"] = false;
         $accounts['nascimento']["human_name"] = "Decio";
-        $accounts['nascimento']["customProofsMessage"] = "-";
+        $accounts['nascimento']["customProofsMessage"] = "";
 
+        $accounts['nascimento']["options"]["thumbsPerPage"] = 10;
         $this->accounts = $accounts;
 
-        $this->clientDir = dirname(__FILE__) . DIRECTORY_SEPARATOR . "client_area";
+    }
 
+    private function personaliseOptions()
+    {
+
+
+    }
+
+    //TODO XML
+    private function setOptions()
+    {
+        $options = array();
+        $options["thumbsPerPage"] = 20;
+        $options["proofsShowLabels"] = true;
+        $options["showNannyingMessageAboutMoreThanOnePage"] = false;
+
+        $this->options = $options;
+    }
+
+
+    private function getOption($option)
+    {
+        return $this->options[$option];
     }
 
     public function run()
@@ -104,6 +142,13 @@ class ClientArea
         $fields["proofsMessage"] = "Your proofs are displayed here. Please select which ones you would like, and then press 'Done'.";
         $fields["done"] = "Done";
         $fields["chosen"] = "Chosen: ";
+        $fields["checkAllMessage"] = "Please make sure you have reviewed all the pages before submitting your order";
+        $fields["moreThanOnePageMessage"] = "Please be sure to check all the pages";
+        $fields["logout"] = "Log Out";
+        $fields["confirmLogoutMessage"] = "Are you sure? Your current selection will not be saved.";
+        $fields["okText"] = "OK";
+        $fields["cancelText"] = "Cancel";
+
 
 
         if (isset($fields[$field])) {
@@ -138,18 +183,33 @@ class ClientArea
 
         if (!empty($this->accounts[$user]) && !empty($password) && ($this->accounts[$user]["password"] === $password)) {
             $_SESSION["user"] = $user;
+            $_SESSION["proofsPagesVisited"] = array();
             return true;
         } else {
             return false;
         }
 
-     }
+    }
+
+    private function logout()
+    {
+        $this->logoutAndShowLoginScreen();
+
+
+    }
 
     private function clearSession()
     {
         unset($_SESSION['user']);
+        unset( $_SESSION["proofsPagesVisited"]);
         //TODO make sure we clear all fields
 
+    }
+
+    private function processProofs()
+    {
+        echo "hi";
+        exut;
     }
 
     private function showProofsScreen()
@@ -171,11 +231,18 @@ class ClientArea
         $proofsMessage = $this->lang("proofsMessage");
         $chosen = $this->lang("chosen");
         $done = $this->lang("done");
+        $logout = $this->lang("logout");
+        $checkAllMessage = $this->lang("checkAllMessage");
+        $confirmLogoutMessage = $this->lang("confirmLogoutMessage");
+        $okText = $this->lang("okText");
+        $cancelText = $this->lang("cancelText");
 
 
-        $dir = dirname(__FILE__);
-        $thumbsDir = $dir . DIRECTORY_SEPARATOR . 'client_area' . DIRECTORY_SEPARATOR . $_SESSION['user'] .
+
+        $thumbsDir = $this->clientAreaDiretory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
             DIRECTORY_SEPARATOR . "proofs" . DIRECTORY_SEPARATOR . "thumbs";
+        $mainDir = $this->clientAreaDiretory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
+            DIRECTORY_SEPARATOR . "proofs" . DIRECTORY_SEPARATOR . "main" . DIRECTORY_SEPARATOR;
         $files = scandir($thumbsDir);
         $thumbs=array();
         foreach ($files as $file)
@@ -186,41 +253,86 @@ class ClientArea
             }
         }
 
-        $thumbsForThisPage = array_slice($thumbs, $startIndex, $this->thumbsPerPage);
+
+        $thumbsForThisPage = array_slice($thumbs, $startIndex, $this->options["thumbsPerPage"]);
+
+        if (($thumbsForThisPage < $thumbs) && $this->getOption("showNannyingMessageAboutMoreThanOnePage")) {
+            $extraMessage = '<br><span>' . $this->lang("moreThanOnePageMessage") . '</span>';
+        } else {
+            $extraMessage = "";
+        }
 
         $numberOfThumbs = $this->getImageCount($thumbsDir);
-        $pageHtml = $this->pageHtml($startIndex, $this->thumbsPerPage, $numberOfThumbs);
+        $pageHtml = $this->pageHtml($startIndex, $this->options["thumbsPerPage"], $numberOfThumbs);
+
+        //this little block is about finding out if the user has visited all pages
+        //so we can warn them if they try to click 'Done' but have not visited all pages
+        if (!in_array($startIndex, $_SESSION["proofsPagesVisited"])) {
+            $_SESSION["proofsPagesVisited"][] = $startIndex;
+        }
+
+        $pageIndexes = $this->getPageIndexes($this->options["thumbsPerPage"], $numberOfThumbs);
+        $notVisited = array_diff($pageIndexes, $_SESSION["proofsPagesVisited"] );
+        if (empty($notVisited)) {
+            $allPagesVisited = "yes";
+        } else {
+            $allPagesVisited = "no";
+        }
 
         $pageThumbsHtml = "";
 
         foreach ($thumbsForThisPage as $file) {
 
+            if ($this->options["proofsShowLabels"]) {
+                $label = '<span class="ca_label">' . $file . '</span>';
+            } else {
+                $label = "";
+            }
 
+            //TODO - in a loop?
+            $imageDimensions = $this->getImageDimensions($mainDir . $file);
 
             $file = str_replace(".JPG", ".jpg", $file); //TODO hack to fix Nascimento
-            $filePath = "/client_area/" . $user . "/proofs/thumbs/" . $file;
-            $fileHtml = '<div class="ca_thumb_pic"><img src="' . $filePath . '"><br><input type="checkbox" value="' .
-                  $file . '"></div>';
+            $filePath = $this->clientAreaUrl . '/' . $user . "/proofs/thumbs/" . $file;
+            $fileHtml = '<div class="ca_thumb_pic"><img' .
+                ' data-image-width="' . $imageDimensions["width"] . '" ' .
+                'src="' . $filePath . '"><br><input type="checkbox" value="' .
+                  $file . '">' . $label . '</div>';
             $pageThumbsHtml.=  $fileHtml;
+        }
+
+        $urlForMains = $this->clientAreaUrl . '/' . $user . "/proofs/main/";
+
+        if ($this->getOption("proofsShowLabels")) {
+            $labelsOption = "on";
+        } else {
+        $labelsOption = "off";
         }
 
         $html = <<<EOF
 
-             <form action="/account.php" method="post" id="ca_action_form">
+             <form action="$this->containerPageUrl" method="post" id="ca_action_form">
                 <input type="hidden" name="action" id="ca_action_field" value="showProofsScreen">
                 <input type="hidden" name="index" id="ca_index_field" value="0">
              </form>
 
-            <div class="ca_proofs_bar">
-                <span class="ca_message_area">$proofsMessage  $customProofsMessage</span>
+            <div class="ca_proofs_bar" data-url-for-mains="$urlForMains"
+                data-labels-option="$labelsOption"
+                data-check-all-message="$checkAllMessage"
+                data-all-pages-visited="$allPagesVisited"
+                data-confirm-logout-message="$confirmLogoutMessage"
+                data-ok-text="$okText"
+                data-cancel-text="$cancelText"
+                >
+                <span class="ca_message_area">$proofsMessage $customProofsMessage $extraMessage</span>
 
             </div>
-            <br class="ca_clear">
-            <div class="ca_proofs_bar ca_sub_bar">
+
+            <div class="ca_sub_bar">
                 <span class="ca_pagination_box">
                   $pageHtml
                 </span>
-
+                <button class="ca_logout_button ca_logout_confirm_event">$logout</button>
                 <button class="ca_proof_button ca_proof_event">$done</button>
                 <span class="ca_counter_box">
                     <span class="ca_counter_label">$chosen</span>
@@ -240,6 +352,19 @@ EOF;
 
     }
 
+    private function getImageDimensions($file)
+    {
+        $dimensions = getimagesize($file);
+
+        $result = array();
+        if ($dimensions !== false) {
+            $result["width"] = $dimensions[0];
+            $result["height"] = $dimensions[1];
+        }
+
+        return $result;
+
+    }
     private function showPrintsScreen()
     {
         echo "Prints";
@@ -275,7 +400,7 @@ EOF;
 
             <div class="print_login">
                 $hello <span class="ca_human_name">$name</span>. $chooseOption
-            <form action="/account.php" method="post" id="ca_action_form">
+            <form action="$this->containerPageUrl" method="post" id="ca_action_form">
                 <input type="hidden" name="action" id="ca_action_field" value="">
                 <select id="ca_activity_choice" class="ca_select_box">
                     <option value="0">Select..</option>
@@ -304,7 +429,7 @@ EOF;
         $html = <<<EOF
             <div class="print_login">
                 $confirmLogoutMessage
-            <form action="/account.php" method="post" id="ca_action_form">
+            <form action="$this->containerPageUrl" method="post" id="ca_action_form">
                 <input type="hidden" name="action" id="ca_action_field" value="">
                 <button class="ca_large_button ca_confirm_switch_event" data-call="logoutAndShowLoginScreen"
                     type="button">$confirmLogoutMessageYes</button>
@@ -348,7 +473,7 @@ EOF;
 
         $html = <<<EOF
             <div class="print_login">
-            <form action="/account.php" method="post">
+            <form action="$this->containerPageUrl" method="post">
                 <input type="hidden" name="action" value="login">
                 <span class="login_error">$loginMessage</span><br>
                 <span class="your_print_label">$userName</span>
@@ -412,9 +537,8 @@ EOF;
 
     }
 
-    private function pageHtml($startIndex, $thumbsPerPage, $numberOfThumbs)
+    private function getPageIndexes($thumbsPerPage, $numberOfThumbs)
     {
-        $output = '<div class="ca_page_info">';
         $numberOfPages = ceil($numberOfThumbs / $thumbsPerPage);
 
         $index = 0;
@@ -425,6 +549,15 @@ EOF;
             $pages[$i] =  $index;
             $index = $index + $thumbsPerPage;
         }
+
+        return $pages;
+    }
+
+    private function pageHtml($startIndex, $thumbsPerPage, $numberOfThumbs)
+    {
+        $output = '<div class="ca_page_info">';
+
+        $pages = $this->getPageIndexes($thumbsPerPage, $numberOfThumbs);
 
         $currentPage = array_search($startIndex, $pages);
 

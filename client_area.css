@@ -91,9 +91,14 @@ Advanced users only beyond this point!
 .ca_proofs_bar
 {
     width: 100%;
-    float: left;
-    margin-bottom: 10px;
     margin-top: 10px;
+    text-align: left;
+    margin-bottom: 5px;
+}
+
+.ca_message_area
+{
+
 }
 
 .ca_counter_label
@@ -113,12 +118,7 @@ Advanced users only beyond this point!
     min-width: 50px;
     display: inline-block;
 }
-.ca_message_area
-{
-    float: left;
-    width: 80%;
-    text-align: left;
-}
+
 
 div.ca_thumb_pic
 {
@@ -133,14 +133,22 @@ div.ca_thumb_pic
     float: left;
 }
 
-button.ca_proof_button
+.ca_thumb_pic img
+{
+    cursor: pointer;
+}
+
+
+button.ca_proof_button, button.ca_logout_button
 {
     float: right;
+    margin-right: 10px;
 }
 
 .ca_pagination_box
 {
     float: left;
+    margin-left: 10px;
 
 }
 
@@ -154,7 +162,9 @@ button.ca_proof_button
 {
     font-size: 80%;
     background-color: #eeeeee;
-    padding: 10px 5px 5px 5px;
+    padding: 10px 0px 10px 0px;
+    float: left;
+    width: 100%;
 }
 
 .ca_highlighted_pagination
@@ -172,4 +182,116 @@ button.ca_proof_button
     display: inline-block;
     margin-right: 5px;
     cursor: pointer;
+}
+
+.ca_label
+{
+    font-size: 10px;
+}
+
+
+/*
+TODO responsive
+*/
+
+.ca_lightbox
+{
+    border: 1px solid #000000;
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    display: inline-block;
+    background-color: #ffffff;
+    z-index: 1001; /* > than for #ca_lightbox_overlay */
+}
+
+.ca_lightbox_close_bar
+{
+    background-color: #eeeeee;
+    width: 100%;
+    height: 20px;
+
+}
+
+.ca_lightbox_close
+{
+    float: right;
+    font-size: 12px;
+    display: inline-block;
+    width: 15px;
+    background-color: #eeeeee;
+    cursor: pointer;
+    margin-right: 5px;
+    margin-top: 2px;
+}
+
+.ca_lightbox_controls
+{
+
+    font-size: 12px;
+    height: 15px;
+}
+
+.ca_lightbox_controls input[type="checkbox"]
+{
+    float: left;
+}
+
+.ca_lightbox_label
+{
+    float: left;
+    margin-left: 20px;
+    display: inline-block;
+}
+
+#ca_lightbox_overlay {
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:url("client_area_overlay.png") repeat;
+    text-align:center;
+    z-index: 1000;
+}
+
+.ca_message_pop_up
+{
+    width: 200px;
+    z-index: 1000;
+    background-color:  #ffffff;
+    border: 1px solid #000000;
+    position: absolute;
+    padding-bottom: 5px;
+
+}
+
+.ca_popup_close_bar
+{
+    background-color: #eeeeee;
+    width: 100%;
+    height: 20px;
+
+}
+
+.ca_popup_close
+{
+    float: right;
+    font-size: 12px;
+    display: inline-block;
+    width: 15px;
+    background-color: #eeeeee;
+    cursor: pointer;
+    margin-right: 5px;
+    margin-top: 2px;
+}
+
+.ca_popup_text
+{
+    padding: 5px;
+}
+
+.ca_button_left
+{
+    margin-right: 5px;
 }
