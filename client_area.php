@@ -209,12 +209,19 @@ class ClientArea
     {
         $user = $_POST['login'];
         $password = $_POST['password'];
+        $restoredProofs = $_POST['restoredProofs'];
 
         if (!empty($this->accounts[$user]) && !empty($password) && ($this->accounts[$user]["password"] === $password)) {
 
             $_SESSION["user"] = $user;
             $_SESSION["proofsPagesVisited"] = array();
             $_SESSION["proofsChosen"] = array();
+            if (!empty($restoredProofs)) {
+                $restoredProofsArray = json_decode($restoredProofs);
+                if (is_array($restoredProofsArray)) {
+                    $_SESSION["proofsChosen"] = $restoredProofsArray;
+                }
+            }
 
             return true;
         } else {
@@ -517,9 +524,10 @@ EOF;
             <div class="print_login">
             <form action="$this->containerPageUrl" method="post" id="ca_action_form">
                 <input type="hidden" name="action" value="login">
+                <input type="hidden" name="restoredProofs" id="restoredProofs" value="">
                 <span class="login_error">$loginMessage</span><br>
                 <span class="your_print_label">$userName</span>
-                <input class="your_print_field" type="text" name="login">
+                <input class="your_print_field" type="text" name="login" id="ca_login_name">
                 <br class="clear">
                 <span class="your_print_label" >$password</span>
                 <input class="your_print_field" type="password" name="password">
@@ -532,7 +540,7 @@ EOF;
                 </select>-->
                 <br class="clear">
 
-                <button class="ca_standard_button ca_login_button" id="login" !type="button">$login</button>
+                <button class="ca_standard_button ca_login_button ca_login_button_event" id="login" type="button">$login</button>
             </form>
         </div>
 

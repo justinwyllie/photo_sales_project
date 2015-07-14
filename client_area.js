@@ -16,6 +16,22 @@ jQuery(function($) {
         }
     })
 
+    $("#ca_content_area").on("click", ".ca_login_button_event", function() {
+
+        var username = $("#ca_login_name").val();
+        var clientAreaStorageProofs = new ClientAreaStorageProofs(username);
+        if (clientAreaStorageProofs.supported) {
+            var storedData = clientAreaStorageProofs.getValueAsString();
+            $("#restoredProofs").val(storedData);
+        }
+
+        $("#ca_action_form").get(0).submit();
+
+    })
+
+
+
+
     $("#ca_content_area").on("click", ".ca_page_number", function() {
         var idx = $(this).data("index");
         $("#ca_action_form #ca_index_field").val(idx);
@@ -175,10 +191,12 @@ jQuery(function($) {
             var username = $(".ca_proofs_bar").data("username");
             var clientAreaStorageProofs = new ClientAreaStorageProofs(username);
 
-            if (checkState) {
-                clientAreaStorageProofs.addToStorage(res.fileRef);
-            } else {
-                clientAreaStorageProofs.removeFromStorage(res.fileRef);
+            if (clientAreaStorageProofs.supported) {
+                if (checkState) {
+                    clientAreaStorageProofs.addToStorage(res.fileRef);
+                } else {
+                    clientAreaStorageProofs.removeFromStorage(res.fileRef);
+                }
             }
 
         }).done(function() {
@@ -195,6 +213,7 @@ jQuery(function($) {
 
 
 
+
     //TODO can you make this abstract?!
     var ClientAreaStorage = function() {
 
@@ -205,20 +224,25 @@ jQuery(function($) {
             this.supported = false;
         }
 
-        this.getValueAsArray = function() {
-            var storedString = localStorage.getItem(this.key);
-            console.log(this.key);
-            if ((storedString === null) || (storedString === "")) {
-                return new Array();
-            }
-            var storedArray = $.parseJSON(storedString);
-            return storedArray;
-        }
+    }
 
-        this.setValueFromArray = function(data) {
-            var dataAsString = JSON.stringify(data);
-            localStorage.setItem(this.key, dataAsString);
+    ClientAreaStorage.prototype.getValueAsArray = function() {
+        var storedString = localStorage.getItem(this.key);
+        if ((storedString === null) || (storedString === "")) {
+            return new Array();
         }
+        var storedArray = $.parseJSON(storedString);
+        return storedArray;
+    }
+
+    ClientAreaStorage.prototype.getValueAsString = function() {
+        var storedString = localStorage.getItem(this.key);
+        return storedString;
+    }
+
+    ClientAreaStorage.prototype.setValueFromArray = function(data) {
+        var dataAsString = JSON.stringify(data);
+        localStorage.setItem(this.key, dataAsString);
     }
 
     ClientAreaStorage.prototype.addToStorage = function(fileRef) {
@@ -242,7 +266,9 @@ jQuery(function($) {
         if (!this.supported) {
             return;
         }
+
         var storedData = this.getValueAsArray();
+
         var pos = storedData.indexOf(fileRef);
         if (pos >= 0) {
             storedData.splice(pos, 1);
@@ -268,6 +294,8 @@ jQuery(function($) {
     ClientAreaStorageProofs.prototype.constructor = ClientAreaStorageProofs;
 
 //TODO message if no storage
+
+    console.log(localStorage.getItem("nascimento_ca_proofs"));
 
 
 });
