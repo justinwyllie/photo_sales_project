@@ -150,6 +150,7 @@ jQuery(function($) {
     $("#ca_content_area").on("click", ".ca_proof_checkbox_event", function() {
         var fileRef = $(this).val();
         var status = $(this).is(":checked");
+
         if (status) {
             var fileAction = "add";
         } else {
@@ -163,23 +164,110 @@ jQuery(function($) {
         }
 
         var postUrl = $("#ca_action_form").attr("action");
+        var that = this;
 
 
-        var jqxhr = $.post(postUrl, data, function() {
-            alert( "success" );
+        var jqxhr = $.post(postUrl, data, function(res) {
+            var checkState = res.checkboxOn;
+
+            $(that).prop("checked", checkState);
+            $(".ca_counter").html(res.numberOfProofs);
+            var username = $(".ca_proofs_bar").data("username");
+            var clientAreaStorageProofs = new ClientAreaStorageProofs(username);
+
+            if (checkState) {
+                clientAreaStorageProofs.addToStorage(res.fileRef);
+            } else {
+                clientAreaStorageProofs.removeFromStorage(res.fileRef);
+            }
+
         }).done(function() {
-                alert( "second success" );
+
         }).fail(function() {
-                alert( "error" );
+
         }).always(function() {
-                alert( "finished" );
+
         });
 
-        console.log(jqxhr);
 
     })
 
 
+
+
+    //TODO can you make this abstract?!
+    var ClientAreaStorage = function() {
+
+        if ( (JSON && typeof JSON.parse === 'function') && (typeof(Storage) !== "undefined") &&
+            (typeof(Array.prototype.indexOf) === "function")) {
+            this.supported = true;
+        } else {
+            this.supported = false;
+        }
+
+        this.getValueAsArray = function() {
+            var storedString = localStorage.getItem(this.key);
+            console.log(this.key);
+            if ((storedString === null) || (storedString === "")) {
+                return new Array();
+            }
+            var storedArray = $.parseJSON(storedString);
+            return storedArray;
+        }
+
+        this.setValueFromArray = function(data) {
+            var dataAsString = JSON.stringify(data);
+            localStorage.setItem(this.key, dataAsString);
+        }
+    }
+
+    ClientAreaStorage.prototype.addToStorage = function(fileRef) {
+
+        if (!this.supported) {
+            return;
+        }
+
+        var storedData = this.getValueAsArray();
+        if (storedData.indexOf(fileRef) >= 0) {
+            return;
+        } else {
+            storedData.push(fileRef);
+        }
+        this.setValueFromArray(storedData);
+
+    }
+
+    ClientAreaStorage.prototype.removeFromStorage = function(fileRef) {
+
+        if (!this.supported) {
+            return;
+        }
+        var storedData = this.getValueAsArray();
+        var pos = storedData.indexOf(fileRef);
+        if (pos >= 0) {
+            storedData.splice(pos, 1);
+        }
+        this.setValueFromArray(storedData);
+
+    }
+
+    if (typeof Object.create !== 'function') {
+        Object.create = function (o) {
+            function F() {}
+            F.prototype = o;
+            return new F();
+        };
+    }
+
+    var ClientAreaStorageProofs = function(username) {
+        this.key = username + "_ca_proofs";
+        ClientAreaStorage.call(this);
+    }
+
+    ClientAreaStorageProofs.prototype = Object.create(ClientAreaStorage.prototype);
+    ClientAreaStorageProofs.prototype.constructor = ClientAreaStorageProofs;
+
+//TODO message if no storage
 
 
 });

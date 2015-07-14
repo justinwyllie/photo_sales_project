@@ -7,6 +7,7 @@
  * thumbs width = max long edge = 120px
  * main long edge = max long edge = 720 px.
  *
+ *
  * TODO LIST
  * store the chosen proofs somewhere so that if user logs in again we can restore them
  * - cld we just seralise the SESSION data and put that in a file?
@@ -94,6 +95,8 @@ class ClientArea
     public function run()
     {
 
+
+
         $content = call_user_func_array(array($this, $this->action), array());
 
         if (is_object($content) ) {
@@ -131,7 +134,9 @@ class ClientArea
         } else {
             $this->action = "terminateScript";
         }
+
     }
+
 
     //TODO test
     private function terminateScript()
@@ -174,7 +179,7 @@ class ClientArea
         $fields["checkAllMessage"] = "Please make sure you have reviewed all the pages before submitting your order";
         $fields["moreThanOnePageMessage"] = "Please be sure to check all the pages";
         $fields["logout"] = "Log Out";
-        $fields["confirmLogoutMessage"] = "Are you sure? Your current selection will not be saved.";
+        $fields["confirmLogoutMessage"] = "Are you sure?";
         $fields["okText"] = "OK";
         $fields["cancelText"] = "Cancel";
         $fields["criticalError"] = "Sorry. A critical error has occurred.";
@@ -205,15 +210,11 @@ class ClientArea
         $user = $_POST['login'];
         $password = $_POST['password'];
 
-        //TODO if they relogin in durring a session what happens to the state of their order?
-        //should we wipe it if they relog in? - probably yes to handle the unlikely event
-        //that a second user is using the same browser instance.
-
-        $this->clearSession();
-
         if (!empty($this->accounts[$user]) && !empty($password) && ($this->accounts[$user]["password"] === $password)) {
+
             $_SESSION["user"] = $user;
             $_SESSION["proofsPagesVisited"] = array();
+            $_SESSION["proofsChosen"] = array();
 
             return true;
         } else {
@@ -224,19 +225,17 @@ class ClientArea
 
     private function logout()
     {
-        $this->logoutAndShowLoginScreen();
-
-
+        return $this->logoutAndShowLoginScreen();
     }
 
-    private function clearSession()
+    private function destroySession()
     {
-        unset($_SESSION['user']);
-        unset( $_SESSION["proofsPagesVisited"]);
-        unset($_SESSION["proofsChosen"]);
-        //TODO make sure we clear all fields
+       session_unset();
+       session_destroy();
 
     }
+
+
 
     private function processProofs()
     {
@@ -315,6 +314,12 @@ class ClientArea
 
         foreach ($thumbsForThisPage as $file) {
 
+            if ((isset($_SESSION["proofsChosen"])) && in_array($file, $_SESSION["proofsChosen"])) {
+                $checked = ' checked="checked" ';
+            } else {
+                $checked = '';
+            }
+
             if ($this->options["proofsShowLabels"]) {
                 $label = '<span class="ca_label">' . $file . '</span>';
             } else {
@@ -329,7 +334,7 @@ class ClientArea
             $fileHtml = '<div class="ca_thumb_pic"><img' .
                 ' data-image-width="' . $imageDimensions["width"] . '" ' .
                 'src="' . $filePath . '"><br><input class="ca_proof_checkbox_event" type="checkbox" value="' .
-                  $file . '">' . $label . '</div>';
+                  $file . '"' . $checked . ' >' . $label . '</div>';
             $pageThumbsHtml.=  $fileHtml;
         }
 
@@ -340,6 +345,9 @@ class ClientArea
         } else {
         $labelsOption = "off";
         }
+
+        $proofsChosenCount = count($_SESSION["proofsChosen"]);
+        $userName = $_SESSION["user"];
 
         $html = <<<EOF
 
@@ -355,6 +363,7 @@ class ClientArea
                 data-confirm-logout-message="$confirmLogoutMessage"
                 data-ok-text="$okText"
                 data-cancel-text="$cancelText"
+                data-username="$userName"
                 >
                 <span class="ca_message_area">$proofsMessage $customProofsMessage $extraMessage</span>
 
@@ -368,7 +377,7 @@ class ClientArea
                 <button class="ca_proof_button ca_proof_event">$done</button>
                 <span class="ca_counter_box">
                     <span class="ca_counter_label">$chosen</span>
-                    <span class="ca_counter">0</span>
+                    <span class="ca_counter">$proofsChosenCount</span>
                 </span>
             </div>
 
@@ -478,8 +487,10 @@ EOF;
 
     private function logoutAndShowLoginScreen()
     {
-        $this->clearSession();
-        $this->showLoginScreen();
+        $this->destroySession();
+        $ret = $this->showLoginScreen();
+        return $ret;
+
     }
 
     private function showLoginScreen()
