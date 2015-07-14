@@ -115,8 +115,9 @@ Advanced users only beyond this point!
 
 .ca_counter
 {
-    min-width: 50px;
+    min-width: 25px;
     display: inline-block;
+    text-align: left;
 }
 
 

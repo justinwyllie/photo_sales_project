@@ -13,27 +13,42 @@
  *
  */
 
+
+session_start();
+$clientArea = new ClientArea;
+$clientArea->controller();
+$clientArea->run();
+
+
 class ClientArea
 {
     public $action;
     private $options;
     private $accounts;
+    protected $template;
 
 
     public function __construct()
     {
 
-
         $this->setOptions();
         $this->setAccounts();
 
-        //the web page which includes this system
-        $this->containerPageUrl = "account.php";
-        //absolute path on your system to where the images are stored. Must be under web root. See Docs.
+        $this->containerPageUrl = $_SERVER['PHP_SELF'];
+
+        //absolute path on your system to where the client folders and images are stored. Must be under web root.
+        //TODO check docs for directory it and scandir - does this have to be full?
         $this->clientAreaDiretory = "/var/www/vhosts/justinwylliephotography.com/httpdocs/client_area";
-        //url for the client area - url which matches above directory. Can the absolute or relative. See Docs.
+        //url for the client area - url which matches above directory. Can the absolute or relative.
         $this->clientAreaUrl = "/client_area";
 
+        //path, absolute or relative to this script, to where the template is stored on your system
+        $this->template = "client_area_template.php";
+
+        //url for the client area js. can be relative to the page this script is executing in or absolute
+        $this->js = "/client_area.js";
+        //url for the client area css. can be relative to the page this script is executing in or absolute
+        $this->css = "/client_area.css";
 
     }
 
@@ -42,7 +57,7 @@ class ClientArea
     {
 
         $accounts = array();
-        $accounts['nascimento']["password"] = "test";
+        $accounts['nascimento']["password"] = "testextra";
         $accounts['nascimento']["proofs_on"] = true;
         $accounts['nascimento']["prints_on"] = false;
         $accounts['nascimento']["human_name"] = "Decio";
@@ -78,7 +93,16 @@ class ClientArea
 
     public function run()
     {
-        call_user_func_array(array($this, $this->action), array());
+
+        $content = call_user_func_array(array($this, $this->action), array());
+
+        if (is_object($content) ) {
+            $this->outputJson($content);
+        } else {
+            $this->outputHtmlPage($content);
+        }
+
+
     }
 
     /**
@@ -109,11 +133,16 @@ class ClientArea
         }
     }
 
-
+    //TODO test
     private function terminateScript()
     {
-        //todo log this/alert me
-        die();
+        if (isset($_POST["action"]) && (strpos($_POST["action"], "ajax" ) !== false) ){
+            $obj = new stdClass();
+            $obj->error = true;
+            $this->outputJson($obj);
+        } else {
+            $this->outputHtmlPage($this->lang("criticalError"));
+        }
     }
 
 
@@ -148,6 +177,7 @@ class ClientArea
         $fields["confirmLogoutMessage"] = "Are you sure? Your current selection will not be saved.";
         $fields["okText"] = "OK";
         $fields["cancelText"] = "Cancel";
+        $fields["criticalError"] = "Sorry. A critical error has occurred.";
 
 
 
@@ -184,6 +214,7 @@ class ClientArea
         if (!empty($this->accounts[$user]) && !empty($password) && ($this->accounts[$user]["password"] === $password)) {
             $_SESSION["user"] = $user;
             $_SESSION["proofsPagesVisited"] = array();
+
             return true;
         } else {
             return false;
@@ -202,14 +233,15 @@ class ClientArea
     {
         unset($_SESSION['user']);
         unset( $_SESSION["proofsPagesVisited"]);
+        unset($_SESSION["proofsChosen"]);
         //TODO make sure we clear all fields
 
     }
 
     private function processProofs()
     {
-        echo "hi";
-        exut;
+        return "hi";
+
     }
 
     private function showProofsScreen()
@@ -296,7 +328,7 @@ class ClientArea
             $filePath = $this->clientAreaUrl . '/' . $user . "/proofs/thumbs/" . $file;
             $fileHtml = '<div class="ca_thumb_pic"><img' .
                 ' data-image-width="' . $imageDimensions["width"] . '" ' .
-                'src="' . $filePath . '"><br><input type="checkbox" value="' .
+                'src="' . $filePath . '"><br><input class="ca_proof_checkbox_event" type="checkbox" value="' .
                   $file . '">' . $label . '</div>';
             $pageThumbsHtml.=  $fileHtml;
         }
@@ -347,8 +379,8 @@ class ClientArea
             </div>
 
 EOF;
-        echo $html;
-        exit;
+        return $html;
+
 
     }
 
@@ -367,7 +399,7 @@ EOF;
     }
     private function showPrintsScreen()
     {
-        echo "Prints";
+        return "Prints";
     }
 
     private function showChoiceScreen()
@@ -413,8 +445,7 @@ EOF;
         </div>
 EOF;
 
-        echo $html;
-        exit;
+        return $html;
 
     }
 
@@ -441,8 +472,8 @@ EOF;
 
 EOF;
 
-        echo $html;
-        exit;
+        return $html;
+
     }
 
     private function logoutAndShowLoginScreen()
@@ -473,7 +504,7 @@ EOF;
 
         $html = <<<EOF
             <div class="print_login">
-            <form action="$this->containerPageUrl" method="post">
+            <form action="$this->containerPageUrl" method="post" id="ca_action_form">
                 <input type="hidden" name="action" value="login">
                 <span class="login_error">$loginMessage</span><br>
                 <span class="your_print_label">$userName</span>
@@ -496,10 +527,40 @@ EOF;
 
 
 EOF;
-        echo $html;
-        exit;
+        return $html;
 
 
+
+    }
+
+    private function ajaxAddRemoveProofImage()
+    {
+        $fileRef = $_POST["fileRef"];
+        $fileAction = $_POST["fileAction"];
+
+        $result = new stdClass();
+        $result->fileRef = $fileRef;
+
+        if (!isset($_SESSION["proofsChosen"])) {
+            $_SESSION["proofsChosen"] = array(); //here
+        }
+
+        if ($fileAction === "add") {
+            if (!in_array($fileRef, $_SESSION["proofsChosen"])) {
+                $_SESSION["proofsChosen"][] =   $fileRef;
+            }
+            $result->checkboxOn = true;
+        } elseif ($fileAction === "remove") {
+            $keyToRemove = array_search($fileRef, $_SESSION["proofsChosen"]);
+            if ($keyToRemove !== false) {
+                unset($_SESSION["proofsChosen"][$keyToRemove]);
+            }
+            $result->checkboxOn = false;
+        }
+
+        $result->numberOfProofs = count($_SESSION["proofsChosen"]);
+
+        return $result;
     }
 
 
@@ -583,13 +644,93 @@ EOF;
 
         }
 
-
         $output.= '</div>';
         return $output;
 
     }
 
+
+    private function outputJson($output) {
+        header("Content-type: application/json");
+        echo json_encode($output, JSON_FORCE_OBJECT);
+        exit();
+    }
+
+    private function outputHtmlPage($content) {
+
+        //build header
+        $headerContent = <<<EOT
+        <script src="$this->js"></script>
+        <link rel="stylesheet" href="$this->css" type="text/css">
+
+EOT;
+
+        $wrappedContent = <<<EOT
+            <div id="ca_content_area">
+                $content
+            </div>
+EOT;
+
+
+        $template = new TemplateEngine;
+        $template->setText();
+        $template->setVars(
+            array(
+                "CLIENTAREAHEAD" => $headerContent,
+                "CLIENTAREABODY" => $wrappedContent,
+
+            )
+        );
+
+        echo $template->getText();
+
+
+    }
+
 }
+
+
+class clientAreaPrints
+{
+
+
+
+}
+
+class TemplateEngine extends ClientArea
+{
+
+
+    public function __construct()
+    {
+        parent::__construct();
+    }
+
+    public function setText()
+    {
+        ob_start();
+        include($this->template);
+        $this->text = ob_get_contents();
+        ob_end_clean();
+
+    }
+
+    //TODO improve this is temporary
+    public function setVars($vars)
+    {
+        foreach ($vars as $key => $replacement) {
+
+            $this->text = str_replace("##" . $key . "##", $replacement, $this->text);
+        }
+    }
+
+    public function getText()
+    {
+        return $this->text;
+    }
+
+}
+
 
 
 

@@ -143,8 +143,41 @@ jQuery(function($) {
 
     $("body").on("click", ".ca_popup_close_event", function() {
         $(this).closest(".ca_message_pop_up").remove();
-     })
+    })
 
+
+
+    $("#ca_content_area").on("click", ".ca_proof_checkbox_event", function() {
+        var fileRef = $(this).val();
+        var status = $(this).is(":checked");
+        if (status) {
+            var fileAction = "add";
+        } else {
+            var fileAction = "remove";
+        }
+
+        var data = {
+            action: "ajaxAddRemoveProofImage",
+            fileRef : fileRef,
+            fileAction : fileAction
+        }
+
+        var postUrl = $("#ca_action_form").attr("action");
+
+
+        var jqxhr = $.post(postUrl, data, function() {
+            alert( "success" );
+        }).done(function() {
+                alert( "second success" );
+        }).fail(function() {
+                alert( "error" );
+        }).always(function() {
+                alert( "finished" );
+        });
+
+        console.log(jqxhr);
+
+    })
 
 
 
