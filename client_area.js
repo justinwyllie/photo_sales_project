@@ -21,8 +21,10 @@ jQuery(function($) {
         var username = $("#ca_login_name").val();
         var clientAreaStorageProofs = new ClientAreaStorageProofs(username);
         if (clientAreaStorageProofs.supported) {
-            var storedData = clientAreaStorageProofs.getValueAsString();
-            $("#restoredProofs").val(storedData);
+            var storedDataProofs = clientAreaStorageProofs.getValueAsString("ca_proofs");
+            $("#restoredProofs").val(storedDataProofs);
+            var storedDataPagesVisited = clientAreaStorageProofs.getValueAsString("ca_proofs_pages_visited");
+            $("#restoredPagesVisited").val(storedDataPagesVisited);
         }
 
         $("#ca_action_form").get(0).submit();
@@ -32,12 +34,13 @@ jQuery(function($) {
 
 
 
-    $("#ca_content_area").on("click", ".ca_page_number", function() {
+    $("#ca_content_area").on("click", ".ca_page_number_event", function() {
         var idx = $(this).data("index");
         $("#ca_action_form #ca_index_field").val(idx);
         $("#ca_action_form").get(0).submit();
 
     })
+
 
     $("#ca_content_area").on("click", ".ca_thumb_pic img", function() {
         var ref = $(this).parent(".ca_thumb_pic").find('input[type="checkbox"]').val();
@@ -159,11 +162,20 @@ jQuery(function($) {
 
     $("body").on("click", ".ca_popup_close_event", function() {
         $(this).closest(".ca_message_pop_up").remove();
-    })
+    });
 
 
+    $("body").on("click", ".ca_lightbox_checkbox_event", function() {
+        proofSelected.call(this);
+    });
 
     $("#ca_content_area").on("click", ".ca_proof_checkbox_event", function() {
+        proofSelected.call(this);
+    });
+
+
+
+    var proofSelected =  function() {
         var fileRef = $(this).val();
         var status = $(this).is(":checked");
 
@@ -187,15 +199,19 @@ jQuery(function($) {
             var checkState = res.checkboxOn;
 
             $(that).prop("checked", checkState);
+            if ($(that).hasClass("ca_lightbox_checkbox_event")) {
+                $('.ca_proof_checkbox_event[value="' + fileRef + '"]').prop("checked", checkState);
+            }
+
             $(".ca_counter").html(res.numberOfProofs);
-            var username = $(".ca_proofs_bar").data("username");
+            var ca_proofs_pages_visited = $(".ca_proofs_bar").data("username");
             var clientAreaStorageProofs = new ClientAreaStorageProofs(username);
 
             if (clientAreaStorageProofs.supported) {
                 if (checkState) {
-                    clientAreaStorageProofs.addToStorage(res.fileRef);
+                    clientAreaStorageProofs.addToStorage("ca_proofs", res.fileRef);
                 } else {
-                    clientAreaStorageProofs.removeFromStorage(res.fileRef);
+                    clientAreaStorageProofs.removeFromStorage("ca_proofs", res.fileRef);
                 }
             }
 
@@ -208,7 +224,7 @@ jQuery(function($) {
         });
 
 
-    })
+    }
 
 
 
@@ -226,8 +242,13 @@ jQuery(function($) {
 
     }
 
-    ClientAreaStorage.prototype.getValueAsArray = function() {
-        var storedString = localStorage.getItem(this.key);
+    ClientAreaStorage.prototype.getUserKey = function(key)
+    {
+        return this.username  + "_" + key;
+    }
+
+    ClientAreaStorage.prototype.getValueAsArray = function(key) {
+        var storedString = localStorage.getItem(this.getUserKey(key));
         if ((storedString === null) || (storedString === "")) {
             return new Array();
         }
@@ -235,45 +256,45 @@ jQuery(function($) {
         return storedArray;
     }
 
-    ClientAreaStorage.prototype.getValueAsString = function() {
-        var storedString = localStorage.getItem(this.key);
+    ClientAreaStorage.prototype.getValueAsString = function(key) {
+        var storedString = localStorage.getItem(this.getUserKey(key));
         return storedString;
     }
 
-    ClientAreaStorage.prototype.setValueFromArray = function(data) {
+    ClientAreaStorage.prototype.setValueFromArray = function(key, data) {
         var dataAsString = JSON.stringify(data);
-        localStorage.setItem(this.key, dataAsString);
+        localStorage.setItem(this.getUserKey(key), dataAsString);
     }
 
-    ClientAreaStorage.prototype.addToStorage = function(fileRef) {
+    ClientAreaStorage.prototype.addToStorage = function(key, value) {
 
         if (!this.supported) {
             return;
         }
 
-        var storedData = this.getValueAsArray();
-        if (storedData.indexOf(fileRef) >= 0) {
+        var storedData = this.getValueAsArray(key);
+        if (storedData.indexOf(value) >= 0) {
             return;
         } else {
-            storedData.push(fileRef);
+            storedData.push(value);
         }
-        this.setValueFromArray(storedData);
+        this.setValueFromArray(key, storedData);
 
     }
 
-    ClientAreaStorage.prototype.removeFromStorage = function(fileRef) {
+    ClientAreaStorage.prototype.removeFromStorage = function(key, value) {
 
         if (!this.supported) {
             return;
         }
 
-        var storedData = this.getValueAsArray();
+        var storedData = this.getValueAsArray(key);
 
-        var pos = storedData.indexOf(fileRef);
+        var pos = storedData.indexOf(value);
         if (pos >= 0) {
             storedData.splice(pos, 1);
         }
-        this.setValueFromArray(storedData);
+        this.setValueFromArray(key, storedData);
 
     }
 
@@ -285,8 +306,9 @@ jQuery(function($) {
         };
     }
 
+    //ca_proofs, ca_proofs_pages_visited
     var ClientAreaStorageProofs = function(username) {
-        this.key = username + "_ca_proofs";
+        this.username = username;
         ClientAreaStorage.call(this);
     }
 
@@ -296,6 +318,27 @@ jQuery(function($) {
 //TODO message if no storage
 
     console.log(localStorage.getItem("nascimento_ca_proofs"));
+
+
+
+    //onpageload TODO
+
+    var pageOn = $("span.ca_proofs_page");
+    if (pageOn.length >= 1) {
+
+        var username = $(".ca_proofs_bar").data("username");
+        var clientAreaStorageProofs = new ClientAreaStorageProofs(username);
+
+        if (clientAreaStorageProofs.supported) {
+            var pageIndex = $(pageOn).filter(".ca_highlighted_pagination").data("index");
+            console.log(pageIndex);
+            clientAreaStorageProofs.addToStorage("ca_proofs_pages_visited", pageIndex);
+        }
+
+    }
+
+
+
 
 
 });

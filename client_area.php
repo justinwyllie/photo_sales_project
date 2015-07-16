@@ -210,6 +210,7 @@ class ClientArea
         $user = $_POST['login'];
         $password = $_POST['password'];
         $restoredProofs = $_POST['restoredProofs'];
+        $restoredPagesVisited = $_POST['restoredPagesVisited'];
 
         if (!empty($this->accounts[$user]) && !empty($password) && ($this->accounts[$user]["password"] === $password)) {
 
@@ -220,6 +221,14 @@ class ClientArea
                 $restoredProofsArray = json_decode($restoredProofs);
                 if (is_array($restoredProofsArray)) {
                     $_SESSION["proofsChosen"] = $restoredProofsArray;
+                }
+            }
+
+            if (!empty($restoredPagesVisited)) {
+                $restoredPagesVisitedArray = json_decode($restoredPagesVisited);
+                if (is_array($restoredPagesVisitedArray)) {
+                    var_dump($restoredPagesVisitedArray);
+                    $_SESSION["proofsPagesVisited"] = $restoredPagesVisitedArray;
                 }
             }
 
@@ -525,6 +534,7 @@ EOF;
             <form action="$this->containerPageUrl" method="post" id="ca_action_form">
                 <input type="hidden" name="action" value="login">
                 <input type="hidden" name="restoredProofs" id="restoredProofs" value="">
+                <input type="hidden" name="restoredPagesVisited" id="restoredPagesVisited" value="">
                 <span class="login_error">$loginMessage</span><br>
                 <span class="your_print_label">$userName</span>
                 <input class="your_print_field" type="text" name="login" id="ca_login_name">
@@ -652,13 +662,13 @@ EOF;
         foreach($pagesToShow as $pageNumber => $index)
         {
             if ($index == $startIndex) {
-                $class = " ca_highlighted_pagination ";
+                $class = " ca_highlighted_pagination  ";
             }
             else
             {
                 $class = "";
             }
-            $output.= '<span data-index="' . $index . '" class="ca_page_number ' . $class .
+            $output.= '<span data-index="' . $index . '" class="ca_page_number_event  ca_proofs_page' . $class .
                 '">' . $pageNumber . '</span>';
 
         }
