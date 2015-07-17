@@ -1,5 +1,17 @@
 jQuery(function($) {
 
+    var criticalErrorMessage = $(".ca_proofs_bar").data("critical-error-message") ;
+
+
+    var redirectToLoginScreen = function() {
+        //this repeats the last page action whether it was a post or get
+        location.reload(true);
+    }
+
+    var criticalError = function() {
+        $(".ca_message_area").prepend( $("<span></span>").addClass("ca-error").html(criticalErrorMessage)    );
+    }
+
     $("#ca_content_area").on("click", ".ca_confirm_switch_event", function() {
         var call = $(this).data("call");
         $("#ca_action_form #ca_action_field").val(call);
@@ -196,6 +208,11 @@ jQuery(function($) {
 
 
         var jqxhr = $.post(postUrl, data, function(res) {
+            if ((typeof(res.redirect)) !== "undefined" && (res.redirect)) {
+                redirectToLoginScreen();
+                return;
+            }
+
             var checkState = res.checkboxOn;
 
             $(that).prop("checked", checkState);
@@ -215,10 +232,10 @@ jQuery(function($) {
                 }
             }
 
-        }).done(function() {
+        }, "json").done(function() {
 
         }).fail(function() {
-
+            criticalError();
         }).always(function() {
 
         });
@@ -336,6 +353,7 @@ jQuery(function($) {
         }
 
     }
+
 
 
 

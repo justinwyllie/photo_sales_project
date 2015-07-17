@@ -27,6 +27,7 @@ class ClientArea
     private $options;
     private $accounts;
     protected $template;
+    private $adminEmail;
 
 
     public function __construct()
@@ -50,6 +51,9 @@ class ClientArea
         $this->js = "/client_area.js";
         //url for the client area css. can be relative to the page this script is executing in or absolute
         $this->css = "/client_area.css";
+
+        $this->adminEmail = "info@justinwylliephotography.com";
+        $this->appName = "Photo ordering system.";
 
     }
 
@@ -127,6 +131,8 @@ class ClientArea
         } elseif (!isset($_SESSION["user"])  && ($_SERVER["REQUEST_METHOD"] === "POST")
                 && (!empty($_POST["action"])) && ($_POST["action"] === "login") ) {
             $this->setLogin();
+        } elseif (!isset($_SESSION["user"]) && (!empty($_POST["action"])) && (strpos($_POST["action"], "ajax") !== false)) {
+            $this->redirectToLoginScreen();
         } elseif  (!isset($_SESSION["user"])  && ($_SERVER["REQUEST_METHOD"] === "POST")
             && (!empty($_POST["action"])) && ($_POST["action"] !== "login") ) {
             $this->loginMessage = $this->lang("sessionExpired");
@@ -138,16 +144,35 @@ class ClientArea
     }
 
 
-    //TODO test
+    private function redirectToLoginScreen()
+    {
+        $obj = new stdClass();
+        $obj->redirect = true;
+        $this->outputJson($obj);
+    }
+
+    //TODO test and ajax. log me
     private function terminateScript()
     {
-        if (isset($_POST["action"]) && (strpos($_POST["action"], "ajax" ) !== false) ){
-            $obj = new stdClass();
-            $obj->error = true;
-            $this->outputJson($obj);
+        if (!empty($_SESSION["user"])) {
+            $msg = "User: " . $_SESSION["user"];
         } else {
-            $this->outputHtmlPage($this->lang("criticalError"));
+            $msg = "No valid logged in user";
         }
+        $this->caMail("Error on site", "The user received a critical error. " . $msg);
+
+        if (isset($_POST["action"]) && (strpos($_POST["action"], "ajax" ) !== false) ){
+            $this->outputJson500();
+        } else {
+            $this->outputHtmlPage('<span class="ca-error">' . $this->lang("criticalErrorMessage") . '</span>');
+            exit;
+        }
+    }
+
+    private function caMail($subject, $content)
+    {
+
+        mail($this->adminEmail, $this->appName . ' ' . $subject, $content);
     }
 
 
@@ -182,7 +207,7 @@ class ClientArea
         $fields["confirmLogoutMessage"] = "Are you sure?";
         $fields["okText"] = "OK";
         $fields["cancelText"] = "Cancel";
-        $fields["criticalError"] = "Sorry. A critical error has occurred.";
+        $fields["criticalErrorMessage"] = "Sorry. A critical error has occurred.";
 
 
 
@@ -255,7 +280,8 @@ class ClientArea
 
     private function processProofs()
     {
-        return "hi";
+
+        echo "ok";
 
     }
 
@@ -276,13 +302,11 @@ class ClientArea
         $customProofsMessage = $account["customProofsMessage"];
 
         $proofsMessage = $this->lang("proofsMessage");
-        $chosen = $this->lang("chosen");
-        $done = $this->lang("done");
-        $logout = $this->lang("logout");
         $checkAllMessage = $this->lang("checkAllMessage");
         $confirmLogoutMessage = $this->lang("confirmLogoutMessage");
         $okText = $this->lang("okText");
         $cancelText = $this->lang("cancelText");
+        $criticalErrorMessage = $this->lang("criticalErrorMessage");
 
 
 
@@ -365,6 +389,21 @@ class ClientArea
         $proofsChosenCount = count($_SESSION["proofsChosen"]);
         $userName = $_SESSION["user"];
 
+        $message = "$proofsMessage $customProofsMessage $extraMessage";
+        $dataAttributes = array();
+        //TODO just use lang
+        $dataAttributes["url-for-mains"] = $urlForMains;
+        $dataAttributes["labels-option"] = $labelsOption;
+        $dataAttributes["check-all-message"] = $checkAllMessage;
+        $dataAttributes["all-pages-visited"] = $allPagesVisited;
+        $dataAttributes["confirm-logout-message"] = $confirmLogoutMessage;
+        $dataAttributes["ok-text"] = $okText;
+        $dataAttributes["cancel-text"] = $cancelText;
+        $dataAttributes["username"] = $_SESSION["user"];
+        $dataAttributes["critical-error-message"] = $criticalErrorMessage;
+        $mainBar = $this->caProofsBar($dataAttributes, $message);
+        $subBar = $this->caSubBar($pageHtml, true, $proofsChosenCount);
+
         $html = <<<EOF
 
              <form action="$this->containerPageUrl" method="post" id="ca_action_form">
@@ -372,31 +411,8 @@ class ClientArea
                 <input type="hidden" name="index" id="ca_index_field" value="0">
              </form>
 
-            <div class="ca_proofs_bar" data-url-for-mains="$urlForMains"
-                data-labels-option="$labelsOption"
-                data-check-all-message="$checkAllMessage"
-                data-all-pages-visited="$allPagesVisited"
-                data-confirm-logout-message="$confirmLogoutMessage"
-                data-ok-text="$okText"
-                data-cancel-text="$cancelText"
-                data-username="$userName"
-                >
-                <span class="ca_message_area">$proofsMessage $customProofsMessage $extraMessage</span>
-
-            </div>
-
-            <div class="ca_sub_bar">
-                <span class="ca_pagination_box">
-                  $pageHtml
-                </span>
-                <button class="ca_logout_button ca_logout_confirm_event">$logout</button>
-                <button class="ca_proof_button ca_proof_event">$done</button>
-                <span class="ca_counter_box">
-                    <span class="ca_counter_label">$chosen</span>
-                    <span class="ca_counter">$proofsChosenCount</span>
-                </span>
-            </div>
-
+             $mainBar
+             $subBar
 
             <hr class="ca_clear">
             <div class="ca_proofs_thumbs">
@@ -408,6 +424,55 @@ EOF;
 
 
     }
+
+    private function caProofsBar($dataAttributes, $message)
+    {
+        $attributes = "";
+        foreach ($dataAttributes as $key => $value) {
+            $attributes = $attributes . ' data-' . $key . '="' . $value . '"';
+        }
+        $html = <<<EOT
+                <div class="ca_proofs_bar"
+                $attributes
+                >
+                <span class="ca_message_area">$message</span>
+            </div>
+EOT;
+
+        return $html;
+    }
+
+    private function caSubBar($pageHtml, $needsDoneButton, $proofsChosenCount)
+    {
+
+        $chosen = $this->lang("chosen");
+        $done = $this->lang("done");
+        $logout = $this->lang("logout");
+
+        if ($needsDoneButton) {
+            $doneButton = '<button class="ca_proof_button ca_proof_event">' . $done . '</button>';
+        } else {
+            $doneButton = '';
+        }
+
+            $html = <<<EOT
+
+              <div class="ca_sub_bar">
+                <span class="ca_pagination_box">
+                  $pageHtml
+                </span>
+                <button class="ca_logout_button ca_logout_confirm_event">$logout</button>
+                     $doneButton
+                <span class="ca_counter_box">
+                    <span class="ca_counter_label">$chosen</span>
+                    <span class="ca_counter">$proofsChosenCount</span>
+                </span>
+            </div>
+
+EOT;
+        return $html;
+    }
+
 
     private function getImageDimensions($file)
     {
@@ -678,6 +743,11 @@ EOF;
 
     }
 
+    private function outputJson500() {
+        header("Content-type: application/json");
+        header("HTTP/1.1 500 Internal Server Error");
+        exit();
+    }
 
     private function outputJson($output) {
         header("Content-type: application/json");
@@ -696,7 +766,7 @@ EOT;
 
         $wrappedContent = <<<EOT
             <div id="ca_content_area">
-                $content
+           $content
             </div>
 EOT;
 
