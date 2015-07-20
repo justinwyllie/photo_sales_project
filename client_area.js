@@ -150,7 +150,7 @@ jQuery(function($) {
         var okText = $(".ca_proofs_bar").data("ok-text");
 
         if (allPagesVisited === "yes") {
-            $("#ca_action_form #ca_action_field").val("processProofs");
+            $("#ca_action_form #ca_action_field").val("processProofsConfirm");
             $("#ca_action_form").get(0).submit();
         } else {
             var text = $(".ca_proofs_bar").data("check-all-message");

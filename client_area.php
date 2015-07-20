@@ -208,6 +208,9 @@ class ClientArea
         $fields["okText"] = "OK";
         $fields["cancelText"] = "Cancel";
         $fields["criticalErrorMessage"] = "Sorry. A critical error has occurred.";
+        $fields["finaliseProofChoices"] = "Please enter any additional message in the box below and then press ";
+        $fields["submit"] = "Submit";
+        $fields["yourInstructions"] = "Additional instructions:";
 
 
 
@@ -277,11 +280,41 @@ class ClientArea
     }
 
 
-
     private function processProofs()
     {
+        return "ok";
+    }
 
-        echo "ok";
+    private function processProofsConfirm()
+    {
+
+        $dataAttributes = array();
+        $dataAttributes["confirm-logout-message"] = $this->lang("confirmLogoutMessage");
+        $dataAttributes["ok-text"] = $this->lang("okText");
+        $dataAttributes["cancel-text"] = $this->lang("cancelText");
+        $dataAttributes["username"] = $_SESSION["user"];
+        $dataAttributes["critical-error-message"] = $this->lang("criticalErrorMessage");
+        $message = $this->lang("finaliseProofChoices") . $this->lang("submit");
+        $yourInstructions = $this->lang("yourInstructions");
+        $submit = $this->lang("submit");
+        $mainBar = $this->caProofsBar($dataAttributes, $message);
+        $subBar = $this->caSubBar("", false, null);
+
+        $html = <<<EOF
+            $mainBar
+             $subBar
+            <hr class="ca_clear">
+             <form action="$this->containerPageUrl" method="post" id="ca_action_form">
+                <input type="hidden" name="action" id="ca_action_field" value="processProofs">
+                <div class="ca_label">$yourInstructions</div>
+                <textarea class="ca_proofs_box" name="processProofsMessage" id="processProofsMessage"></textarea>
+                <br>
+                <button>$submit</button>
+             </form>
+
+EOF;
+
+        return $html;
 
     }
 
@@ -445,7 +478,7 @@ EOT;
     private function caSubBar($pageHtml, $needsDoneButton, $proofsChosenCount)
     {
 
-        $chosen = $this->lang("chosen");
+
         $done = $this->lang("done");
         $logout = $this->lang("logout");
 
@@ -453,6 +486,14 @@ EOT;
             $doneButton = '<button class="ca_proof_button ca_proof_event">' . $done . '</button>';
         } else {
             $doneButton = '';
+        }
+
+        if (!is_null($proofsChosenCount)) {
+            $chosen = $this->lang("chosen");
+            $proofsChosenText = '<span class="ca_counter_label">' . $chosen . '</span>' .
+                '<span class="ca_counter">' . $proofsChosenCount . '</span>';
+        } else {
+            $proofsChosenText = "";
         }
 
             $html = <<<EOT
@@ -464,8 +505,8 @@ EOT;
                 <button class="ca_logout_button ca_logout_confirm_event">$logout</button>
                      $doneButton
                 <span class="ca_counter_box">
-                    <span class="ca_counter_label">$chosen</span>
-                    <span class="ca_counter">$proofsChosenCount</span>
+
+                    $proofsChosenText
                 </span>
             </div>
 
