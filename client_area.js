@@ -75,8 +75,15 @@ jQuery(function($) {
         var actualImageWidth = $(this).data("image-width");
         if (actualImageWidth !== "") {
 
-            var offset = Math.floor(actualImageWidth / 2);
-            lightBox.css("margin-left", "-" + offset + "px");
+            var viewportWidth = $(window).width();
+
+            if (viewportWidth <= 767) {
+                lightBox.css("top", "0px");
+                lightBox.css("left", "0px");
+            } else {
+                var offset = Math.floor(actualImageWidth / 2);
+                lightBox.css("margin-left", "-" + offset + "px");
+            }
         } else {
             lightBox.css("top", "0px");
             lightBox.css("left", "0px");

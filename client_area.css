@@ -10,17 +10,7 @@ TODO make this reponsive
 #ca_content_area
 {
     width: 100%;
-}
-
-/*
-adjust this to push the login buttons off the top of the main content area.
-*/
-.print_login
-{
-    margin-top: 20%;
-    width: 600px;
-    margin-left: auto;
-    margin-right: auto;
+    text-align: left;
 }
 
 
@@ -35,24 +25,7 @@ Advanced users only beyond this point!
 {
     margin-top:20px;
 }
-.login_error
-{
 
-    color: #ff0000;
-}
-.your_print_label
-{
-    float: left;
-    width: 240px;
-    margin-top: 10px;
-}
-.your_print_field
-{
-    float: left;
-    width: 240px;
-    margin-top: 10px;
-
-}
 
 .ca_standard_button
 {
@@ -81,6 +54,7 @@ Advanced users only beyond this point!
 .ca_select_box
 {
     margin-top: 10px;
+    margin-bottom: 5px;
 }
 
 .ca_human_name
@@ -98,7 +72,7 @@ Advanced users only beyond this point!
 
 .ca_message_area
 {
-
+    font-size: 100%;
 }
 
 .ca_counter_label
@@ -195,16 +169,7 @@ button.ca_proof_button, button.ca_logout_button
 TODO responsive
 */
 
-.ca_lightbox
-{
-    border: 1px solid #000000;
-    position: absolute;
-    top: 10%;
-    left: 50%;
-    display: inline-block;
-    background-color: #ffffff;
-    z-index: 1001; /* > than for #ca_lightbox_overlay */
-}
+
 
 .ca_lightbox_close_bar
 {
@@ -297,7 +262,7 @@ TODO responsive
     margin-right: 5px;
 }
 
-.ca-error
+.ca_error
 {
     color: #ff0000;
     display: block;
@@ -310,5 +275,100 @@ TODO responsive
     width: 200px;
     height: 100px;
     margin-top: 5px;
+
+}
+
+
+/*
+
+below here are rules which are responsive
+the defaults will apply for devices up to 768px wide
+then the same rules are redefined for > 768px;
+
+NB. For responsiveness to work as expected your container page should include something like:
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+
+
+*/
+
+.ca_your_print_label
+{
+    float: left;
+    width: 240px;
+    margin-top: 10px;
+}
+.ca_your_print_field
+{
+    float: left;
+    width: 240px;
+    margin-top: 10px;
+
+}
+
+.ca_print_login
+{
+    margin-top: 20%;
+    width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+
+}
+
+.ca_login_error
+{
+    display: inline-block;
+    width: 100%;
+    color: #ff0000;
+}
+
+.ca_lightbox
+{
+    border: 1px solid #000000;
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    display: inline-block;
+    background-color: #ffffff;
+    z-index: 1001; /* > than for #ca_lightbox_overlay */
+}
+
+
+
+@media only screen and (max-width : 767px)   {
+
+    .ca_your_print_label
+    {
+        float: none;
+        width: auto;
+        margin-top: 10px;
+    }
+    .ca_your_print_field
+    {
+        float: none;
+        width: auto;
+        margin-top: 10px;
+    }
+
+    .ca_print_login
+    {
+        margin-top: 20%;
+        width: auto;
+        margin-left: 0px;
+        margin-right: 0px;
+        text-align: left;
+    }
+
+    .ca_login_error
+    {
+        text-align: left;
+    }
+
+    .ca_lightbox img
+    {
+        max-width: 420px;
+        height: auto;
+    }
+
 
 }

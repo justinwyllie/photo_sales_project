@@ -22,7 +22,7 @@
 
 
 <body>
-
+<div class="test" style="width:480px;">xxx</div>
 <div id="contentHolder">
 
     <h1>Justin Wyllie Photography</h1>

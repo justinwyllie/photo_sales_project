@@ -164,7 +164,7 @@ class ClientArea
         if (isset($_POST["action"]) && (strpos($_POST["action"], "ajax" ) !== false) ){
             $this->outputJson500();
         } else {
-            $this->outputHtmlPage('<span class="ca-error">' . $this->lang("criticalErrorMessage") . '</span>');
+            $this->outputHtmlPage('<span class="ca_error">' . $this->lang("criticalErrorMessage") . '</span>');
             exit;
         }
     }
@@ -211,8 +211,12 @@ class ClientArea
         $fields["finaliseProofChoices"] = "Please enter any additional message in the box below and then press ";
         $fields["submit"] = "Submit";
         $fields["yourInstructions"] = "Additional instructions:";
-
-
+        $fields["adminSendProofsMessage"] = "Proofs Ordered On Website";
+        $fields["user"] = "User";
+        $fields["proofsTitle"] = "Proofs";
+        $fields["proofsSuccess"] = "Thanks. Your proofs selection has been submitted.";
+        $fields["proofsFailure"] = "An error occurred and your proofs selection has not been submitted. Please contact me.";
+        $fields["adminAdditionalMessage"] = "The user additionally said: ";
 
         if (isset($fields[$field])) {
             return $fields[$field];
@@ -221,6 +225,12 @@ class ClientArea
         }
     }
 
+
+    private function adminAlert($subject, $message) {
+
+        $ret = mail($this->adminEmail, $subject, $message);
+        return $ret;
+    }
 
     private function setLogin()
     {
@@ -241,10 +251,11 @@ class ClientArea
         $restoredPagesVisited = $_POST['restoredPagesVisited'];
 
         if (!empty($this->accounts[$user]) && !empty($password) && ($this->accounts[$user]["password"] === $password)) {
-
+            session_unset();
             $_SESSION["user"] = $user;
             $_SESSION["proofsPagesVisited"] = array();
             $_SESSION["proofsChosen"] = array();
+
             if (!empty($restoredProofs)) {
                 $restoredProofsArray = json_decode($restoredProofs);
                 if (is_array($restoredProofsArray)) {
@@ -279,10 +290,57 @@ class ClientArea
 
     }
 
+    private function sendProofs($additionalMessage)
+    {
+        $subject = $this->lang("adminSendProofsMessage");
+        $message = $this->lang("user");
+        $message = $message . " : " . $_SESSION["user"] . "\n\n";
+
+        $proofString = implode("\n", $_SESSION["proofsChosen"]);
+        $message.= $proofString;
+        $message.= "\n\n";
+        $message.= $this->lang("adminAdditionalMessage");
+        $message.= $additionalMessage;
+
+        return $this->adminAlert($subject, $message);
+
+    }
+
 
     private function processProofs()
     {
-        return "ok";
+        $additionalMessage = $_POST["processProofsMessage"];
+        $ret = $this->sendProofs($additionalMessage);
+
+        if ($ret) {
+            $message = '<span>' . $this->lang("proofsSuccess") . '</span>';
+        } else {
+            $message = '<span class="ca_error">' . $this->lang("proofsFailure")  . '</span>';
+        }
+
+        $dataAttributes = array();
+        $dataAttributes["confirm-logout-message"] = $this->lang("confirmLogoutMessage");
+        $dataAttributes["ok-text"] = $this->lang("okText");
+        $dataAttributes["cancel-text"] = $this->lang("cancelText");
+        $dataAttributes["username"] = $_SESSION["user"];
+        $dataAttributes["critical-error-message"] = $this->lang("criticalErrorMessage");
+        $mainBar = $this->caProofsBar($dataAttributes, $this->lang("proofsTitle"));
+        $subBar = $this->caSubBar("", false, null);
+
+        $html = <<<EOF
+            $mainBar
+            $subBar
+            <hr class="ca_clear">
+            $message
+             <form action="$this->containerPageUrl" method="post" id="ca_action_form">
+                <input type="hidden" name="action" id="ca_action_field" value="processProofs">
+             </form>
+
+EOF;
+
+        return $html;
+
+
     }
 
     private function processProofsConfirm()
@@ -561,7 +619,7 @@ EOT;
 
         $html = <<<EOF
 
-            <div class="print_login">
+            <div class="ca_print_login">
                 $hello <span class="ca_human_name">$name</span>. $chooseOption
             <form action="$this->containerPageUrl" method="post" id="ca_action_form">
                 <input type="hidden" name="action" id="ca_action_field" value="">
@@ -589,7 +647,7 @@ EOF;
 
 
         $html = <<<EOF
-            <div class="print_login">
+            <div class="ca_print_login">
                 $confirmLogoutMessage
             <form action="$this->containerPageUrl" method="post" id="ca_action_form">
                 <input type="hidden" name="action" id="ca_action_field" value="">
@@ -636,20 +694,20 @@ EOF;
 
 
         $html = <<<EOF
-            <div class="print_login">
+            <div class="ca_print_login">
             <form action="$this->containerPageUrl" method="post" id="ca_action_form">
                 <input type="hidden" name="action" value="login">
                 <input type="hidden" name="restoredProofs" id="restoredProofs" value="">
                 <input type="hidden" name="restoredPagesVisited" id="restoredPagesVisited" value="">
-                <span class="login_error">$loginMessage</span><br>
-                <span class="your_print_label">$userName</span>
-                <input class="your_print_field" type="text" name="login" id="ca_login_name">
+                <span class="ca_login_error">$loginMessage</span><br>
+                <span class="ca_your_print_label">$userName</span>
+                <input class="ca_your_print_field" type="text" name="login" id="ca_login_name">
+                <br class="clear ">
+                <span class="ca_your_print_label" >$password</span>
+                <input class="ca_your_print_field" type="password" name="password">
                 <br class="clear">
-                <span class="your_print_label" >$password</span>
-                <input class="your_print_field" type="password" name="password">
-                <br class="clear">
-               <!-- <span class="your_print_label" >$likeToDo</span>
-                <select name="mode" class="your_print_field">
+               <!-- <span class="ca_your_print_label" >$likeToDo</span>
+                <select name="mode" class="ca_your_print_field">
                         <option value="0">$select</option>
                         <option value="proofs">$viewProofs</option>
                         <option value="proofs">$orderPrints</option>
