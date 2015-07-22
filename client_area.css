@@ -278,16 +278,37 @@ TODO responsive
 
 }
 
+.ca_lightbox
+{
+    border: 1px solid #000000;
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    display: inline-block;
+    background-color: #ffffff;
+    z-index: 1001; /* > than for #ca_lightbox_overlay */
+}
+
+.ca_print_login.ca_additional_instructions
+{
+    margin-top: 20px;
+}
+
+.ca_login_error
+{
+    display: inline-block;
+    width: 100%;
+    color: #ff0000;
+}
 
 /*
 
 below here are rules which are responsive
-the defaults will apply for devices up to 768px wide
-then the same rules are redefined for > 768px;
+the defaults will apply for devices >= 768px wide
+then the same rules are redefined for < 768px;
 
 NB. For responsiveness to work as expected your container page should include something like:
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-
 
 */
 
@@ -315,25 +336,6 @@ NB. For responsiveness to work as expected your container page should include so
 
 }
 
-.ca_login_error
-{
-    display: inline-block;
-    width: 100%;
-    color: #ff0000;
-}
-
-.ca_lightbox
-{
-    border: 1px solid #000000;
-    position: absolute;
-    top: 10%;
-    left: 50%;
-    display: inline-block;
-    background-color: #ffffff;
-    z-index: 1001; /* > than for #ca_lightbox_overlay */
-}
-
-
 
 @media only screen and (max-width : 767px)   {
 
@@ -358,17 +360,5 @@ NB. For responsiveness to work as expected your container page should include so
         margin-right: 0px;
         text-align: left;
     }
-
-    .ca_login_error
-    {
-        text-align: left;
-    }
-
-    .ca_lightbox img
-    {
-        max-width: 420px;
-        height: auto;
-    }
-
 
 }

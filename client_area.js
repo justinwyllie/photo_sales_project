@@ -73,21 +73,31 @@ jQuery(function($) {
         var overLay = $('<div></div>').attr("id", "ca_lightbox_overlay");
 
         var actualImageWidth = $(this).data("image-width");
-        if (actualImageWidth !== "") {
 
-            var viewportWidth = $(window).width();
+        var viewportWidth = $(window).width();
+        var safeImageWidth = viewportWidth - 100;
+
+        if (actualImageWidth === "") {
+            lightBox.find("img").css({"width": safeImageWidth + ".px", "height": "auto"});
+            lightBox.css("top", "0px");
+            lightBox.css("left", "0px");
+
+        } else {
 
             if (viewportWidth <= 767) {
+
+                if (actualImageWidth > safeImageWidth) {
+                    lightBox.find("img").css({"width": safeImageWidth + ".px", "height": "auto"});
+                }
+
                 lightBox.css("top", "0px");
                 lightBox.css("left", "0px");
             } else {
                 var offset = Math.floor(actualImageWidth / 2);
                 lightBox.css("margin-left", "-" + offset + "px");
             }
-        } else {
-            lightBox.css("top", "0px");
-            lightBox.css("left", "0px");
         }
+
 
         $(".ca_message_pop_up").remove();
         $("body").append(overLay);

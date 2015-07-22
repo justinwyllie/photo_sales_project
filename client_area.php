@@ -33,42 +33,54 @@ class ClientArea
     public function __construct()
     {
 
-        $this->setOptions();
-        $this->setAccounts();
+
+        //path to the options config file. SHOULD be outside of your web root
+        $this->optionsPath = "/var/www/vhosts/justinwylliephotography.com/client_area_options.xml";
+        //path to the accounts config file. MUST be outside of your web root
+        $this->accountsPath = "/var/www/vhosts/justinwylliephotography.com/client_area_accounts.xml";
+
+        //path, absolute or relative to this script, to where the page template is stored on your system
+         $this->template = "client_area_template.php";
+
 
         $this->containerPageUrl = $_SERVER['PHP_SELF'];
 
-        //absolute path on your system to where the client folders and images are stored. Must be under web root.
-        //TODO check docs for directory it and scandir - does this have to be full?
-        $this->clientAreaDiretory = "/var/www/vhosts/justinwylliephotography.com/httpdocs/client_area";
-        //url for the client area - url which matches above directory. Can the absolute or relative.
-        $this->clientAreaUrl = "/client_area";
-
-        //path, absolute or relative to this script, to where the template is stored on your system
-        $this->template = "client_area_template.php";
-
-        //url for the client area js. can be relative to the page this script is executing in or absolute
-        $this->js = "/client_area.js";
-        //url for the client area css. can be relative to the page this script is executing in or absolute
-        $this->css = "/client_area.css";
-
-        $this->adminEmail = "info@justinwylliephotography.com";
-        $this->appName = "Photo ordering system.";
-
+        $this->setOptions();
+        $this->setAccounts();
     }
 
-    //TODO XML
+    private function setUserOptions($user)
+    {
+        $options = simplexml_load_file($this->clientAreaDirectory . DIRECTORY_SEPARATOR . $user .
+            DIRECTORY_SEPARATOR . "options.xml" );
+
+        if (!$options) {
+            $this->destroySession();
+            $this->terminateScript("Missing or broken user options file");
+        } else {
+
+            $this->accounts[$user]["proofs_on"] = (bool) (int) $options->proofsOn;
+            $this->accounts[$user]["prints_on"] = (bool) (int) $options->printsOn;
+            $this->accounts[$user]["customProofsMessage"] = $options->customProofsMessage . "";
+            $this->accounts[$user]["thumbsPerPage"] = (int) $options->thumbsPerPage ;
+
+        }
+    }
+
     private function setAccounts()
     {
+        $client_area_accounts = simplexml_load_file($this->accountsPath);
+
+        if (!$client_area_accounts) {
+            $this->criticalError("Error in accounts file or file does not exist");
+        }
 
         $accounts = array();
-        $accounts['nascimento']["password"] = "testextra";
-        $accounts['nascimento']["proofs_on"] = true;
-        $accounts['nascimento']["prints_on"] = false;
-        $accounts['nascimento']["human_name"] = "Decio";
-        $accounts['nascimento']["customProofsMessage"] = "";
+        foreach($client_area_accounts->account as $account) {
+            $username = $account["username"] . "";
+            $accounts[$username]["password"] = $account->password . "";
+        }
 
-        $accounts['nascimento']["options"]["thumbsPerPage"] = 10;
         $this->accounts = $accounts;
 
     }
@@ -79,13 +91,29 @@ class ClientArea
 
     }
 
-    //TODO XML
+
     private function setOptions()
     {
+        $client_area = simplexml_load_file($this->optionsPath);
+
+        if (!$client_area) {
+            $this->criticalError("Error in options file or file does not exist");
+        }
+
+        $systemOptions = $client_area->options->system;
+        $displayOptions = $client_area->options->display;
+
+        $this->clientAreaDirectory = $systemOptions->clientAreaDirectory . "";
+        $this->clientAreaUrl = $systemOptions->clientAreaUrl . "";
+        $this->jsUrl = $systemOptions->jsUrl . "";
+        $this->cssUrl = $systemOptions->cssUrl . "";
+        $this->adminEmail = $systemOptions->adminEmail . "";
+        $this->appName = $systemOptions->appName . "";
+
         $options = array();
-        $options["thumbsPerPage"] = 20;
-        $options["proofsShowLabels"] = true;
-        $options["showNannyingMessageAboutMoreThanOnePage"] = false;
+        $options["thumbsPerPage"] = (int) $displayOptions->thumbsPerPage;
+        $options["proofsShowLabels"] = (bool) (int) $displayOptions->proofsShowLabels;
+        $options["showNannyingMessageAboutMoreThanOnePage"] = (bool) (int)  $displayOptions->showNannyingMessageAboutMoreThanOnePage;
 
         $this->options = $options;
     }
@@ -94,6 +122,13 @@ class ClientArea
     private function getOption($option)
     {
         return $this->options[$option];
+    }
+
+    private function criticalError($message)
+    {
+        echo "Sorry. A critical error has occurred. Please contact the site owner." .
+            " Additional information may be available: " . $message;
+        exit;
     }
 
     public function run()
@@ -152,14 +187,14 @@ class ClientArea
     }
 
     //TODO test and ajax. log me
-    private function terminateScript()
+    private function terminateScript($info = "")
     {
         if (!empty($_SESSION["user"])) {
             $msg = "User: " . $_SESSION["user"];
         } else {
             $msg = "No valid logged in user";
         }
-        $this->caMail("Error on site", "The user received a critical error. " . $msg);
+        $this->caMail("Error on site", "The user received a critical error. " . $msg . " " . $info);
 
         if (isset($_POST["action"]) && (strpos($_POST["action"], "ajax" ) !== false) ){
             $this->outputJson500();
@@ -167,6 +202,8 @@ class ClientArea
             $this->outputHtmlPage('<span class="ca_error">' . $this->lang("criticalErrorMessage") . '</span>');
             exit;
         }
+
+
     }
 
     private function caMail($subject, $content)
@@ -252,9 +289,12 @@ class ClientArea
 
         if (!empty($this->accounts[$user]) && !empty($password) && ($this->accounts[$user]["password"] === $password)) {
             session_unset();
+
             $_SESSION["user"] = $user;
             $_SESSION["proofsPagesVisited"] = array();
             $_SESSION["proofsChosen"] = array();
+
+            $this->setUserOptions($user);
 
             if (!empty($restoredProofs)) {
                 $restoredProofsArray = json_decode($restoredProofs);
@@ -266,7 +306,7 @@ class ClientArea
             if (!empty($restoredPagesVisited)) {
                 $restoredPagesVisitedArray = json_decode($restoredPagesVisited);
                 if (is_array($restoredPagesVisitedArray)) {
-                    var_dump($restoredPagesVisitedArray);
+
                     $_SESSION["proofsPagesVisited"] = $restoredPagesVisitedArray;
                 }
             }
@@ -362,13 +402,15 @@ EOF;
             $mainBar
              $subBar
             <hr class="ca_clear">
-             <form action="$this->containerPageUrl" method="post" id="ca_action_form">
-                <input type="hidden" name="action" id="ca_action_field" value="processProofs">
-                <div class="ca_label">$yourInstructions</div>
-                <textarea class="ca_proofs_box" name="processProofsMessage" id="processProofsMessage"></textarea>
-                <br>
-                <button>$submit</button>
-             </form>
+            <div class="ca_print_login ca_additional_instructions">
+                 <form action="$this->containerPageUrl" method="post" id="ca_action_form">
+                    <input type="hidden" name="action" id="ca_action_field" value="processProofs">
+                    <div class="ca_label">$yourInstructions</div>
+                    <textarea class="ca_proofs_box" name="processProofsMessage" id="processProofsMessage"></textarea>
+                    <br>
+                    <button>$submit</button>
+                 </form>
+             <div class="ca_print_login">
 
 EOF;
 
@@ -401,9 +443,9 @@ EOF;
 
 
 
-        $thumbsDir = $this->clientAreaDiretory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
+        $thumbsDir = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
             DIRECTORY_SEPARATOR . "proofs" . DIRECTORY_SEPARATOR . "thumbs";
-        $mainDir = $this->clientAreaDiretory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
+        $mainDir = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
             DIRECTORY_SEPARATOR . "proofs" . DIRECTORY_SEPARATOR . "main" . DIRECTORY_SEPARATOR;
         $files = scandir($thumbsDir);
         $thumbs=array();
@@ -605,6 +647,7 @@ EOT;
         $name = $account["human_name"];
 
         //TODO check the dirs exist as well
+
         if ($account["proofs_on"]) {
             $proofs_on ="";
         } else {
@@ -858,8 +901,8 @@ EOF;
 
         //build header
         $headerContent = <<<EOT
-        <script src="$this->js"></script>
-        <link rel="stylesheet" href="$this->css" type="text/css">
+        <script src="$this->jsUrl"></script>
+        <link rel="stylesheet" href="$this->cssUrl" type="text/css">
 
 EOT;
 
