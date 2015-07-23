@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<strings>
+
+    <field name="loginError">
+        Error logging in. Possibly wrong username/password
+    </field>
+    <field name="sessionExpired">
+        Your session has expired. Please login again.
+    </field>
+    <field name="userName">
+        Your username:
+    </field>
+    <field name="password">
+        Password:
+    </field>
+    <field name="likeToDo">
+        what would you like to do?
+    </field>
+    <field name="select">
+        Select..
+    </field>
+    <field name="viewProofs">
+        View Proofs
+    </field>
+    <field name="orderPrints">
+        Order Prints
+    </field>
+    <field name="login">
+        Login
+    </field>
+    <field name="confirmLogoutMessage">
+        Proceeding will log you out.
+    </field>
+
+    <field name="confirmLogoutMessageNo">
+        No. Don't log me out. I want to continue with my order
+    </field>
+    <field name="confirmLogoutMessageYes">
+        Yes. Please log me out.
+    </field>
+    <field name="chooseOption">
+        What do you want to do?
+    </field>
+    <field name="go">
+        Go
+    </field>
+    <field name="hello">
+        Hello
+    </field>
+    <field name="proofsMessage">
+        Your proofs are displayed here. Please select which ones you would like, and then press 'Done'.
+    </field>
+    <field name="done">
+        Done
+    </field>
+    <field name="chosen">
+        Chosen:
+    </field>
+    <field name="checkAllMessage">
+        Please make sure you have reviewed all the pages before submitting your order
+    </field>
+    <field name="moreThanOnePageMessage">
+        Please be sure to check all the pages
+    </field>
+    <field name="logout">
+        Log Out
+    </field>
+    <field name="confirmLogoutMessage">
+        Are you sure?
+    </field>
+    <field name="okText">
+        OK
+    </field>
+    <field name="cancelText">
+        Cancel
+    </field>
+    <field name="criticalErrorMessage">
+        Sorry. A critical error has occurred.
+    </field>
+    <field name="finaliseProofChoices">
+        Please enter any additional message in the box below and then press
+    </field>
+    <field name="Submit">
+        Submit
+    </field>
+    <field name="yourInstructions">
+        Additional instructions:
+    </field>
+    <field name="adminSendProofsMessage">
+        Proofs Ordered On Website
+    </field>
+    <field name="adminSendProofsMessage">
+        Proofs Ordered On Website
+    </field>
+    <field name="user">
+        User
+    </field>
+    <field name="proofsTitle">
+        Proofs
+    </field>
+    <field name="proofsSuccess">
+        Thanks. Your proofs selection has been submitted.
+    </field>
+    <field name="proofsFailure">
+        An error occurred and your proofs selection has not been submitted. Please contact me.
+    </field>
+    <field name="adminAdditionalMessage">
+        adminAdditionalMessage
+    </field>
+
+</strings>

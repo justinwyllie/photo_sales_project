@@ -38,6 +38,8 @@ class ClientArea
         $this->optionsPath = "/var/www/vhosts/justinwylliephotography.com/client_area_options.xml";
         //path to the accounts config file. MUST be outside of your web root
         $this->accountsPath = "/var/www/vhosts/justinwylliephotography.com/client_area_accounts.xml";
+        //path to the language strings file.
+        $this->langPath = "/var/www/vhosts/justinwylliephotography.com/client_area_lang.xml";
 
         //path, absolute or relative to this script, to where the page template is stored on your system
          $this->template = "client_area_template.php";
@@ -47,6 +49,7 @@ class ClientArea
 
         $this->setOptions();
         $this->setAccounts();
+        $this->setLang();
     }
 
     private function setUserOptions($user)
@@ -54,9 +57,9 @@ class ClientArea
         $options = simplexml_load_file($this->clientAreaDirectory . DIRECTORY_SEPARATOR . $user .
             DIRECTORY_SEPARATOR . "options.xml" );
 
-        if (!$options) {
+        if ($options === false) {
             $this->destroySession();
-            $this->terminateScript("Missing or broken user options file");
+            $this->terminateScript("Missing or broken user options file for " . $user);
         } else {
 
             $this->accounts[$user]["proofs_on"] = (bool) (int) $options->proofsOn;
@@ -71,7 +74,7 @@ class ClientArea
     {
         $client_area_accounts = simplexml_load_file($this->accountsPath);
 
-        if (!$client_area_accounts) {
+        if ($client_area_accounts === false) {
             $this->criticalError("Error in accounts file or file does not exist");
         }
 
@@ -91,12 +94,32 @@ class ClientArea
 
     }
 
+    private function setLang()
+    {
+        $strings = simplexml_load_file($this->langPath);
+
+        if ($strings === false) {
+            $this->criticalError("Error in language file or file does not exist");
+        }
+
+        $langStrings = array();
+        foreach ($strings->field as $field) {
+            $fieldName = $field["name"] . "";
+            $fieldValue = trim($field . "");
+            $langStrings[$fieldName] = $fieldValue;
+        }
+
+        $this->langStrings = $langStrings;
+       
+    }
+
+
 
     private function setOptions()
     {
         $client_area = simplexml_load_file($this->optionsPath);
 
-        if (!$client_area) {
+        if ($client_area === false) {
             $this->criticalError("Error in options file or file does not exist");
         }
 
@@ -179,6 +202,7 @@ class ClientArea
     }
 
 
+
     private function redirectToLoginScreen()
     {
         $obj = new stdClass();
@@ -186,7 +210,7 @@ class ClientArea
         $this->outputJson($obj);
     }
 
-    //TODO test and ajax. log me
+    //TODO this still can be called repeatedly?
     private function terminateScript($info = "")
     {
         if (!empty($_SESSION["user"])) {
@@ -208,8 +232,7 @@ class ClientArea
 
     private function caMail($subject, $content)
     {
-
-        mail($this->adminEmail, $this->appName . ' ' . $subject, $content);
+        return mail($this->adminEmail, $this->appName . ' ' . $subject, $content);
     }
 
 
@@ -217,56 +240,11 @@ class ClientArea
     //TODO
     private function lang($field)
     {
-
-        $fields = array();
-        $fields["loginError"] = "Error logging in. Possibly wrong username/password";
-        $fields["sessionExpired"] = "Your session has expired. Please login again.";
-        $fields["userName"] = "Your username:";
-
-        $fields["password"] = "Password:";
-        $fields["likeToDo"] = "what would you like to do?";
-        $fields["select"] = "Select..";
-        $fields["viewProofs"] = "View Proofs";
-        $fields["orderPrints"] = "Order Prints";
-        $fields["login"] = "Login";
-        $fields["confirmLogoutMessage"] = "Proceeding will log you out. Your order will not be saved.";
-        $fields["confirmLogoutMessageNo"] = "No. Don't log me out. I want to continue with my order";
-        $fields["confirmLogoutMessageYes"] = "Yes. Please log me out.";
-        $fields["chooseOption"] = "What do you want to do?";
-        $fields["go"] = "Go";
-        $fields["hello"] = "Hello";
-        $fields["proofsMessage"] = "Your proofs are displayed here. Please select which ones you would like, and then press 'Done'.";
-        $fields["done"] = "Done";
-        $fields["chosen"] = "Chosen: ";
-        $fields["checkAllMessage"] = "Please make sure you have reviewed all the pages before submitting your order";
-        $fields["moreThanOnePageMessage"] = "Please be sure to check all the pages";
-        $fields["logout"] = "Log Out";
-        $fields["confirmLogoutMessage"] = "Are you sure?";
-        $fields["okText"] = "OK";
-        $fields["cancelText"] = "Cancel";
-        $fields["criticalErrorMessage"] = "Sorry. A critical error has occurred.";
-        $fields["finaliseProofChoices"] = "Please enter any additional message in the box below and then press ";
-        $fields["submit"] = "Submit";
-        $fields["yourInstructions"] = "Additional instructions:";
-        $fields["adminSendProofsMessage"] = "Proofs Ordered On Website";
-        $fields["user"] = "User";
-        $fields["proofsTitle"] = "Proofs";
-        $fields["proofsSuccess"] = "Thanks. Your proofs selection has been submitted.";
-        $fields["proofsFailure"] = "An error occurred and your proofs selection has not been submitted. Please contact me.";
-        $fields["adminAdditionalMessage"] = "The user additionally said: ";
-
-        if (isset($fields[$field])) {
-            return $fields[$field];
+        if (isset($this->langStrings[$field])) {
+            return $this->langStrings[$field];
         } else {
             return "";
         }
-    }
-
-
-    private function adminAlert($subject, $message) {
-
-        $ret = mail($this->adminEmail, $subject, $message);
-        return $ret;
     }
 
     private function setLogin()
@@ -342,7 +320,7 @@ class ClientArea
         $message.= $this->lang("adminAdditionalMessage");
         $message.= $additionalMessage;
 
-        return $this->adminAlert($subject, $message);
+        return $this->caMail($subject, $message);
 
     }
 
@@ -924,6 +902,7 @@ EOT;
         );
 
         echo $template->getText();
+        exit;
 
 
     }

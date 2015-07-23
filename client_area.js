@@ -55,7 +55,10 @@ jQuery(function($) {
 
 
     $("#ca_content_area").on("click", ".ca_thumb_pic img", function() {
-        var ref = $(this).parent(".ca_thumb_pic").find('input[type="checkbox"]').val();
+        var cb = $(this).parent(".ca_thumb_pic").find('input[type="checkbox"]');
+        var ref = cb.val();
+        var checkedState = cb.prop("checked");
+
         var picPath = $(".ca_proofs_bar").data("url-for-mains") + ref;
 
 
@@ -66,8 +69,14 @@ jQuery(function($) {
         lightBox.append( $('<div></div>').addClass("ca_lightbox_image").
             append( $("<img>").attr("src", picPath)  ));
 
+        var popUpCheckbox = $("<input>").addClass("ca_lightbox_checkbox_event").attr("type", "checkbox").val(ref);
+
+        if (checkedState) {
+            popUpCheckbox.prop("checked", true);
+        }
+
         lightBox.append( $('<div></div>').addClass("ca_lightbox_controls").
-            append( $("<input>").addClass("ca_lightbox_checkbox_event").attr("type", "checkbox").val(ref)  ));
+            append( popUpCheckbox  ));
 
 
         var overLay = $('<div></div>').attr("id", "ca_lightbox_overlay");
@@ -77,25 +86,19 @@ jQuery(function($) {
         var viewportWidth = $(window).width();
         var safeImageWidth = viewportWidth - 100;
 
-        if (actualImageWidth === "") {
+        if ((actualImageWidth === "") || (actualImageWidth > safeImageWidth) ) {
             lightBox.find("img").css({"width": safeImageWidth + ".px", "height": "auto"});
+            var usedImageWidth = safeImageWidth;
+        } else {
+            var usedImageWidth = actualImageWidth;
+        }
+
+        if (viewportWidth <= 767) {
             lightBox.css("top", "0px");
             lightBox.css("left", "0px");
-
         } else {
-
-            if (viewportWidth <= 767) {
-
-                if (actualImageWidth > safeImageWidth) {
-                    lightBox.find("img").css({"width": safeImageWidth + ".px", "height": "auto"});
-                }
-
-                lightBox.css("top", "0px");
-                lightBox.css("left", "0px");
-            } else {
-                var offset = Math.floor(actualImageWidth / 2);
-                lightBox.css("margin-left", "-" + offset + "px");
-            }
+            var offset = Math.floor(usedImageWidth / 2);
+            lightBox.css("margin-left", "-" + offset + "px");
         }
 
 
