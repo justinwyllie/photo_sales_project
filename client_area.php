@@ -66,7 +66,6 @@ class ClientArea
             $this->accounts[$user]["prints_on"] = (bool) (int) $options->printsOn;
             $this->accounts[$user]["customProofsMessage"] = $options->customProofsMessage . "";
             $this->accounts[$user]["thumbsPerPage"] = (int) $options->thumbsPerPage ;
-
         }
     }
 
@@ -82,6 +81,8 @@ class ClientArea
         foreach($client_area_accounts->account as $account) {
             $username = $account["username"] . "";
             $accounts[$username]["password"] = $account->password . "";
+            $accounts[$username]["human_name"] = $account->human_name . "";
+
         }
 
         $this->accounts = $accounts;
@@ -110,7 +111,7 @@ class ClientArea
         }
 
         $this->langStrings = $langStrings;
-       
+
     }
 
 
@@ -157,7 +158,9 @@ class ClientArea
     public function run()
     {
 
-
+        if (isset($_SESSION["user"])) {
+            $this->setUserOptions($_SESSION["user"]);
+        }
 
         $content = call_user_func_array(array($this, $this->action), array());
 
@@ -272,8 +275,6 @@ class ClientArea
             $_SESSION["proofsPagesVisited"] = array();
             $_SESSION["proofsChosen"] = array();
 
-            $this->setUserOptions($user);
-
             if (!empty($restoredProofs)) {
                 $restoredProofsArray = json_decode($restoredProofs);
                 if (is_array($restoredProofsArray)) {
@@ -343,7 +344,7 @@ class ClientArea
         $dataAttributes["username"] = $_SESSION["user"];
         $dataAttributes["critical-error-message"] = $this->lang("criticalErrorMessage");
         $mainBar = $this->caProofsBar($dataAttributes, $this->lang("proofsTitle"));
-        $subBar = $this->caSubBar("", false, null);
+        $subBar = $this->caSubBar("", false, false, null);
 
         $html = <<<EOF
             $mainBar
@@ -370,11 +371,12 @@ EOF;
         $dataAttributes["cancel-text"] = $this->lang("cancelText");
         $dataAttributes["username"] = $_SESSION["user"];
         $dataAttributes["critical-error-message"] = $this->lang("criticalErrorMessage");
-        $message = $this->lang("finaliseProofChoices") . $this->lang("submit");
+        $dataAttributes["last-page-visited-index"] = $this->noScriptInjection($_POST["index"]);
+        $message = $this->lang("finaliseProofChoices") . " " . $this->lang("submit");
         $yourInstructions = $this->lang("yourInstructions");
         $submit = $this->lang("submit");
         $mainBar = $this->caProofsBar($dataAttributes, $message);
-        $subBar = $this->caSubBar("", false, null);
+        $subBar = $this->caSubBar("", false, true, null);
 
         $html = <<<EOF
             $mainBar
@@ -383,9 +385,9 @@ EOF;
             <div class="ca_print_login ca_additional_instructions">
                  <form action="$this->containerPageUrl" method="post" id="ca_action_form">
                     <input type="hidden" name="action" id="ca_action_field" value="processProofs">
+                    <input type="hidden" name="index" id="ca_index_field" value="">
                     <div class="ca_label">$yourInstructions</div>
                     <textarea class="ca_proofs_box" name="processProofsMessage" id="processProofsMessage"></textarea>
-                    <br>
                     <button>$submit</button>
                  </form>
              <div class="ca_print_login">
@@ -410,16 +412,9 @@ EOF;
 
         $user = $_SESSION["user"];
         $account = $this->accounts[$user];
+
         $customProofsMessage = $account["customProofsMessage"];
-
         $proofsMessage = $this->lang("proofsMessage");
-        $checkAllMessage = $this->lang("checkAllMessage");
-        $confirmLogoutMessage = $this->lang("confirmLogoutMessage");
-        $okText = $this->lang("okText");
-        $cancelText = $this->lang("cancelText");
-        $criticalErrorMessage = $this->lang("criticalErrorMessage");
-
-
 
         $thumbsDir = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
             DIRECTORY_SEPARATOR . "proofs" . DIRECTORY_SEPARATOR . "thumbs";
@@ -434,7 +429,6 @@ EOF;
                 $thumbs[] = $file;
             }
         }
-
 
         $thumbsForThisPage = array_slice($thumbs, $startIndex, $this->options["thumbsPerPage"]);
 
@@ -462,6 +456,13 @@ EOF;
         }
 
         $pageThumbsHtml = "";
+        $maxImageHeightInThisPageSet = $this->getMaxHeight($thumbsDir, $thumbsForThisPage);
+        if ($maxImageHeightInThisPageSet === 0) {
+            $picStyle = "";
+        } else {
+            $picHolderHeight = $maxImageHeightInThisPageSet + 20;
+            $picStyle = ' style="height:' . $picHolderHeight . 'px;"';
+        }
 
         foreach ($thumbsForThisPage as $file) {
 
@@ -477,14 +478,15 @@ EOF;
                 $label = "";
             }
 
-            //TODO - in a loop?
+            //TODO - in a loop? or at least we should cache the results
             $imageDimensions = $this->getImageDimensions($mainDir . $file);
+
 
             $file = str_replace(".JPG", ".jpg", $file); //TODO hack to fix Nascimento
             $filePath = $this->clientAreaUrl . '/' . $user . "/proofs/thumbs/" . $file;
-            $fileHtml = '<div class="ca_thumb_pic"><img' .
+            $fileHtml = '<div class="ca_thumb_pic"'. $picStyle . '><img' .
                 ' data-image-width="' . $imageDimensions["width"] . '" ' .
-                'src="' . $filePath . '"><br><input class="ca_proof_checkbox_event" type="checkbox" value="' .
+                'src="' . $filePath . '"><input class="ca_proof_checkbox_event" type="checkbox" value="' .
                   $file . '"' . $checked . ' >' . $label . '</div>';
             $pageThumbsHtml.=  $fileHtml;
         }
@@ -498,22 +500,21 @@ EOF;
         }
 
         $proofsChosenCount = count($_SESSION["proofsChosen"]);
-        $userName = $_SESSION["user"];
 
         $message = "$proofsMessage $customProofsMessage $extraMessage";
         $dataAttributes = array();
-        //TODO just use lang
+
         $dataAttributes["url-for-mains"] = $urlForMains;
         $dataAttributes["labels-option"] = $labelsOption;
-        $dataAttributes["check-all-message"] = $checkAllMessage;
+        $dataAttributes["check-all-message"] = $this->lang("checkAllMessage");
         $dataAttributes["all-pages-visited"] = $allPagesVisited;
-        $dataAttributes["confirm-logout-message"] = $confirmLogoutMessage;
-        $dataAttributes["ok-text"] = $okText;
-        $dataAttributes["cancel-text"] = $cancelText;
+        $dataAttributes["confirm-logout-message"] = $this->lang("confirmLogoutMessage");
+        $dataAttributes["ok-text"] = $this->lang("okText");
+        $dataAttributes["cancel-text"] = $this->lang("cancelText");
         $dataAttributes["username"] = $_SESSION["user"];
-        $dataAttributes["critical-error-message"] = $criticalErrorMessage;
+        $dataAttributes["critical-error-message"] = $this->lang("criticalErrorMessage");
         $mainBar = $this->caProofsBar($dataAttributes, $message);
-        $subBar = $this->caSubBar($pageHtml, true, $proofsChosenCount);
+        $subBar = $this->caSubBar($pageHtml, true, false, $proofsChosenCount);
 
         $html = <<<EOF
 
@@ -553,17 +554,24 @@ EOT;
         return $html;
     }
 
-    private function caSubBar($pageHtml, $needsDoneButton, $proofsChosenCount)
+    private function caSubBar($pageHtml, $needsDoneButton, $needsCancelButton, $proofsChosenCount)
     {
 
 
         $done = $this->lang("done");
         $logout = $this->lang("logout");
+        $cancelText = $this->lang("cancelText");
 
         if ($needsDoneButton) {
             $doneButton = '<button class="ca_proof_button ca_proof_event">' . $done . '</button>';
         } else {
             $doneButton = '';
+        }
+
+        if ($needsCancelButton) {
+            $cancelButton = '<button class="ca_proof_button ca_proof_cancel_event">' . $cancelText . '</button>';
+        } else {
+            $cancelButton = '';
         }
 
         if (!is_null($proofsChosenCount)) {
@@ -581,7 +589,7 @@ EOT;
                   $pageHtml
                 </span>
                 <button class="ca_logout_button ca_logout_confirm_event">$logout</button>
-                     $doneButton
+                     $doneButton $cancelButton
                 <span class="ca_counter_box">
 
                     $proofsChosenText
@@ -590,6 +598,24 @@ EOT;
 
 EOT;
         return $html;
+    }
+
+
+    private function getMaxHeight($thumbsDir, $thumbsForThisPage)
+    {
+
+        $maxHeight = 0;
+
+         foreach ($thumbsForThisPage as $thumb) {
+            $dimensions = $this->getImageDimensions($thumbsDir . DIRECTORY_SEPARATOR . $thumb);
+            if ((!empty($dimensions)) && ($dimensions["height"] > $maxHeight)) {
+                $maxHeight = $dimensions["height"];
+            }
+        }
+
+        return $maxHeight;
+
+
     }
 
 
@@ -888,6 +914,7 @@ EOT;
             <div id="ca_content_area">
            $content
             </div>
+            <br class="ca_clear">
 EOT;
 
 
@@ -905,6 +932,18 @@ EOT;
         exit;
 
 
+    }
+
+    private function microtime_float()
+    {
+        list($usec, $sec) = explode(" ", microtime());
+        return ((float)$usec + (float)$sec);
+    }
+
+    //TODO
+    private function noScriptInjection($data)
+    {
+        return $data;
     }
 
 }

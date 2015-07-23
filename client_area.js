@@ -1,5 +1,8 @@
 jQuery(function($) {
 
+    //TODO don't really need to use delegated events in most cases... except for when i've created
+    //elements dynamically - and then you could bind when the element is created?
+
     var criticalErrorMessage = $(".ca_proofs_bar").data("critical-error-message") ;
 
 
@@ -14,7 +17,7 @@ jQuery(function($) {
 
     $("#ca_content_area").on("click", ".ca_confirm_switch_event", function() {
         var call = $(this).data("call");
-        $("#ca_action_form #ca_action_field").val(call);
+        $("#ca_action_field").val(call);
         $("#ca_action_form").get(0).submit();
 
     })
@@ -38,7 +41,7 @@ jQuery(function($) {
             var storedDataPagesVisited = clientAreaStorageProofs.getValueAsString("ca_proofs_pages_visited");
             $("#restoredPagesVisited").val(storedDataPagesVisited);
         }
-
+        $("#ca_action_field").val("login");
         $("#ca_action_form").get(0).submit();
 
     })
@@ -48,7 +51,8 @@ jQuery(function($) {
 
     $("#ca_content_area").on("click", ".ca_page_number_event", function() {
         var idx = $(this).data("index");
-        $("#ca_action_form #ca_index_field").val(idx);
+        $("#ca_action_field").val("showProofsScreen");
+        $("#ca_index_field").val(idx);
         $("#ca_action_form").get(0).submit();
 
     })
@@ -158,10 +162,23 @@ jQuery(function($) {
 
     $("body").on("click", ".ca_logout_event", function(evt) {
         $(this).closest(".ca_message_pop_up").remove();
-        $("#ca_action_form #ca_action_field").val("logout");
+        $("#ca_action_field").val("logout");
         $("#ca_action_form").get(0).submit();
 
     });
+
+    $("#ca_content_area").on("click", ".ca_proof_cancel_event", function(evt) {
+        var idx = $(".ca_proofs_bar").data("last-page-visited-index");
+        if ( (typeof(idx) === "undefined") || (idx === "")) {
+            idx = 0;
+        }
+        $("#ca_index_field").val(idx);
+        $("#ca_action_field").val("showProofsScreen");
+        $("#ca_action_form").get(0).submit();
+
+
+    });
+
 
 
     $("#ca_content_area").on("click", ".ca_proof_event", function(evt) {
@@ -170,7 +187,9 @@ jQuery(function($) {
         var okText = $(".ca_proofs_bar").data("ok-text");
 
         if (allPagesVisited === "yes") {
-            $("#ca_action_form #ca_action_field").val("processProofsConfirm");
+            var idx = $(".ca_page_info span.ca_highlighted_pagination").data("index");
+            $("#ca_index_field").val(idx);
+            $("#ca_action_field").val("processProofsConfirm");
             $("#ca_action_form").get(0).submit();
         } else {
             var text = $(".ca_proofs_bar").data("check-all-message");
@@ -352,11 +371,6 @@ jQuery(function($) {
     ClientAreaStorageProofs.prototype = Object.create(ClientAreaStorage.prototype);
     ClientAreaStorageProofs.prototype.constructor = ClientAreaStorageProofs;
 
-//TODO message if no storage
-
-    console.log(localStorage.getItem("nascimento_ca_proofs"));
-
-
 
     //onpageload TODO
 
@@ -368,7 +382,6 @@ jQuery(function($) {
 
         if (clientAreaStorageProofs.supported) {
             var pageIndex = $(pageOn).filter(".ca_highlighted_pagination").data("index");
-            console.log(pageIndex);
             clientAreaStorageProofs.addToStorage("ca_proofs_pages_visited", pageIndex);
         }
 

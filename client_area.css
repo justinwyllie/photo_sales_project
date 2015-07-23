@@ -11,6 +11,7 @@ TODO make this reponsive
 {
     width: 100%;
     text-align: left;
+    float: left;
 }
 
 
@@ -20,6 +21,11 @@ TODO make this reponsive
 /*
 Advanced users only beyond this point!
 */
+
+.ca_proofs_thumbs
+{
+    float: left;
+}
 
 .print_login button
 {
@@ -98,9 +104,9 @@ Advanced users only beyond this point!
 div.ca_thumb_pic
 {
     float: left;
-    height: 120px;
     margin-right: 20px;
     margin-top: 10px;
+    margin-bottom: 5px;
 }
 
 .ca_thumb_pic input[type="checkbox"]
@@ -111,8 +117,14 @@ div.ca_thumb_pic
 .ca_thumb_pic img
 {
     cursor: pointer;
+    display: block;
+    margin-bottom: 5px;
 }
 
+.ca_thumb_pic .ca_label
+{
+    float: left;
+}
 
 button.ca_proof_button, button.ca_logout_button
 {
@@ -275,6 +287,10 @@ TODO responsive
     width: 200px;
     height: 100px;
     margin-top: 5px;
+    margin-bottom: 5px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
 
 }
 
