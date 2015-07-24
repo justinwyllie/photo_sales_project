@@ -35,11 +35,11 @@ class ClientArea
 
 
         //path to the options config file. SHOULD be outside of your web root
-        $this->optionsPath = "client_area_options.xml";
+        $this->optionsPath = "/var/www/vhosts/justinwylliephotography.com/client_area_options.xml";
         //path to the accounts config file. MUST be outside of your web root
-        $this->accountsPath = "client_area_accounts.xml";
+        $this->accountsPath = "/var/www/vhosts/justinwylliephotography.com/client_area_accounts.xml";
         //path to the language strings file.
-        $this->langPath = "client_area_lang.xml";
+        $this->langPath = "/var/www/vhosts/justinwylliephotography.com/client_area_lang.xml";
 
         //path, absolute or relative to this script, to where the page template is stored on your system
          $this->template = "/var/www/vhosts/justinwylliephotography.com/httpdocs/client_area_template.php";
