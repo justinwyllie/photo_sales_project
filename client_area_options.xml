@@ -6,7 +6,7 @@
             <!-- system path to where the client images are stored. -->
             <clientAreaDirectory>/var/www/vhosts/justinwylliephotography.com/httpdocs/client_area_files</clientAreaDirectory>
             <!-- web path to where the client images are stored -->
-            <clientAreaUrl>/client_area</clientAreaUrl>
+            <clientAreaUrl>/client_area_files</clientAreaUrl>
             <!-- web path to the Javascript file -->
             <jsUrl>/client_area.js</jsUrl>
             <!-- web path to the CSS file -->
