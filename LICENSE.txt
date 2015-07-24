@@ -1,2 +1,3 @@
 Copyright 2015 Justin Wyllie
 
+Individual licenses are granted for use on a single web site on application. 
