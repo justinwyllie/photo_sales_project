@@ -105,7 +105,10 @@
         An error occurred and your proofs selection has not been submitted. Please contact me.
     </field>
     <field name="adminAdditionalMessage">
-        adminAdditionalMessage
+        The user additionally said:
+    </field>
+    <field name="thumb">
+        Thumbnail Image
     </field>
 
 </strings>

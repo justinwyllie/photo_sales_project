@@ -4,13 +4,13 @@
 
         <system>
             <!-- system path to where the client images are stored. -->
-            <clientAreaDirectory>client_area_files</clientAreaDirectory>
+            <clientAreaDirectory>/var/www/vhosts/justinwylliephotography.com/httpdocs/client_area_files</clientAreaDirectory>
             <!-- web path to where the client images are stored -->
-            <clientAreaUrl>/photo_sales_project/client_area_files</clientAreaUrl>
+            <clientAreaUrl>/client_area_files</clientAreaUrl>
             <!-- web path to the Javascript file -->
-            <jsUrl>/photo_sales_project/client_area.js</jsUrl>
+            <jsUrl>/client_area.js</jsUrl>
             <!-- web path to the CSS file -->
-            <cssUrl>/photo_sales_project/client_area.css</cssUrl>
+            <cssUrl>/client_area.css</cssUrl>
 
             <adminEmail>info@justinwylliephotography.com</adminEmail>
             <appName>Photo ordering system.</appName>
