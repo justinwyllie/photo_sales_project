@@ -282,17 +282,7 @@ TODO responsive
     text-align: center;
 }
 
-.ca_proofs_box
-{
-    width: 200px;
-    height: 100px;
-    margin-top: 5px;
-    margin-bottom: 5px;
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
 
-}
 
 .ca_lightbox
 {
@@ -352,6 +342,18 @@ NB. For responsiveness to work as expected your container page should include so
 
 }
 
+.ca_proofs_box
+{
+    width: 200px;
+    height: 100px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+
+}
+
 
 @media only screen and (max-width : 767px)   {
 
@@ -375,6 +377,12 @@ NB. For responsiveness to work as expected your container page should include so
         margin-left: 0px;
         margin-right: 0px;
         text-align: left;
+    }
+
+    .ca_proofs_box
+    {
+        margin-left: 0px;
+        margin-right: 0px;
     }
 
 }

@@ -390,7 +390,7 @@ EOF;
                     <textarea class="ca_proofs_box" name="processProofsMessage" id="processProofsMessage"></textarea>
                     <button>$submit</button>
                  </form>
-             <div class="ca_print_login">
+            </div>
 
 EOF;
 
@@ -403,18 +403,20 @@ EOF;
 
         if (isset($_POST['index']))
         {
-            $startIndex = $_POST['index'];
+            $startIndex = $this->noScriptInjection($_POST['index']);
         }
         else
         {
             $startIndex = 0;
         }
 
+
         $user = $_SESSION["user"];
         $account = $this->accounts[$user];
 
         $customProofsMessage = $account["customProofsMessage"];
         $proofsMessage = $this->lang("proofsMessage");
+        $thumb = $this->lang("thumb");
 
         $thumbsDir = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
             DIRECTORY_SEPARATOR . "proofs" . DIRECTORY_SEPARATOR . "thumbs";
@@ -486,7 +488,7 @@ EOF;
             $filePath = $this->clientAreaUrl . '/' . $user . "/proofs/thumbs/" . $file;
             $fileHtml = '<div class="ca_thumb_pic"'. $picStyle . '><img' .
                 ' data-image-width="' . $imageDimensions["width"] . '" ' .
-                'src="' . $filePath . '"><input class="ca_proof_checkbox_event" type="checkbox" value="' .
+                'src="' . $filePath . '" alt="' . $thumb  . '"><input class="ca_proof_checkbox_event" type="checkbox" value="' .
                   $file . '"' . $checked . ' >' . $label . '</div>';
             $pageThumbsHtml.=  $fileHtml;
         }
@@ -585,9 +587,9 @@ EOT;
             $html = <<<EOT
 
               <div class="ca_sub_bar">
-                <span class="ca_pagination_box">
+                <div class="ca_pagination_box">
                   $pageHtml
-                </span>
+                </div>
                 <button class="ca_logout_button ca_logout_confirm_event">$logout</button>
                      $doneButton $cancelButton
                 <span class="ca_counter_box">
@@ -668,17 +670,17 @@ EOT;
 
             <div class="ca_print_login">
                 $hello <span class="ca_human_name">$name</span>. $chooseOption
-            <form action="$this->containerPageUrl" method="post" id="ca_action_form">
-                <input type="hidden" name="action" id="ca_action_field" value="">
-                <select id="ca_activity_choice" class="ca_select_box">
-                    <option value="0">Select..</option>
-                    <option value="showProofsScreen" $proofs_on>$viewProofs</option>
-                    <option value="showPrintsScreen" $prints_on>$orderPrints</option>
-                </select><br>
-                <button class="ca_large_button ca_choose_activity_event"
-                    type="button">$go</button>
-            </form>
-        </div>
+                <form action="$this->containerPageUrl" method="post" id="ca_action_form">
+                    <input type="hidden" name="action" id="ca_action_field" value="">
+                    <select id="ca_activity_choice" class="ca_select_box">
+                        <option value="0">Select..</option>
+                        <option value="showProofsScreen" $proofs_on>$viewProofs</option>
+                        <option value="showPrintsScreen" $prints_on>$orderPrints</option>
+                    </select><br>
+                    <button class="ca_large_button ca_choose_activity_event"
+                        type="button">$go</button>
+                </form>
+            </div>
 EOF;
 
         return $html;
@@ -696,14 +698,14 @@ EOF;
         $html = <<<EOF
             <div class="ca_print_login">
                 $confirmLogoutMessage
-            <form action="$this->containerPageUrl" method="post" id="ca_action_form">
-                <input type="hidden" name="action" id="ca_action_field" value="">
-                <button class="ca_large_button ca_confirm_switch_event" data-call="logoutAndShowLoginScreen"
-                    type="button">$confirmLogoutMessageYes</button>
-                <button class="ca_large_button ca_confirm_switch_event" data-call="showChoiceScreen"
-                    type="button">$confirmLogoutMessageNo</button>
-            </form>
-        </div>
+                <form action="$this->containerPageUrl" method="post" id="ca_action_form">
+                    <input type="hidden" name="action" id="ca_action_field" value="">
+                    <button class="ca_large_button ca_confirm_switch_event" data-call="logoutAndShowLoginScreen"
+                        type="button">$confirmLogoutMessageYes</button>
+                    <button class="ca_large_button ca_confirm_switch_event" data-call="showChoiceScreen"
+                        type="button">$confirmLogoutMessageNo</button>
+                </form>
+            </div>
 
 
 EOF;
@@ -742,28 +744,28 @@ EOF;
 
         $html = <<<EOF
             <div class="ca_print_login">
-            <form action="$this->containerPageUrl" method="post" id="ca_action_form">
-                <input type="hidden" name="action" value="login">
-                <input type="hidden" name="restoredProofs" id="restoredProofs" value="">
-                <input type="hidden" name="restoredPagesVisited" id="restoredPagesVisited" value="">
-                <span class="ca_login_error">$loginMessage</span><br>
-                <span class="ca_your_print_label">$userName</span>
-                <input class="ca_your_print_field" type="text" name="login" id="ca_login_name">
-                <br class="clear ">
-                <span class="ca_your_print_label" >$password</span>
-                <input class="ca_your_print_field" type="password" name="password">
-                <br class="clear">
-               <!-- <span class="ca_your_print_label" >$likeToDo</span>
-                <select name="mode" class="ca_your_print_field">
-                        <option value="0">$select</option>
-                        <option value="proofs">$viewProofs</option>
-                        <option value="proofs">$orderPrints</option>
-                </select>-->
-                <br class="clear">
+                <form action="$this->containerPageUrl" method="post" id="ca_action_form">
+                    <input type="hidden" name="action" value="login">
+                    <input type="hidden" name="restoredProofs" id="restoredProofs" value="">
+                    <input type="hidden" name="restoredPagesVisited" id="restoredPagesVisited" value="">
+                    <span class="ca_login_error">$loginMessage</span><br>
+                    <span class="ca_your_print_label">$userName</span>
+                    <input class="ca_your_print_field" type="text" name="login" id="ca_login_name">
+                    <br class="clear ">
+                    <span class="ca_your_print_label" >$password</span>
+                    <input class="ca_your_print_field" type="password" name="password">
+                    <br class="clear">
+                   <!-- <span class="ca_your_print_label" >$likeToDo</span>
+                    <select name="mode" class="ca_your_print_field">
+                            <option value="0">$select</option>
+                            <option value="proofs">$viewProofs</option>
+                            <option value="proofs">$orderPrints</option>
+                    </select>-->
+                    <br class="clear">
 
-                <button class="ca_standard_button ca_login_button ca_login_button_event" id="login" type="button">$login</button>
-            </form>
-        </div>
+                    <button class="ca_standard_button ca_login_button ca_login_button_event" id="login" type="button">$login</button>
+                </form>
+            </div>
 
 
 EOF;
@@ -940,10 +942,10 @@ EOT;
         return ((float)$usec + (float)$sec);
     }
 
-    //TODO
+
     private function noScriptInjection($data)
     {
-        return $data;
+        return htmlentities($data);
     }
 
 }
