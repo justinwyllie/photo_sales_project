@@ -80,7 +80,7 @@
     <field name="finaliseProofChoices">
         Please enter any additional message in the box below and then press
     </field>
-    <field name="Submit">
+    <field name="submit">
         Submit
     </field>
     <field name="yourInstructions">
