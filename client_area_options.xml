@@ -4,7 +4,7 @@
 
         <system>
             <!-- system path to where the client images are stored. -->
-            <clientAreaDirectory>/var/www/vhosts/justinwylliephotography.com/httpdocs/client_area</clientAreaDirectory>
+            <clientAreaDirectory>/var/www/vhosts/justinwylliephotography.com/httpdocs/client_area_files</clientAreaDirectory>
             <!-- web path to where the client images are stored -->
             <clientAreaUrl>/client_area</clientAreaUrl>
             <!-- web path to the Javascript file -->
