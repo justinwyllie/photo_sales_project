@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<options>
+    <!-- 1 for on and 0 for off -->
+    <proofsOn>1</proofsOn>
+    <printsOn>0</printsOn>
+    <customProofsMessage></customProofsMessage>
+    <thumbsPerPage>20</thumbsPerPage>
+</options>

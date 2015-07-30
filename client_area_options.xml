@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <client_area>
     <options>
-
         <system>
             <!-- system path to where the client images are stored. -->
-            <clientAreaDirectory>client_area_files</clientAreaDirectory>
+            <clientAreaDirectory>client_area_files_dev</clientAreaDirectory>
             <!-- web path to where the client images are stored -->
-            <clientAreaUrl>/photo_sales_project/client_area_files</clientAreaUrl>
+            <clientAreaUrl>/photo_sales_project/client_area_files_dev</clientAreaUrl>
             <!-- web path to the Javascript file -->
             <jsUrl>/photo_sales_project/client_area.js</jsUrl>
             <!-- web path to the CSS file -->
