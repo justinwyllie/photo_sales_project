@@ -221,7 +221,14 @@ class ClientArea
         } else {
             $msg = "No valid logged in user";
         }
-        $this->caMail("Error on site", "The user received a critical error. " . $msg . " " . $info);
+
+        $url = $_SERVER['PHP_SELF'];
+        $action = $this->action;
+        $method = $_SERVER["REQUEST_METHOD"];
+
+
+        $this->caMail("Error on site", "The user received a critical error. " . $msg . " Additional Info if any: " .
+                 $info . " Calling url: " . $url . " Form Action: " . $action . " Request Method:" . $method);
 
         if (isset($_POST["action"]) && (strpos($_POST["action"], "ajax" ) !== false) ){
             $this->outputJson500();
