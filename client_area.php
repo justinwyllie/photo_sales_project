@@ -57,6 +57,8 @@ class ClientArea
         $options = simplexml_load_file($this->clientAreaDirectory . DIRECTORY_SEPARATOR . $user .
             DIRECTORY_SEPARATOR . "options.xml" );
 
+        //var_dump($options);exit;
+
         if ($options === false) {
             $this->destroySession();
             $this->terminateScript("Missing or broken user options file for " . $user);
@@ -65,7 +67,16 @@ class ClientArea
             $this->accounts[$user]["proofs_on"] = (bool) (int) $options->proofsOn;
             $this->accounts[$user]["prints_on"] = (bool) (int) $options->printsOn;
             $this->accounts[$user]["customProofsMessage"] = $options->customProofsMessage . "";
-            $this->accounts[$user]["thumbsPerPage"] = (int) $options->thumbsPerPage ;
+            $this->accounts[$user]["customPrintsMessage"] = $options->customPrintsMessage . "";
+
+            if (isset($options->overrides)) {
+                foreach ($options->overrides->children() as $option) {
+                    $userOptions[$option->getName()] =  $option . "";
+                }
+                $this->personaliseOptions($userOptions);
+
+            }
+
         }
     }
 
@@ -89,11 +100,47 @@ class ClientArea
 
     }
 
-    private function personaliseOptions()
+    private function personaliseOptions($userOptions)
     {
 
+        if (array_key_exists("thumbsPerPage", $userOptions )) {
+            $this->options["thumbsPerPage"] = (int) $userOptions["thumbsPerPage"];
+        }
 
+        if (array_key_exists("proofsShowLabels", $userOptions )) {
+            $this->options["proofsShowLabels"] = (bool) (int) $userOptions["proofsShowLabels"];
+        }
     }
+
+
+    private function setOptions()
+    {
+        $client_area = simplexml_load_file($this->optionsPath);
+
+        if ($client_area === false) {
+            $this->criticalError("Error in options file or file does not exist");
+        }
+
+        $systemOptions = $client_area->options->system;
+        $displayOptions = $client_area->options->display;
+
+        $this->clientAreaDirectory = $systemOptions->clientAreaDirectory . "";
+        $this->clientAreaUrl = $systemOptions->clientAreaUrl . "";
+        $this->jsUrl = $systemOptions->jsUrl . "";
+        $this->underscoreUrl = $systemOptions->underscoreUrl . "";
+        $this->cssUrl = $systemOptions->cssUrl . "";
+        $this->adminEmail = $systemOptions->adminEmail . "";
+        $this->appName = $systemOptions->appName . "";
+
+        $options = array();
+        $options["thumbsPerPage"] = (int) $displayOptions->thumbsPerPage;
+        $options["proofsShowLabels"] = (bool) (int) $displayOptions->proofsShowLabels;
+        $options["showNannyingMessageAboutMoreThanOnePage"] = (bool) (int)  $displayOptions->showNannyingMessageAboutMoreThanOnePage;
+
+        $this->options = $options;
+    }
+
+
 
     private function setLang()
     {
@@ -113,35 +160,6 @@ class ClientArea
         $this->langStrings = $langStrings;
 
     }
-
-
-
-    private function setOptions()
-    {
-        $client_area = simplexml_load_file($this->optionsPath);
-
-        if ($client_area === false) {
-            $this->criticalError("Error in options file or file does not exist");
-        }
-
-        $systemOptions = $client_area->options->system;
-        $displayOptions = $client_area->options->display;
-
-        $this->clientAreaDirectory = $systemOptions->clientAreaDirectory . "";
-        $this->clientAreaUrl = $systemOptions->clientAreaUrl . "";
-        $this->jsUrl = $systemOptions->jsUrl . "";
-        $this->cssUrl = $systemOptions->cssUrl . "";
-        $this->adminEmail = $systemOptions->adminEmail . "";
-        $this->appName = $systemOptions->appName . "";
-
-        $options = array();
-        $options["thumbsPerPage"] = (int) $displayOptions->thumbsPerPage;
-        $options["proofsShowLabels"] = (bool) (int) $displayOptions->proofsShowLabels;
-        $options["showNannyingMessageAboutMoreThanOnePage"] = (bool) (int)  $displayOptions->showNannyingMessageAboutMoreThanOnePage;
-
-        $this->options = $options;
-    }
-
 
     private function getOption($option)
     {
@@ -273,13 +291,15 @@ class ClientArea
         $user = $_POST['login'];
         $password = $_POST['password'];
         $restoredProofs = $_POST['restoredProofs'];
-        $restoredPagesVisited = $_POST['restoredPagesVisited'];
+        $restoredProofsPagesVisited = $_POST['restoredProofsPagesVisited'];
+        $restoredPrintsPagesVisited = $_POST['restoredPrintsPagesVisited'];
 
         if (!empty($this->accounts[$user]) && !empty($password) && ($this->accounts[$user]["password"] === $password)) {
             session_unset();
 
             $_SESSION["user"] = $user;
             $_SESSION["proofsPagesVisited"] = array();
+            $_SESSION["printsPagesVisited"] = array();
             $_SESSION["proofsChosen"] = array();
 
             if (!empty($restoredProofs)) {
@@ -289,11 +309,17 @@ class ClientArea
                 }
             }
 
-            if (!empty($restoredPagesVisited)) {
-                $restoredPagesVisitedArray = json_decode($restoredPagesVisited);
-                if (is_array($restoredPagesVisitedArray)) {
+            if (!empty($restoredProofsPagesVisited)) {
+                $restoredProofsPagesVisitedArray = json_decode($restoredProofsPagesVisited);
+                if (is_array($restoredProofsPagesVisitedArray)) {
+                    $_SESSION["proofsPagesVisited"] = $restoredProofsPagesVisitedArray;
+                }
+            }
 
-                    $_SESSION["proofsPagesVisited"] = $restoredPagesVisitedArray;
+            if (!empty($restoredPrintsPagesVisited)) {
+                $restoredPrintsPagesVisitedArray = json_decode($restoredPrintsPagesVisited);
+                if (is_array($restoredPrintsPagesVisitedArray)) {
+                    $_SESSION["printssPagesVisited"] = $restoredPrintsPagesVisitedArray;
                 }
             }
 
@@ -408,6 +434,16 @@ EOF;
 
     private function showProofsScreen()
     {
+        return $this->showThumbsScreen("proofs");
+    }
+
+    private function showPrintsScreen()
+    {
+        return $this->showThumbsScreen("prints");
+    }
+
+    private function showThumbsScreen($mode)
+    {
 
         if (isset($_POST['index']))
         {
@@ -422,14 +458,24 @@ EOF;
         $user = $_SESSION["user"];
         $account = $this->accounts[$user];
 
-        $customProofsMessage = $account["customProofsMessage"];
-        $proofsMessage = $this->lang("proofsMessage");
+
+        if ($mode === "proofs") {
+            $customMessage = $account["customProofsMessage"];
+            $systemMessage = $this->lang("proofsMessage");
+        }  else {
+            $customMessage = $account["customPrintsMessage"];
+            $systemMessage = $this->lang("printsMessage");
+        }
+
+
+
+
         $thumb = $this->lang("thumb");
 
         $thumbsDir = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
-            DIRECTORY_SEPARATOR . "proofs" . DIRECTORY_SEPARATOR . "thumbs";
+            DIRECTORY_SEPARATOR . $mode . DIRECTORY_SEPARATOR . "thumbs";
         $mainDir = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
-            DIRECTORY_SEPARATOR . "proofs" . DIRECTORY_SEPARATOR . "main" . DIRECTORY_SEPARATOR;
+            DIRECTORY_SEPARATOR . $mode . DIRECTORY_SEPARATOR . "main" . DIRECTORY_SEPARATOR;
         $files = scandir($thumbsDir);
         $thumbs=array();
         foreach ($files as $file)
@@ -453,17 +499,20 @@ EOF;
 
         //this little block is about finding out if the user has visited all pages
         //so we can warn them if they try to click 'Done' but have not visited all pages
-        if (!in_array($startIndex, $_SESSION["proofsPagesVisited"])) {
-            $_SESSION["proofsPagesVisited"][] = $startIndex;
-        }
-
         $pageIndexes = $this->getPageIndexes($this->options["thumbsPerPage"], $numberOfThumbs);
-        $notVisited = array_diff($pageIndexes, $_SESSION["proofsPagesVisited"] );
+
+        $pageCheckMode = $mode . "PagesVisited";
+        if (!in_array($startIndex, $_SESSION[$pageCheckMode])) {
+            $_SESSION[$pageCheckMode][] = $startIndex;
+        }
+        $notVisited = array_diff($pageIndexes, $_SESSION[$pageCheckMode] );
+
         if (empty($notVisited)) {
             $allPagesVisited = "yes";
         } else {
             $allPagesVisited = "no";
         }
+
 
         $pageThumbsHtml = "";
         $maxImageHeightInThisPageSet = $this->getMaxHeight($thumbsDir, $thumbsForThisPage);
@@ -473,7 +522,7 @@ EOF;
             $picHolderHeight = $maxImageHeightInThisPageSet + 20;
             $picStyle = ' style="height:' . $picHolderHeight . 'px;"';
         }
-
+        //working here break this out into two funcs one for each mode
         foreach ($thumbsForThisPage as $file) {
 
             if ((isset($_SESSION["proofsChosen"])) && in_array($file, $_SESSION["proofsChosen"])) {
@@ -492,7 +541,6 @@ EOF;
             $imageDimensions = $this->getImageDimensions($mainDir . $file);
 
 
-            $file = str_replace(".JPG", ".jpg", $file); //TODO hack to fix Nascimento
             $filePath = $this->clientAreaUrl . '/' . $user . "/proofs/thumbs/" . $file;
             $fileHtml = '<div class="ca_thumb_pic"'. $picStyle . '><img' .
                 ' data-image-width="' . $imageDimensions["width"] . '" ' .
@@ -500,6 +548,8 @@ EOF;
                   $file . '"' . $checked . ' >' . $label . '</div>';
             $pageThumbsHtml.=  $fileHtml;
         }
+
+        
 
         $urlForMains = $this->clientAreaUrl . '/' . $user . "/proofs/main/";
 
@@ -511,7 +561,7 @@ EOF;
 
         $proofsChosenCount = count($_SESSION["proofsChosen"]);
 
-        $message = "$proofsMessage $customProofsMessage $extraMessage";
+        $message = "$systemMessage $customMessage $extraMessage";
         $dataAttributes = array();
 
         $dataAttributes["url-for-mains"] = $urlForMains;
@@ -522,6 +572,7 @@ EOF;
         $dataAttributes["ok-text"] = $this->lang("okText");
         $dataAttributes["cancel-text"] = $this->lang("cancelText");
         $dataAttributes["username"] = $_SESSION["user"];
+        $dataAttributes["mode"] = $mode;
         $dataAttributes["critical-error-message"] = $this->lang("criticalErrorMessage");
         $mainBar = $this->caProofsBar($dataAttributes, $message);
         $subBar = $this->caSubBar($pageHtml, true, false, $proofsChosenCount);
@@ -642,10 +693,6 @@ EOT;
         return $result;
 
     }
-    private function showPrintsScreen()
-    {
-        return "Prints";
-    }
 
     private function showChoiceScreen()
     {
@@ -755,7 +802,8 @@ EOF;
                 <form action="$this->containerPageUrl" method="post" id="ca_action_form">
                     <input type="hidden" name="action" value="login">
                     <input type="hidden" name="restoredProofs" id="restoredProofs" value="">
-                    <input type="hidden" name="restoredPagesVisited" id="restoredPagesVisited" value="">
+                    <input type="hidden" name="restoredProofsPagesVisited" id="restoredProofsPagesVisited" value="">
+                    <input type="hidden" name="restoredPrintsPagesVisited" id="restoredPrintsPagesVisited" value="">
                     <span class="ca_login_error">$loginMessage</span><br>
                     <span class="ca_your_print_label">$userName</span>
                     <input class="ca_your_print_field" type="text" name="login" id="ca_login_name">
@@ -916,6 +964,7 @@ EOF;
         //build header
         $headerContent = <<<EOT
         <script src="$this->jsUrl"></script>
+        <script src="$this->underscoreUrl"></script>
         <link rel="stylesheet" href="$this->cssUrl" type="text/css">
 
 EOT;

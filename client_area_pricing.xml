@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<client_area>
+
+
+    <print_sizes>
+
+        <size_group ratio="1.5">
+            <size size="9x6" price="3.00" mounted="15.00">9&quot;  x 6&quot;</size>
+            <size size="12x8" price="3.50" mounted="20.00">12&quot;  x 8&quot;</size>
+        </size_group>
+
+        <size_group ratio="1.25">
+            <size size="10x8" price="3.50" mounted="20.00">10&quot;  x 8&quot;</size>
+            <size size="20x16" price="4.00" mounted="25.00">20&quot;  x 16&quot;</size>
+        </size_group>
+
+        <size_group ratio="1">
+            <size size="10x10" price="3.50" mounted="20.00">10&quot;  x 10&quot;</size>
+            <size size="15x15"  price="4.00" mounted="25.00">15&quot;  x 15&quot;</size>
+        </size_group>
+
+    </print_sizes>
+
+    <frames>
+
+        <frame label="A">Light Oak</frame>
+        <frame label="B">Medium Oak</frame>
+        <frame label="C">Antique Pine</frame>
+        <frame label="D">Driftwood</frame>
+        <frame label="E">B Series - Black</frame>
+        <frame label="F">B Series - Chocolate</frame>
+        <frame label="G">B Series - White</frame>
+        <frame label="H">B Series - Antique</frame>
+
+    </frames>
+
+    <frames_prices>
+
+
+        <frame label="A">
+            <print_size size="9x6">20.00</print_size>
+            <print_size size="12x8">25.00</print_size>
+            <print_size size="10x8">25.00</print_size>
+            <print_size size="20x16">35.00</print_size>
+            <print_size size="10x10">25.00</print_size>
+            <print_size size="15x15">35.00</print_size>
+        </frame>
+
+        <frame label="B">
+            <print_size size="9x6">20.00</print_size>
+            <print_size size="12x8">25.00</print_size>
+            <print_size size="10x8">25.00</print_size>
+            <print_size size="20x16">35.00</print_size>
+            <print_size size="10x10">25.00</print_size>
+            <print_size size="15x15">35.00</print_size>
+        </frame>
+
+        <frame label="C">
+            <print_size size="9x6">20.00</print_size>
+            <print_size size="12x8">25.00</print_size>
+            <print_size size="10x8">25.00</print_size>
+            <print_size size="20x16">35.00</print_size>
+            <print_size size="10x10">25.00</print_size>
+            <print_size size="15x15">35.00</print_size>
+        </frame>
+
+        <frame label="D">
+            <print_size size="9x6">20.00</print_size>
+            <print_size size="12x8">25.00</print_size>
+            <print_size size="10x8">25.00</print_size>
+            <print_size size="20x16">35.00</print_size>
+            <print_size size="10x10">25.00</print_size>
+            <print_size size="15x15">35.00</print_size>
+        </frame>
+
+        <frame label="E">
+            <print_size size="9x6">50.00</print_size>
+            <print_size size="12x8">60.00</print_size>
+            <print_size size="10x8">60.00</print_size>
+        </frame>
+
+        <frame label="F">
+            <print_size size="9x6">50.00</print_size>
+            <print_size size="12x8">60.00</print_size>
+            <print_size size="10x8">60.00</print_size>
+        </frame>
+
+        <frame label="G">
+            <print_size size="9x6">50.00</print_size>
+            <print_size size="12x8">60.00</print_size>
+            <print_size size="10x8">60.00</print_size>
+        </frame>
+
+    </frames_prices>
+
+
+
+</client_area>

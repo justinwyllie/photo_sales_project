@@ -1,5 +1,8 @@
 jQuery(function($) {
 
+    //load dependencies
+
+
     //TODO don't really need to use delegated events in most cases... except for when i've created
     //elements dynamically - and then you could bind when the element is created?
 
@@ -38,8 +41,10 @@ jQuery(function($) {
         if (clientAreaStorageProofs.supported) {
             var storedDataProofs = clientAreaStorageProofs.getValueAsString("ca_proofs");
             $("#restoredProofs").val(storedDataProofs);
-            var storedDataPagesVisited = clientAreaStorageProofs.getValueAsString("ca_proofs_pages_visited");
-            $("#restoredPagesVisited").val(storedDataPagesVisited);
+            var storedDataProofsPagesVisited = clientAreaStorageProofs.getValueAsString("ca_proofs_pages_visited");
+            var storedDataPrintsPagesVisited = clientAreaStorageProofs.getValueAsString("ca_prints_pages_visited");
+            $("#restoredProofsPagesVisited").val(storedDataProofsPagesVisited);
+            $("#restoredPrintssPagesVisited").val(storedDataPrintssPagesVisited);
         }
         $("#ca_action_field").val("login");
         $("#ca_action_form").get(0).submit();
@@ -260,7 +265,6 @@ jQuery(function($) {
             }
 
             $(".ca_counter").html(res.numberOfProofs);
-            var ca_proofs_pages_visited = $(".ca_proofs_bar").data("username");
             var clientAreaStorageProofs = new ClientAreaStorageProofs(username);
 
             if (clientAreaStorageProofs.supported) {
@@ -378,16 +382,17 @@ jQuery(function($) {
     if (pageOn.length >= 1) {
 
         var username = $(".ca_proofs_bar").data("username");
+        var mode = $(".ca_proofs_bar").data("mode");
         var clientAreaStorageProofs = new ClientAreaStorageProofs(username);
 
         if (clientAreaStorageProofs.supported) {
             var pageIndex = $(pageOn).filter(".ca_highlighted_pagination").data("index");
-            clientAreaStorageProofs.addToStorage("ca_proofs_pages_visited", pageIndex);
+            clientAreaStorageProofs.addToStorage("ca_" + mode + "_pages_visited", pageIndex);
         }
 
     }
 
-
+    //prints:
 
 
 

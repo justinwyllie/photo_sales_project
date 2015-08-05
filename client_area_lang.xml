@@ -108,4 +108,8 @@
         adminAdditionalMessage
     </field>
 
+    <field name="printsMessage">
+        Your images are displayed here. Click on the thumbnails to see a larger image and order prints, mounts and frames.
+    </field>
+
 </strings>

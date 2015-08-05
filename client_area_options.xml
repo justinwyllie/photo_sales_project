@@ -8,6 +8,8 @@
             <clientAreaUrl>/photo_sales_project/client_area_files_dev</clientAreaUrl>
             <!-- web path to the Javascript file -->
             <jsUrl>/photo_sales_project/client_area.js</jsUrl>
+            <!-- web path to the Underscore library dependency -->
+            <underscoreUrl>/photo_sales_project/underscore.min.js</underscoreUrl>
             <!-- web path to the CSS file -->
             <cssUrl>/photo_sales_project/client_area.css</cssUrl>
 
