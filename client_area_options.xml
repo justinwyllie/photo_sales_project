@@ -22,7 +22,7 @@
             <!-- 0 for off and 1 for on -->
             <proofsShowLabels>1</proofsShowLabels>
             <!-- 0 for off and 1 for on -->
-            <showNannyingMessageAboutMoreThanOnePage>0</showNannyingMessageAboutMoreThanOnePage>
+            <printsShowLabels>1</printsShowLabels>
         </display>
 
 

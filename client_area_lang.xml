@@ -59,10 +59,7 @@
     <field name="checkAllMessage">
         Please make sure you have reviewed all the pages before submitting your order
     </field>
-    <field name="moreThanOnePageMessage">
-        Please be sure to check all the pages
-    </field>
-    <field name="logout">
+     <field name="logout">
         Log Out
     </field>
     <field name="confirmLogoutMessage">

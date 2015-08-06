@@ -44,7 +44,7 @@ jQuery(function($) {
             var storedDataProofsPagesVisited = clientAreaStorageProofs.getValueAsString("ca_proofs_pages_visited");
             var storedDataPrintsPagesVisited = clientAreaStorageProofs.getValueAsString("ca_prints_pages_visited");
             $("#restoredProofsPagesVisited").val(storedDataProofsPagesVisited);
-            $("#restoredPrintssPagesVisited").val(storedDataPrintssPagesVisited);
+            $("#restoredPrintsPagesVisited").val(storedDataPrintsPagesVisited);
         }
         $("#ca_action_field").val("login");
         $("#ca_action_form").get(0).submit();
@@ -394,7 +394,9 @@ jQuery(function($) {
 
     //prints:
 
-
+    if ($(".ca_proofs_bar").data("mode") === "prints" ) {
+        alert("make an ajax call to get the thumbs");
+    }
 
 
 });

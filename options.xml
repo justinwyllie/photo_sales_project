@@ -8,5 +8,6 @@
     <overrides>
         <thumbsPerPage>20</thumbsPerPage>
         <proofsShowLabels>1</proofsShowLabels>
+        <printsShowLabels>1</printsShowLabels>
     </overrides>
 </options>

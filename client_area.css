@@ -22,7 +22,7 @@ TODO make this reponsive
 Advanced users only beyond this point!
 */
 
-.ca_proofs_thumbs
+.ca_proofs_thumbs, .ca_prints_thumbs
 {
     float: left;
 }
