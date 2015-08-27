@@ -21,6 +21,14 @@
 
     </print_sizes>
 
+    
+    <mounts>
+
+        <mount>White</mount>
+        <mount>Off-White</mount>
+
+    </mounts>
+
     <frames>
 
         <frame label="A">Light Oak</frame>

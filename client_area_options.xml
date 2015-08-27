@@ -10,6 +10,8 @@
             <jsUrl>/photo_sales_project/client_area.js</jsUrl>
             <!-- web path to the Underscore library dependency -->
             <underscoreUrl>/photo_sales_project/underscore.min.js</underscoreUrl>
+            <!-- web path to the Backbone library dependency -->
+            <underscoreUrl>/photo_sales_project/backbone.js</underscoreUrl>
             <!-- web path to the CSS file -->
             <cssUrl>/photo_sales_project/client_area.css</cssUrl>
 

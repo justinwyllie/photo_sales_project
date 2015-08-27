@@ -132,6 +132,7 @@ class ClientArea
         $this->clientAreaUrl = $systemOptions->clientAreaUrl . "";
         $this->jsUrl = $systemOptions->jsUrl . "";
         $this->underscoreUrl = $systemOptions->underscoreUrl . "";
+        $this->backboneUrl = $systemOptions->backboneUrl . "";
         $this->cssUrl = $systemOptions->cssUrl . "";
         $this->adminEmail = $systemOptions->adminEmail . "";
         $this->appName = $systemOptions->appName . "";
@@ -1027,6 +1028,7 @@ EOF;
         $headerContent = <<<EOT
         <script src="$this->jsUrl"></script>
         <script src="$this->underscoreUrl"></script>
+        <script src="$this->backboneUrl"></script>
         <script>
             window.clientAreaUS = _.noConflict();
         </script>
