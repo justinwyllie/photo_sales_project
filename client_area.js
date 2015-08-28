@@ -399,4 +399,134 @@ jQuery(function($) {
     }
 
 
+    /* Backbone App for Prints */
+
+
+    var thumbModel = Backbone.Model.extend({
+
+    });
+
+    var printOrderLineModel =  Backbone.Model.extend({
+
+        defaults: {
+            imageId: null,
+            printSize: "",
+            unitCost: 0.00,
+            qty: 0,
+            totalCost: 0.00
+        }
+
+    });
+
+    var mountOrderLineModel =  Backbone.Model.extend({
+
+        defaults: {
+            imageId: null,
+            printSize: "",
+            mountStyle: "",
+            unitCost: 0.00,
+            qty: 0,
+            totalCost: 0.00
+        }
+
+    });
+
+    var frameOrderLineModel =  Backbone.Model.extend({
+
+        defaults: {
+            imageId: null,
+            printSize: "",
+            frameStyle: "",
+            unitCost: 0.00,
+            qty: 0,
+            totalCost: 0.00
+        }
+
+    });
+
+    var thumbsCollection = Backbone.Collection.extend({
+        model: thumbModel
+
+    });
+
+    var printOrderLinesCollection = Backbone.Collection.extend({
+
+        model: printOrderLineModel
+
+    });
+
+    var mountOrderLinesCollection = Backbone.Collection.extend({
+
+        model: mountOrderLineModel
+
+    });
+
+    var frameOrderLinesCollection = Backbone.Collection.extend({
+
+        model: frameOrderLineModel
+
+    });
+
+
+    /*
+
+        what is the collection here?
+        it is a filtered collection of basket.printOrderLines for just this imageId
+        nb. don't forget to delete it after use
+
+     */
+    /*
+        View for displaying ordering UI alongside an image in order dialog
+     */
+    var printOrderLineView = Backbone.View.extend({
+
+        el: 'table#ca_print_order_lines',
+
+        initialize: function() {
+            this.template = _.template($("#printOrderLinesTemplate").html());
+            this.listenTo(this.collection, "change", this.updateBasket); //is change the right one?
+        },
+
+        events: {
+            //update collection model based on ui update and delete button presses
+            //so we need to identify the model
+            //problem is:  we've updated the collection which is just for this image Not the basket collection
+
+        },
+
+        render: function() {
+
+            var html = "";
+            that = this;
+            _.each(this.collection.models, function(m) {
+                var orderLineHtml = that.template( m.toJSON() );
+                html+= orderLineHtml;
+            });
+
+            this.$el.html(html);
+        },
+
+        updateBasket: function() {
+            //use an event - possibly Backbone dispatcher - to notify Basket of the change to THIS collection
+            //sending a reference to this collection.
+            //Basket will update it.printOrderLines which is a collection - it will update the models
+            //in it.printOrderLines which belong to this collection
+        }
+
+
+    });
+
+
+
+    //http://javascript.crockford.com/private.html
+    function Basket() {
+
+        this.printOrderLines = null;
+        this.mountOrderLines = null;
+        this.frameOrderLines = null;
+
+    }
+
+
+
 });

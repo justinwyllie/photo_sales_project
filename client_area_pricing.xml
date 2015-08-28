@@ -1,6 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <client_area>
 
+    <!--
+
+        pricing should be expressed to 2 decimal points
+
+        units. the aymbol for inches should be expressed as &quot; not "
+
+    -->
+
+
+    <units>
+        <symbol>&quot;</symbol>
+        <name>inches</name>
+    </units>
 
     <print_sizes>
 

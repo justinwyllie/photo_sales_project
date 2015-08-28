@@ -465,6 +465,7 @@ EOF;
         $dataAttributes["critical-error-message"] = $this->lang("criticalErrorMessage");
         $mainBar = $this->caMainBar($dataAttributes, $message);
         $subBar = $this->caPrintsSubBar();
+        $backboneTemplates = $this->backboneTemplates();
 
 
         $html = <<<EOF
@@ -476,6 +477,7 @@ EOF;
 
              $mainBar
              $subBar
+             $backboneTemplates
 
             <hr class="ca_clear">
             <div class="ca_prints_thumbs">
@@ -484,6 +486,32 @@ EOF;
 
 EOF;
         return $html;
+    }
+
+    private function backboneTemplates() {
+
+        $update = $this->lang("updateText");
+        $clear = $this->lang("clearText");
+
+        $templates = <<<EOF
+
+            <script type="text/template id="printOrderLinesTemplate">
+                <tr data-image="<%= imageId %>" >
+                    <td><%= printSize %></td>
+                    <td><%= unitCost %></td>
+                    <td><input name="printOrderLines_qty" value="<%= qty %>"></td>
+                    <td><%= totalCost %></td>
+                    <td><button class="ca_update_event">$update</button></td>
+                    <td><button class="ca_delete_event">$clear</button></td>
+                </tr>
+            </script>
+
+
+
+EOF;
+
+        return $templates;
+
     }
 
     private function showProofsScreen()
