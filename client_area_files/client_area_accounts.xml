@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<client_area_accounts>
+
+    <account username="nascimento">
+        <password>testextra</password>
+        <human_name>Decio</human_name>
+    </account>
+
+
+    <account username="nascimento2">
+        <password>testextra2</password>
+        <human_name>Decio2</human_name>
+    </account>
+
+
+    <account username="professor_george">
+        <password>lincoln</password>
+        <human_name>Professor George</human_name>
+    </account>
+
+    <account username="roberts">
+        <password>xxx</password>
+        <human_name>Mrs Roberts</human_name>
+    </account>
+
+    <account username="sims">
+        <password>littlebury</password>
+        <human_name>Julie and Allen</human_name>
+    </account>
+
+    <account username="patterson">
+        <password>dc123</password>
+        <human_name>David and Lynda</human_name>
+    </account>
+
+    <account username="cadle">
+        <password>fourpillars</password>
+        <human_name>Shaun and Jenny</human_name>
+    </account>
+
+
+</client_area_accounts>
+
+

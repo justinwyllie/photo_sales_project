@@ -50,6 +50,9 @@
     <field name="proofsMessage">
         Your proofs are displayed here. Please select which ones you would like, and then press 'Done'.
     </field>
+    <field name="printsMessage">
+        Your selected images are displayed here. Please review them and select the prints you would like. When you have finished please press 'Checkout'.
+    </field>
     <field name="done">
         Done
     </field>
@@ -80,7 +83,7 @@
     <field name="finaliseProofChoices">
         Please enter any additional message in the box below and then press
     </field>
-    <field name="Submit">
+    <field name="submit">
         Submit
     </field>
     <field name="yourInstructions">
@@ -105,7 +108,16 @@
         An error occurred and your proofs selection has not been submitted. Please contact me.
     </field>
     <field name="adminAdditionalMessage">
-        adminAdditionalMessage
+        The user additionally said:
+    </field>
+    <field name="thumb">
+        Thumbnail Image
+    </field>
+    <field name="basketButtonText">
+        Basket
+    </field>
+    <field name="checkoutButtonText">
+        Checkout
     </field>
 
 </strings>

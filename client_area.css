@@ -5,7 +5,6 @@ TODO namespace all these
 
 /*
 this is the overall content area. customise it for your site
-TODO make this reponsive
 */
 #ca_content_area
 {
@@ -22,9 +21,27 @@ TODO make this reponsive
 Advanced users only beyond this point!
 */
 
+/*
+  Font sizes: basically this app. does little with font sizes and will pick up whatever is set on the containing element.
+  In a few places we set font-size explicirty in pixels to control button text and bar height.
+  There is a class .ca_label for smaller label text
+  There is a class to make the message area text easy to change: .ca_message_area    
+
+*/
+
+.ca_message_area
+{
+    font-size: 100%;       
+}
+
+.ca_label
+{
+    font-size: 80%;
+}
+
 .ca_proofs_thumbs
 {
-    float: left;
+   float: left; 
 }
 
 .print_login button
@@ -68,7 +85,7 @@ Advanced users only beyond this point!
     text-decoration: underline;
 }
 
-.ca_proofs_bar
+.ca_menu_bar
 {
     width: 100%;
     margin-top: 10px;
@@ -76,10 +93,6 @@ Advanced users only beyond this point!
     margin-bottom: 5px;
 }
 
-.ca_message_area
-{
-    font-size: 100%;
-}
 
 .ca_counter_label
 {
@@ -87,11 +100,6 @@ Advanced users only beyond this point!
     display: inline-block;
 }
 
-.ca_counter_box
-{
-    float: right;
-    display: inline-block;
-}
 
 .ca_counter
 {
@@ -106,7 +114,18 @@ div.ca_thumb_pic
     float: left;
     margin-right: 20px;
     margin-top: 10px;
+ 
+}
+
+.ca_thumb_pic img
+{
     margin-bottom: 5px;
+    box-sizing: border-box;
+}
+
+.ca_thumb_pic.has_order img
+{
+    border: 1px solid #ff0000;
 }
 
 .ca_thumb_pic input[type="checkbox"]
@@ -128,13 +147,26 @@ div.ca_thumb_pic
 
 button.ca_proof_button, button.ca_logout_button
 {
-    float: right;
     margin-right: 10px;
+}
+
+button.ca_menu_button
+{
+    margin-right: 5px;
+}
+
+.ca_counter_box
+{
+    display: inline-block;
+}
+
+.ca_menu_buttons
+{
+    
 }
 
 .ca_pagination_box
 {
-    float: left;
     margin-left: 10px;
 
 }
@@ -147,16 +179,19 @@ button.ca_proof_button, button.ca_logout_button
 
 .ca_sub_bar
 {
-    font-size: 80%;
     background-color: #eeeeee;
     padding: 10px 0px 10px 0px;
-    float: left;
     width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #A9A9A9;
 }
 
 .ca_highlighted_pagination
 {
-    text-decoration: underline;
+    font-weight: bold;
+    border: 1px solid #000000;
 }
 
 .ca_page_info
@@ -167,45 +202,14 @@ button.ca_proof_button, button.ca_logout_button
 .ca_proofs_page
 {
     display: inline-block;
-    margin-right: 5px;
+    margin-right: 10px;
     cursor: pointer;
 }
 
-.ca_label
-{
-    font-size: 10px;
-}
 
-
-/*
-TODO responsive
-*/
-
-
-
-.ca_lightbox_close_bar
-{
-    background-color: #eeeeee;
-    width: 100%;
-    height: 20px;
-
-}
-
-.ca_lightbox_close
-{
-    float: right;
-    font-size: 12px;
-    display: inline-block;
-    width: 15px;
-    background-color: #eeeeee;
-    cursor: pointer;
-    margin-right: 5px;
-    margin-top: 2px;
-}
-
+/* label underneath main lightbox image */                  
 .ca_lightbox_controls
 {
-
     font-size: 12px;
     height: 15px;
 }
@@ -248,21 +252,26 @@ TODO responsive
 {
     background-color: #eeeeee;
     width: 100%;
-    height: 20px;
+    height: 30px;
+    
 
 }
 
 .ca_popup_close
 {
     float: right;
-    font-size: 12px;
-    display: inline-block;
-    width: 15px;
-    background-color: #eeeeee;
+    font-size: 15px;
+    background-color: #a9a9a9;
     cursor: pointer;
     margin-right: 5px;
     margin-top: 2px;
+    display: flex;
+    align-items: center;
 }
+
+
+
+
 
 .ca_popup_text
 {
@@ -354,6 +363,10 @@ NB. For responsiveness to work as expected your container page should include so
 
 }
 
+/*
+    this is about the alignment of controls on the login page on mobile
+    TODO may need improving
+*/
 
 @media only screen and (max-width : 767px)   {
 

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<options>
+    <!-- 1 for on and 0 for off -->
+    <proofsOn>1</proofsOn>
+    <printsOn>1</printsOn>
+    <customProofsMessage>Please select up to 225 images which will then be further edited. The software will
+    remember your current selection  - on the same browser. (Modern browsers only - IE 11, Chrome or FireFox).</customProofsMessage>
+    <customPrintsMessage>Your prints should be ready in 10 days.</customPrintsMessage>
+    <thumbsPerPage>45</thumbsPerPage>
+</options>

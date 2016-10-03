@@ -7,8 +7,9 @@
             <clientAreaDirectory>/var/www/vhosts/justinwylliephotography.com/httpdocs/client_area_files</clientAreaDirectory>
             <!-- web path to where the client images are stored -->
             <clientAreaUrl>/client_area_files</clientAreaUrl>
-            <!-- web path to the Javascript file -->
+            <!-- web path to the Javascript files -->
             <jsUrl>/client_area.js</jsUrl>
+            <underscoreUrl>/underscore.js</underscoreUrl>
             <!-- web path to the CSS file -->
             <cssUrl>/client_area.css</cssUrl>
 
@@ -17,7 +18,7 @@
         </system>
 
         <display>
-            <thumbsPerPage>20</thumbsPerPage>
+            <thumbsPerPage>50</thumbsPerPage>
             <!-- 0 for off and 1 for on -->
             <proofsShowLabels>1</proofsShowLabels>
             <!-- 0 for off and 1 for on -->

@@ -31,19 +31,18 @@ class ClientArea
 
 
     public function __construct()
-    {
+    {   
+        //absolute path on your system to the client_area_files directory
+        $this->clientAreaDirectory = "/var/www/vhosts/justinwylliephotography.com/client_area_files";
 
+        $this->optionsPath = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_options.xml";
+        $this->accountsPath = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_accounts.xml";
+        $this->langPath = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_lang.xml";
+        $this->pricingPath =  $this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_pricing.xml";
 
-        //path to the options config file. SHOULD be outside of your web root
-        $this->optionsPath = "/var/www/vhosts/justinwylliephotography.com/client_area_options.xml";
-        //path to the accounts config file. MUST be outside of your web root
-        $this->accountsPath = "/var/www/vhosts/justinwylliephotography.com/client_area_accounts.xml";
-        //path to the language strings file.
-        $this->langPath = "/var/www/vhosts/justinwylliephotography.com/client_area_lang.xml";
-
-        //path, absolute or relative to this script, to where the page template is stored on your system
-         $this->template = "client_area_template.php";
-
+        $this->template = "client_area_template.php";
+        #url path from the web root to this file. normally it will be placed in the web root
+        $this->imageProvider = "/client_area_image_provider.php";
 
         $this->containerPageUrl = $_SERVER['PHP_SELF'];
 
@@ -64,7 +63,16 @@ class ClientArea
 
             $this->accounts[$user]["proofs_on"] = (bool) (int) $options->proofsOn;
             $this->accounts[$user]["prints_on"] = (bool) (int) $options->printsOn;
-            $this->accounts[$user]["customProofsMessage"] = $options->customProofsMessage . "";
+            if ($this->accounts[$user]["proofs_on"])
+            {
+                $this->accounts[$user]["customProofsMessage"] = $options->customProofsMessage . "";
+            }
+            if ($this->accounts[$user]["prints_on"])
+            {
+                $this->accounts[$user]["customPrintsMessage"] = $options->customPrintsessage . "";
+            }
+            
+            $this->accounts[$user]["customPrintsMessage"] = $options->customPrintsMessage . "";
             $this->accounts[$user]["thumbsPerPage"] = (int) $options->thumbsPerPage ;
         }
     }
@@ -98,7 +106,6 @@ class ClientArea
     private function setLang()
     {
         $strings = simplexml_load_file($this->langPath);
-
         if ($strings === false) {
             $this->criticalError("Error in language file or file does not exist");
         }
@@ -118,18 +125,17 @@ class ClientArea
 
     private function setOptions()
     {
-        $client_area = simplexml_load_file($this->optionsPath);
+        $client_area_options = simplexml_load_file($this->optionsPath);
 
-        if ($client_area === false) {
+        if ($client_area_options === false) {
             $this->criticalError("Error in options file or file does not exist");
         }
 
-        $systemOptions = $client_area->options->system;
-        $displayOptions = $client_area->options->display;
+        $systemOptions = $client_area_options->options->system;
+        $displayOptions = $client_area_options->options->display;
 
-        $this->clientAreaDirectory = $systemOptions->clientAreaDirectory . "";
-        $this->clientAreaUrl = $systemOptions->clientAreaUrl . "";
         $this->jsUrl = $systemOptions->jsUrl . "";
+        $this->underscoreUrl = $systemOptions->underscoreUrl . "";
         $this->cssUrl = $systemOptions->cssUrl . "";
         $this->adminEmail = $systemOptions->adminEmail . "";
         $this->appName = $systemOptions->appName . "";
@@ -238,9 +244,6 @@ class ClientArea
         return mail($this->adminEmail, $this->appName . ' ' . $subject, $content);
     }
 
-
-
-    //TODO
     private function lang($field)
     {
         if (isset($this->langStrings[$field])) {
@@ -262,11 +265,13 @@ class ClientArea
     }
 
     private function doLogin()
-    {
+    {                                                            
         $user = $_POST['login'];
         $password = $_POST['password'];
-        $restoredProofs = $_POST['restoredProofs'];
-        $restoredPagesVisited = $_POST['restoredPagesVisited'];
+        $restoredProofs = $_POST['restoredProofs'];                  
+        $restoredProofsPagesVisited = $_POST['restoredProofsPagesVisited'];
+        $restoredPrints = $_POST['restoredPrints'];                  
+        $restoredPrintsPagesVisited = $_POST['restoredPrintsPagesVisited'];
 
         if (!empty($this->accounts[$user]) && !empty($password) && ($this->accounts[$user]["password"] === $password)) {
             session_unset();
@@ -274,22 +279,45 @@ class ClientArea
             $_SESSION["user"] = $user;
             $_SESSION["proofsPagesVisited"] = array();
             $_SESSION["proofsChosen"] = array();
+            $_SESSION["printsPagesVisited"] = array();
+            $_SESSION["printsChosen"] = array();
 
+            //If the user is logging in try to restore the proofs chosen based on what was stored in html data if it is available
             if (!empty($restoredProofs)) {
                 $restoredProofsArray = json_decode($restoredProofs);
                 if (is_array($restoredProofsArray)) {
                     $_SESSION["proofsChosen"] = $restoredProofsArray;
                 }
             }
+                
+            //If the user is logging in try to restore the proof pages visited chosen based on what was stored in html data if it is available    
+            if (!empty($restoredProofsPagesVisited)) {
+                $restoredProofsPagesVisitedArray = json_decode($restoredProofsPagesVisited);
+                if (is_array($restoredProofsPagesVisitedArray)) {
 
-            if (!empty($restoredPagesVisited)) {
-                $restoredPagesVisitedArray = json_decode($restoredPagesVisited);
-                if (is_array($restoredPagesVisitedArray)) {
-
-                    $_SESSION["proofsPagesVisited"] = $restoredPagesVisitedArray;
+                    $_SESSION["proofsPagesVisited"] = $restoredProofsPagesVisitedArray;
                 }
             }
+            
+            //If the user is logging in try to restore the prints chosen based on what was stored in html data if it is available
+            if (!empty($restoredPrints)) {
+                $restoredPrintsArray = json_decode($restoredPrints);
+                if (is_array($restoredPrintssArray)) {
+                    $_SESSION["printsChosen"] = $restoredPrintsArray;
+                }
+            }
+            
+            //If the user is logging in try to restore the prints pages visited chosen based on what was stored in html data if it is available  
+            if (!empty($restoredPrintsPagesVisited)) {
+                $restoredPrintsPagesVisitedArray = json_decode($restoredPrintsPagesVisited);
+                if (is_array($restoredPrintsPagesVisitedArray)) {
 
+                    $_SESSION["printsPagesVisited"] = $restoredPrintsPagesVisitedArray;
+                }
+            }
+            
+            
+                                                               
             return true;
         } else {
             return false;
@@ -381,7 +409,6 @@ EOF;
         $html = <<<EOF
             $mainBar
              $subBar
-            <hr class="ca_clear">
             <div class="ca_print_login ca_additional_instructions">
                  <form action="$this->containerPageUrl" method="post" id="ca_action_form">
                     <input type="hidden" name="action" id="ca_action_field" value="processProofs">
@@ -398,30 +425,39 @@ EOF;
 
     }
 
-    private function showProofsScreen()
+    private function showThumbsScreen($mode)
     {
-
+        
         if (isset($_POST['index']))
         {
-            $startIndex = $this->noScriptInjection($_POST['index']);
+            $pageIndex = $this->noScriptInjection($_POST['index']);
         }
         else
         {
-            $startIndex = 0;
+            $pageIndex = 0;
         }
-
 
         $user = $_SESSION["user"];
         $account = $this->accounts[$user];
 
-        $customProofsMessage = $account["customProofsMessage"];
-        $proofsMessage = $this->lang("proofsMessage");
+        if ($mode == 'proofs') {
+            $userMessage = $this->lang("proofsMessage");
+            $customMessage = $account["customProofsMessage"];
+            $pricingData = '';
+        } 
+        else
+        {
+            $userMessage = $this->lang("printsMessage");
+            $customMessage = $account["customPrintsMessage"];
+            $pricingData = $this->loadPricingData();
+        }
+                                                        
         $thumb = $this->lang("thumb");
 
         $thumbsDir = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
-            DIRECTORY_SEPARATOR . "proofs" . DIRECTORY_SEPARATOR . "thumbs";
+            DIRECTORY_SEPARATOR . $mode . DIRECTORY_SEPARATOR . "thumbs";
         $mainDir = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
-            DIRECTORY_SEPARATOR . "proofs" . DIRECTORY_SEPARATOR . "main" . DIRECTORY_SEPARATOR;
+            DIRECTORY_SEPARATOR . $mode . DIRECTORY_SEPARATOR . "main" . DIRECTORY_SEPARATOR;
         $files = scandir($thumbsDir);
         $thumbs=array();
         foreach ($files as $file)
@@ -432,7 +468,7 @@ EOF;
             }
         }
 
-        $thumbsForThisPage = array_slice($thumbs, $startIndex, $this->options["thumbsPerPage"]);
+        $thumbsForThisPage = array_slice($thumbs, $pageIndex, $this->options["thumbsPerPage"]);
 
         if (($thumbsForThisPage < $thumbs) && $this->getOption("showNannyingMessageAboutMoreThanOnePage")) {
             $extraMessage = '<br><span>' . $this->lang("moreThanOnePageMessage") . '</span>';
@@ -441,20 +477,37 @@ EOF;
         }
 
         $numberOfThumbs = $this->getImageCount($thumbsDir);
-        $pageHtml = $this->pageHtml($startIndex, $this->options["thumbsPerPage"], $numberOfThumbs);
+        $pageHtml = $this->pageHtml($pageIndex, $this->options["thumbsPerPage"], $numberOfThumbs);
 
-        //this little block is about finding out if the user has visited all pages
-        //so we can warn them if they try to click 'Done' but have not visited all pages
-        if (!in_array($startIndex, $_SESSION["proofsPagesVisited"])) {
-            $_SESSION["proofsPagesVisited"][] = $startIndex;
-        }
-
+        //these little blocks are about finding out if the user has visited all pages
+        //so we can warn them if they try to click 'Done' or 'Checkout'' but have not visited all pages
         $pageIndexes = $this->getPageIndexes($this->options["thumbsPerPage"], $numberOfThumbs);
-        $notVisited = array_diff($pageIndexes, $_SESSION["proofsPagesVisited"] );
-        if (empty($notVisited)) {
-            $allPagesVisited = "yes";
-        } else {
-            $allPagesVisited = "no";
+        $allPrintsPagesVisited = '';
+        $allProofsPagesVisited = '';
+                                          
+        if ($mode == 'proofs') {
+          if (!in_array($pageIndex, $_SESSION["proofsPagesVisited"])) {
+              $_SESSION["proofsPagesVisited"][] = $pageIndex;
+          }
+          $notVisitedProofs = array_diff($pageIndexes, $_SESSION["proofsPagesVisited"] );
+          if (empty($notVisitedProofs)) {
+              $allProofsPagesVisited = "yes";
+          } else {
+              $allProofsPagesVisited = "no";
+          }
+        
+        }
+        else
+        {
+          if (!in_array($pageIndex, $_SESSION["printsPagesVisited"])) {
+              $_SESSION["printsPagesVisited"][] = $pageIndex;
+          }
+          $notVisitedPrints = array_diff($pageIndexes, $_SESSION["printsPagesVisited"] );
+          if (empty($notVisitedPrints)) {
+              $allPrintsPagesVisited = "yes";
+          } else {
+              $allPrintsPagesVisited = "no";
+          }
         }
 
         $pageThumbsHtml = "";
@@ -468,12 +521,8 @@ EOF;
 
         foreach ($thumbsForThisPage as $file) {
 
-            if ((isset($_SESSION["proofsChosen"])) && in_array($file, $_SESSION["proofsChosen"])) {
-                $checked = ' checked="checked" ';
-            } else {
-                $checked = '';
-            }
-
+         
+            //TODO - make this generic?
             if ($this->options["proofsShowLabels"]) {
                 $label = '<span class="ca_label">' . $file . '</span>';
             } else {
@@ -485,15 +534,33 @@ EOF;
 
 
             $file = str_replace(".JPG", ".jpg", $file); //TODO hack to fix Nascimento
-            $filePath = $this->clientAreaUrl . '/' . $user . "/proofs/thumbs/" . $file;
-            $fileHtml = '<div class="ca_thumb_pic"'. $picStyle . '><img' .
-                ' data-image-width="' . $imageDimensions["width"] . '" ' .
-                'src="' . $filePath . '" alt="' . $thumb  . '"><input class="ca_proof_checkbox_event" type="checkbox" value="' .
-                  $file . '"' . $checked . ' >' . $label . '</div>';
+            $thumbPath = $this->imageProvider . '?mode=proofs&size=thumbs&file=' . $file; 
+
+            if ($mode == 'proofs')
+            {     
+                if ((isset($_SESSION["proofsChosen"])) && in_array($file, $_SESSION["proofsChosen"])) {
+                    $checked = ' checked="checked" ';
+                } else {
+                    $checked = '';
+                }
+                $controls =  '<input class="ca_proof_checkbox_event" type="checkbox" value="' .
+                  $file . '"' . $checked . ' > ' ;
+                $thumbClass = '';
+            }    
+            else
+            {
+                $controls = '';
+                //TODO - is it in the basket?
+                $thumbClass = 'has_order';
+            }
+
+            $fileHtml = '<div class="ca_thumb_pic ' . $thumbClass . ' "'. $picStyle . '><img' .
+                ' data-file-ref="' . $file . '" data-image-width="' . $imageDimensions["width"] . '" ' .
+                'src="' . $thumbPath . '" alt="' . $thumb  . '">' . $controls . $label . '</div>';
             $pageThumbsHtml.=  $fileHtml;
         }
 
-        $urlForMains = $this->clientAreaUrl . '/' . $user . "/proofs/main/";
+        $urlForMains = $this->imageProvider . '?mode=proofs&size=main';
 
         if ($this->getOption("proofsShowLabels")) {
             $labelsOption = "on";
@@ -503,32 +570,33 @@ EOF;
 
         $proofsChosenCount = count($_SESSION["proofsChosen"]);
 
-        $message = "$proofsMessage $customProofsMessage $extraMessage";
+        $message = "$userMessage $customMessage $extraMessage";
         $dataAttributes = array();
-
         $dataAttributes["url-for-mains"] = $urlForMains;
         $dataAttributes["labels-option"] = $labelsOption;
         $dataAttributes["check-all-message"] = $this->lang("checkAllMessage");
-        $dataAttributes["all-pages-visited"] = $allPagesVisited;
+        $dataAttributes["all-proofs-pages-visited"] = $allProofsPagesVisited;
+        $dataAttributes["all-prints-pages-visited"] = $allPrintsPagesVisited;
         $dataAttributes["confirm-logout-message"] = $this->lang("confirmLogoutMessage");
         $dataAttributes["ok-text"] = $this->lang("okText");
         $dataAttributes["cancel-text"] = $this->lang("cancelText");
         $dataAttributes["username"] = $_SESSION["user"];
         $dataAttributes["critical-error-message"] = $this->lang("criticalErrorMessage");
+        $dataAttributes["mode"] = $mode;
+        $dataAttributes["pricing-data"] = $pricingData;
         $mainBar = $this->caProofsBar($dataAttributes, $message);
-        $subBar = $this->caSubBar($pageHtml, true, false, $proofsChosenCount);
+        $subBar = $this->caSubBar($pageHtml, true, false, $proofsChosenCount, $mode);
 
         $html = <<<EOF
 
              <form action="$this->containerPageUrl" method="post" id="ca_action_form">
-                <input type="hidden" name="action" id="ca_action_field" value="showProofsScreen">
+                <input type="hidden" name="action" id="ca_action_field" value="">
                 <input type="hidden" name="index" id="ca_index_field" value="0">
              </form>
 
              $mainBar
              $subBar
 
-            <hr class="ca_clear">
             <div class="ca_proofs_thumbs">
                 $pageThumbsHtml
             </div>
@@ -539,14 +607,37 @@ EOF;
 
     }
 
+    private function showProofsScreen()
+    {                                
+        return $this->showThumbsScreen('proofs');
+    }
+
+    private function showPrintsScreen()
+    {                                    
+        return $this->showThumbsScreen('prints');
+    }
+
+    private function loadPricingData()
+    {
+        $pricingData = simplexml_load_file($this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_pricing.xml");
+        
+        if ($pricingData === false) {
+            $this->destroySession();
+            $this->terminateScript("Missing or broken user pricing file");
+        } else {
+           $pricingDataJson = json_encode($pricingData);
+           return $pricingDataJson;
+        }    
+    }
+
     private function caProofsBar($dataAttributes, $message)
     {
         $attributes = "";
         foreach ($dataAttributes as $key => $value) {
-            $attributes = $attributes . ' data-' . $key . '="' . $value . '"';
+            $attributes = $attributes . ' data-' . $key . "='" . $value . "'";
         }
         $html = <<<EOT
-                <div class="ca_proofs_bar"
+                <div class="ca_menu_bar"
                 $attributes
                 >
                 <span class="ca_message_area">$message</span>
@@ -556,18 +647,31 @@ EOT;
         return $html;
     }
 
-    private function caSubBar($pageHtml, $needsDoneButton, $needsCancelButton, $proofsChosenCount)
+    private function caSubBar($pageHtml, $needsDoneButton, $needsCancelButton, $proofsChosenCount, $mode)
     {
 
-
-        $done = $this->lang("done");
+        
         $logout = $this->lang("logout");
         $cancelText = $this->lang("cancelText");
 
-        if ($needsDoneButton) {
-            $doneButton = '<button class="ca_proof_button ca_proof_event">' . $done . '</button>';
-        } else {
-            $doneButton = '';
+        if ($needsDoneButton && $mode === 'proofs') {
+            $doneButtonText  = $this->lang("done");
+            $doneButton = '<button class="ca_proof_button ca_proof_event">' . $doneButtonText . '</button>';
+        }
+        
+        if ($mode === 'prints') {
+          $basketButtonText =     $this->lang("basketButtonText");
+          $checkoutButtonText =     $this->lang("checkoutButtonText");
+          $basketButton = '<button class="ca_menu_button ca_prints_basket_event">' . $basketButtonText . '</button>';
+          $checkoutButton = '<button class="ca_menu_button ca_prints_checkout_event">' . $checkoutButtonText . '</button>';
+        }
+                           
+        if (isset($doneButton)) {
+          $orderingButtons = $doneButton;
+        }
+        else
+        {
+          $orderingButtons = $basketButton . $checkoutButton;
         }
 
         if ($needsCancelButton) {
@@ -576,9 +680,9 @@ EOT;
             $cancelButton = '';
         }
 
-        if (!is_null($proofsChosenCount)) {
+        if (!is_null($proofsChosenCount) && ($mode == 'proofs')) {
             $chosen = $this->lang("chosen");
-            $proofsChosenText = '<span class="ca_counter_label">' . $chosen . '</span>' .
+            $proofsChosenText = '<span>' . $chosen . '</span>' .
                 '<span class="ca_counter">' . $proofsChosenCount . '</span>';
         } else {
             $proofsChosenText = "";
@@ -590,12 +694,13 @@ EOT;
                 <div class="ca_pagination_box">
                   $pageHtml
                 </div>
-                <button class="ca_logout_button ca_logout_confirm_event">$logout</button>
-                     $doneButton $cancelButton
-                <span class="ca_counter_box">
-
-                    $proofsChosenText
-                </span>
+                <div class="ca_menu_buttons">
+                    <span class="ca_counter_box ca_counter_label ca_label">
+                         $proofsChosenText
+                    </span>
+                    <span>$orderingButtons</span><span>$cancelButton</span>
+                   <span><button class="ca_logout_button ca_logout_confirm_event">$logout</button></span>
+                </div>
             </div>
 
 EOT;
@@ -634,10 +739,7 @@ EOT;
         return $result;
 
     }
-    private function showPrintsScreen()
-    {
-        return "Prints";
-    }
+
 
     private function showChoiceScreen()
     {
@@ -747,7 +849,9 @@ EOF;
                 <form action="$this->containerPageUrl" method="post" id="ca_action_form">
                     <input type="hidden" name="action" value="login">
                     <input type="hidden" name="restoredProofs" id="restoredProofs" value="">
-                    <input type="hidden" name="restoredPagesVisited" id="restoredPagesVisited" value="">
+                    <input type="hidden" name="restoredProofsPagesVisited" id="restoredProofsPagesVisited" value="">
+                    <input type="hidden" name="restoredPrints" id="restoredPrints" value="">
+                    <input type="hidden" name="restoredPrintsPagesVisited" id="restoredPrintsPagesVisited" value="">
                     <span class="ca_login_error">$loginMessage</span><br>
                     <span class="ca_your_print_label">$userName</span>
                     <input class="ca_your_print_field" type="text" name="login" id="ca_login_name">
@@ -847,7 +951,7 @@ EOF;
         $index = 0;
         $pages = array();
 
-        for ($i= 1; $i <= $numberOfPages; $i++)
+        for ($i= 0; $i < $numberOfPages; $i++)
         {
             $pages[$i] =  $index;
             $index = $index + $thumbsPerPage;
@@ -856,13 +960,13 @@ EOF;
         return $pages;
     }
 
-    private function pageHtml($startIndex, $thumbsPerPage, $numberOfThumbs)
+    private function pageHtml($pageIndex, $thumbsPerPage, $numberOfThumbs)
     {
         $output = '<div class="ca_page_info">';
 
         $pages = $this->getPageIndexes($thumbsPerPage, $numberOfThumbs);
 
-        $currentPage = array_search($startIndex, $pages);
+        $currentPage = array_search($pageIndex, $pages);
 
         $length = 11;
         $offset = $currentPage - 6;
@@ -874,15 +978,15 @@ EOF;
 
         foreach($pagesToShow as $pageNumber => $index)
         {
-            if ($index == $startIndex) {
+            if ($index == $pageIndex) {
                 $class = " ca_highlighted_pagination  ";
             }
             else
             {
                 $class = "";
             }
-            $output.= '<span data-index="' . $index . '" class="ca_page_number_event  ca_proofs_page' . $class .
-                '">' . $pageNumber . '</span>';
+            $output.= '<button data-index="' . $index . '" class="ca_page_number_event ca_thumbs_page ' . $class .
+                '"><span>'  . $pageNumber . '</span></button>';
 
         }
 
@@ -908,6 +1012,7 @@ EOF;
         //build header
         $headerContent = <<<EOT
         <script src="$this->jsUrl"></script>
+        <script src="$this->underscoreUrl"></script>
         <link rel="stylesheet" href="$this->cssUrl" type="text/css">
 
 EOT;
@@ -920,7 +1025,7 @@ EOT;
 EOT;
 
 
-        $template = new TemplateEngine;
+        $template = new TemplateEngine($this->template);
         $template->setText();
         $template->setVars(
             array(
@@ -951,20 +1056,15 @@ EOT;
 }
 
 
-class clientAreaPrints
+
+
+class TemplateEngine
 {
+    private $template;
 
-
-
-}
-
-class TemplateEngine extends ClientArea
-{
-
-
-    public function __construct()
+    public function __construct($template)
     {
-        parent::__construct();
+        $this->template = $template;
     }
 
     public function setText()
