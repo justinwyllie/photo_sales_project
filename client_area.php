@@ -136,6 +136,7 @@ class ClientArea
 
         $this->jsUrl = $systemOptions->jsUrl . "";
         $this->underscoreUrl = $systemOptions->underscoreUrl . "";
+        $this->backboneUrl = $systemOptions->backboneUrl . "";
         $this->cssUrl = $systemOptions->cssUrl . "";
         $this->adminEmail = $systemOptions->adminEmail . "";
         $this->appName = $systemOptions->appName . "";
@@ -556,6 +557,7 @@ EOF;
 
             $fileHtml = '<div class="ca_thumb_pic ' . $thumbClass . ' "'. $picStyle . '><img' .
                 ' data-file-ref="' . $file . '" data-image-width="' . $imageDimensions["width"] . '" ' .
+                'data-image-height="' . $imageDimensions["height"] . '" ' .
                 'src="' . $thumbPath . '" alt="' . $thumb  . '">' . $controls . $label . '</div>';
             $pageThumbsHtml.=  $fileHtml;
         }
@@ -1013,6 +1015,7 @@ EOF;
         $headerContent = <<<EOT
         <script src="$this->jsUrl"></script>
         <script src="$this->underscoreUrl"></script>
+        <script src="$this->backboneUrl"></script>
         <link rel="stylesheet" href="$this->cssUrl" type="text/css">
 
 EOT;

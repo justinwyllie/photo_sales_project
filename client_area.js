@@ -203,35 +203,56 @@ jQuery(function($) {
         var overLay = $('<div></div>').attr("id", "ca_lightbox_overlay");
 
         var actualImageWidth = $(this).data("image-width");
+        var actualImageHeight = $(this).data("image-height");
 
         var viewportWidth = $(window).width();
         var safeImageWidth = viewportWidth - 100;
-
-        if ((actualImageWidth === "") || (actualImageWidth > safeImageWidth) ) {
-            lightBox.find("img").css({"width": safeImageWidth + ".px", "height": "auto"});
-            var usedImageWidth = safeImageWidth;
-        } else {
-            var usedImageWidth = actualImageWidth;
-        }
-
-        if (viewportWidth <= 767) {
-            lightBox.css("top", "0px");
-            lightBox.css("left", "0px");
-        } else {
-            var offset = Math.floor(usedImageWidth / 2);
-            lightBox.css("margin-left", "-" + offset + "px");
-        }
         
+        var viewportHeight = $(window).height();
+        if (mode === 'prints') {
+            var heightAdjuster = 300;
+        }  else {
+            var heightAdjuster = 100;    
+        }
+        var safeImageHeight = viewportHeight - heightAdjuster;
+        var usedImageWidth;
+        //TODO handle case of no image sizes
+        if ((actualImageWidth > safeImageWidth) && (actualImageHeight <= safeImageHeight)) {
+            lightBox.find("img").css({"width": safeImageWidth + ".px", "height": "auto"});
+            usedImageWidth = safeImageWidth; 
+        } else if  ( (actualImageWidth <= safeImageWidth)  && (actualImageHeight > safeImageHeight)) {
+             lightBox.find("img").css({"height": safeImageHeight + ".px", "width": "auto"});
+             var resizedProportion = safeImageHeight / actualImageHeight;
+             usedImageWidth = Math.round(actualImageWidth *  resizedProportion);
+        } else if ((actualImageWidth > safeImageWidth)  && (actualImageHeight > safeImageHeight)) {    
+            var widthExceedsRatio = actualImageWidth /  actualImageWidth;
+            var heightExceedsRatio = actualImageHeight /  actualImageHeight;
+            if (widthExceedsRatio >  heightExceedsRatio) {
+                 lightBox.find("img").css({"width": safeImageWidth + ".px", "height": "auto"});
+                 usedImageWidth = safeImageWidth; 
+            }  else  {
+                lightBox.find("img").css({"height": safeImageHeight + ".px", "width": "auto"});
+                var resizedProportion = safeImageHeight / actualImageHeight;
+                usedImageWidth = Math.round(actualImageWidth *  resizedProportion);
+            }
+            
+        } else {
+             lightBox.find("img").css({"width": actualImageWidth + ".px", "height": "auto"});
+             usedImageWidth = actualImageWidth; 
+        }
+
         if (mode === 'prints') {
             var pricingArea = getPricingArea();   
             lightBox.append(pricingArea);
-        
         }
-
-
+                   
         $(".ca_message_pop_up").remove();
         $("body").append(overLay);
         $("body").append(lightBox);
+        
+        var offset = Math.floor(usedImageWidth / 2);
+        lightBox.css("margin-left", "-" + offset + "px");
+        
         $("body").scrollTop(0);
 
         var labelsOption = $(".ca_menu_bar").data("labels-option");
@@ -300,10 +321,8 @@ jQuery(function($) {
     }
 
    var getPricingArea = function() {
-   
         el = $('<div>PR</div>').addClass('ca_pricing_area');
-        
-   
+        return el;
    }
 
     var ClientAreaStorage = function(username) {
@@ -389,11 +408,13 @@ jQuery(function($) {
         ClientAreaStorage.call(this);
     }
 
-    //ClientAreaStorageProofs.prototype = Object.create(ClientAreaStorage.prototype);         TODO
-    //ClientAreaStorageProofs.prototype.constructor = ClientAreaStorageProofs;
+
+    Basket = function() {
+    
+    }
 
 
-    //onpageload TODO
+    //onpageload
 
     var pageOn = $("button.ca_thumbs_page");
     var mode = $('.ca_menu_bar').data('mode');
@@ -412,6 +433,7 @@ jQuery(function($) {
     
     if (mode === "prints") {
         var pricingModel = $('.ca_menu_bar').data('pricing-data');
+        var basket = new Basket();
     }
 
 });
