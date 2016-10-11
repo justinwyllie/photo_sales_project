@@ -187,6 +187,8 @@ class ClientArea
      */
     public function controller()
     {
+        $reqAddress = $_SERVER["PHP_SELF"];
+        var_dump("debug", $reqAddress);
 
         if ((isset($_SESSION["user"])) && (!empty($_POST["action"])) && ($_POST["action"] !== "login")) {
             $this->action = $_POST["action"];
@@ -282,6 +284,7 @@ class ClientArea
             $_SESSION["proofsChosen"] = array();
             $_SESSION["printsPagesVisited"] = array();
             $_SESSION["printsChosen"] = array();
+            $_SESSION["basket"] = array();
 
             //If the user is logging in try to restore the proofs chosen based on what was stored in html data if it is available
             if (!empty($restoredProofs)) {
@@ -316,6 +319,9 @@ class ClientArea
                     $_SESSION["printsPagesVisited"] = $restoredPrintsPagesVisitedArray;
                 }
             }
+            
+            //try to restore the basket based on html5 data
+            //TODO
             
             
                                                                
@@ -910,7 +916,7 @@ EOF;
 
         return $result;
     }
-
+    
 
     //TODO move these old pos functions to some utility library
     private function getImageCount($dir)

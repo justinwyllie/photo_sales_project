@@ -204,17 +204,27 @@ jQuery(function($) {
 
         var actualImageWidth = $(this).data("image-width");
         var actualImageHeight = $(this).data("image-height");
+        
+        var enforcedMinWidth = 300;
+        var enforcedMinHeight = 300;
 
         var viewportWidth = $(window).width();
         var safeImageWidth = viewportWidth - 100;
+        if (safeImageWidth < enforcedMinWidth)  {
+            safeImageWidth = enforcedMinWidth;
+        }
         
         var viewportHeight = $(window).height();
         if (mode === 'prints') {
-            var heightAdjuster = 300;
+            var heightAdjuster = 100;      //TODO
         }  else {
             var heightAdjuster = 100;    
         }
-        var safeImageHeight = viewportHeight - heightAdjuster;
+        safeImageHeight = viewportHeight -   heightAdjuster;
+        if (safeImageHeight < enforcedMinHeight)  {
+            safeImageHeight = enforcedMinHeight;
+        }
+                          
         var usedImageWidth;
         //TODO handle case of no image sizes
         if ((actualImageWidth > safeImageWidth) && (actualImageHeight <= safeImageHeight)) {
@@ -240,6 +250,8 @@ jQuery(function($) {
              lightBox.find("img").css({"width": actualImageWidth + ".px", "height": "auto"});
              usedImageWidth = actualImageWidth; 
         }
+        
+        lightBox.css('min-width', usedImageWidth + 'px');
 
         if (mode === 'prints') {
             var pricingArea = getPricingArea();   
@@ -250,6 +262,7 @@ jQuery(function($) {
         $("body").append(overLay);
         $("body").append(lightBox);
         
+        
         var offset = Math.floor(usedImageWidth / 2);
         lightBox.css("margin-left", "-" + offset + "px");
         
@@ -259,10 +272,6 @@ jQuery(function($) {
         if (labelsOption === "on") {
             $(".ca_lightbox_controls").append( $('<div></div>').addClass("ca_lightbox_label").html(ref) );
         }
-
-        var w = $(".ca_lightbox").width();
-        var h = $(".ca_lightbox").height();
-
 
     }
 
@@ -321,7 +330,7 @@ jQuery(function($) {
     }
 
    var getPricingArea = function() {
-        el = $('<div>PR</div>').addClass('ca_pricing_area');
+        el = $('<div id="ca_pricing_area">PR</div>');
         return el;
    }
 
@@ -407,11 +416,55 @@ jQuery(function($) {
         this.username = username;
         ClientAreaStorage.call(this);
     }
+               
 
-
-    Basket = function() {
+    //OrderLine model
+    var OrderLine = Backbone.Model.extend({
+       defaults: {
+            "id": null,
+            "image": "",
+            "print_price": "0.00",
+            "size":"",
+            "mount_price":"",
+            "mount_style":"",
+            "frame_style":"",
+            "frame_price":"0.00",
+            "qty":0
+        }
     
-    }
+    });
+    
+    //OrderLine View - a view to display a single order line
+    var OrderLineView = Backbone.View.extend({
+         
+    
+    });
+    
+    //Basket - collection of OrderLines
+    var BasketCollection =  Backbone.Collection.extend({
+        model: OrderLine,
+        url: "basket" 
+    
+    });
+    
+    //Basket View - gets linked to the Basket Collection which it iterates through to display indiviudal order lines. 
+    //of course we really need a Marionette ItemViewCollection
+    var BasketCollectionView  =  Backbone.View.extend({
+        el: "#ca_pricing_area", 
+        className: "ca_pricing_area" ,
+        
+        initialize: function() {
+            console.log('basketView collection', this.collection)  ;
+            this.render();
+        },
+        
+        render: function() {
+            this.$el.html('basket view says hello')
+        
+        }
+    
+    });
+    
 
 
     //onpageload
@@ -433,7 +486,14 @@ jQuery(function($) {
     
     if (mode === "prints") {
         var pricingModel = $('.ca_menu_bar').data('pricing-data');
-        var basket = new Basket();
+        //popuate from backend session (which itself may have been reloaded via html5 data when they logged in)
+        var basket = new BasketCollection();
+        basket.fetch().then(function() {
+            console.log("order lines ", basket.length);
+          });
+        console.log("basket", basket);
+        var basketCollectionView = new BasketCollectionView({collection: basket});  
+    
     }
 
 });

@@ -57,6 +57,8 @@ if you don't offer mounted prints just leave out the mounted_price elements.
 if you don't offer a frame style for a given print size just leave it out of the frame_prices section for that size
 
 prices must be to 2 decimal places 
+
+- framed assumes mounting - is in road map to offer option for framed but not mounted
 -->
 
     <print_sizes>

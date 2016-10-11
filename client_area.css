@@ -365,7 +365,7 @@ NB. For responsiveness to work as expected your container page should include so
 
 /*
     this is about the alignment of controls on the login page on mobile
-    TODO may need improving
+    TODO may need improving        not mobile first 
 */
 
 @media only screen and (max-width : 767px)   {
@@ -398,4 +398,10 @@ NB. For responsiveness to work as expected your container page should include so
         margin-right: 0px;
     }
 
+}
+
+.ca_pricing_area
+{
+    min-width: 300px;
+    font-size: 10px;
 }
