@@ -133,7 +133,6 @@ jQuery(function($) {
     $("#ca_content_area").on("click", ".ca_proof_event", function(evt) {
 
         var allPagesVisited = $(".ca_menu_bar").data("all-proofs-pages-visited");
-        console.log('proofs', allPagesVisited);
         var okText = $(".ca_menu_bar").data("ok-text");
 
         if (allPagesVisited === "yes") {
@@ -254,13 +253,16 @@ jQuery(function($) {
         lightBox.css('min-width', usedImageWidth + 'px');
 
         if (mode === 'prints') {
-            var pricingArea = getPricingArea();   
-            lightBox.append(pricingArea);
+            lightBox.append('<div id="ca_pricing_area">PR</div>');
         }
                    
         $(".ca_message_pop_up").remove();
         $("body").append(overLay);
         $("body").append(lightBox);
+        
+        if (mode == 'prints') {
+            renderPricingArea(ref);
+        }
         
         
         var offset = Math.floor(usedImageWidth / 2);
@@ -329,9 +331,24 @@ jQuery(function($) {
 
     }
 
-   var getPricingArea = function() {
-        el = $('<div id="ca_pricing_area">PR</div>');
-        return el;
+   var renderPricingArea = function(ref) {
+        //console.log(pricingModel);
+        console.log('basket', basket);
+        console.log(ref);
+        
+        //filter the bsaket for this ref
+        //use the filtered basket to instanitae a basketCollectionView
+        //call the render method on that which uses the order line view to show the indivual order lines
+        
+        //be aware that the ids have been cpied from the main basket 
+        var basketForThisImage = basket.byImage(ref);
+        console.log('basketForThisImage2', basketForThisImage);
+        
+        //hmm what is the lifespan of this?
+        var basketCollectionView = new BasketCollectionView({collection: basketForThisImage});  
+        
+        
+
    }
 
     var ClientAreaStorage = function(username) {
@@ -436,14 +453,27 @@ jQuery(function($) {
     
     //OrderLine View - a view to display a single order line
     var OrderLineView = Backbone.View.extend({
-         
+        tagName: 'div',
+        render: function() {
+            var html = this.model.toJSON().frame_style; //in fact from template   & prob. a list
+            this.$el.html(html);
+            return this;
+        }    
+        
     
     });
     
     //Basket - collection of OrderLines
     var BasketCollection =  Backbone.Collection.extend({
         model: OrderLine,
-        url: "basket" 
+        url: "basket",
+        
+        byImage: function (ref) {
+          filtered = this.filter(function (orderLine) {
+              return orderLine.get("image") === ref;
+          });
+          return new BasketCollection(filtered);
+        } 
     
     });
     
@@ -454,12 +484,18 @@ jQuery(function($) {
         className: "ca_pricing_area" ,
         
         initialize: function() {
-            console.log('basketView collection', this.collection)  ;
-            this.render();
+                 this.render();
         },
         
         render: function() {
-            this.$el.html('basket view says hello')
+            this.$el.html() ;
+            
+            this.collection.each(function(orderLine) {
+                //TODO - is each one deleted from memory by the assignment?
+                var orderLine = new OrderLineView({model: orderLine});
+                this.$el.append(orderLine.render().$el);
+
+	       }, this);
         
         }
     
@@ -489,10 +525,8 @@ jQuery(function($) {
         //popuate from backend session (which itself may have been reloaded via html5 data when they logged in)
         var basket = new BasketCollection();
         basket.fetch().then(function() {
-            console.log("order lines ", basket.length);
           });
-        console.log("basket", basket);
-        var basketCollectionView = new BasketCollectionView({collection: basket});  
+        
     
     }
 
