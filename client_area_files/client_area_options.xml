@@ -9,6 +9,7 @@
             <clientAreaUrl>/client_area_files</clientAreaUrl>
             <!-- web path to the Javascript files -->
             <jsUrl>/client_area.js</jsUrl>
+            <appUrl>/client_area_app.js</appUrl>
             <underscoreUrl>/underscore.js</underscoreUrl>
             <backboneUrl>/backbone.js</backboneUrl>
             <!-- web path to the CSS file -->

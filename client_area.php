@@ -135,6 +135,7 @@ class ClientArea
         $displayOptions = $client_area_options->options->display;
 
         $this->jsUrl = $systemOptions->jsUrl . "";
+        $this->appUrl = $systemOptions->appUrl . "";
         $this->underscoreUrl = $systemOptions->underscoreUrl . "";
         $this->backboneUrl = $systemOptions->backboneUrl . "";
         $this->cssUrl = $systemOptions->cssUrl . "";
@@ -1019,9 +1020,11 @@ EOF;
 
         //build header
         $headerContent = <<<EOT
-        <script src="$this->jsUrl"></script>
         <script src="$this->underscoreUrl"></script>
         <script src="$this->backboneUrl"></script>
+        <script src="$this->appUrl"></script>
+        <script src="$this->jsUrl"></script>
+ 
         <link rel="stylesheet" href="$this->cssUrl" type="text/css">
 
 EOT;
