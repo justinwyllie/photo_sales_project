@@ -17,8 +17,8 @@
 
 session_start();
 $clientArea = new ClientArea;
-$clientArea->controller();
-$clientArea->run();
+$clientArea->controller();  //sets everything up
+$clientArea->run();         //runs the determined action
 
 
 class ClientArea
@@ -38,8 +38,7 @@ class ClientArea
         $this->optionsPath = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_options.xml";
         $this->accountsPath = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_accounts.xml";
         $this->langPath = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_lang.xml";
-        $this->pricingPath =  $this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_pricing.xml";
-
+   
         $this->template = "client_area_template.php";
         #url path from the web root to this file. normally it will be placed in the web root
         $this->imageProvider = "/client_area_image_provider.php";
@@ -74,6 +73,8 @@ class ClientArea
             
             $this->accounts[$user]["customPrintsMessage"] = $options->customPrintsMessage . "";
             $this->accounts[$user]["thumbsPerPage"] = (int) $options->thumbsPerPage ;
+            
+            $_SESSION["client_area_directory_path"]   = $this->clientAreaDirectory;
         }
     }
 
@@ -183,7 +184,7 @@ class ClientArea
 
     /**
      * Check that there is a session and an action
-     * Act appropriately.
+     * Set the action which will be run (see method 'run')
      *
      */
     public function controller()
@@ -451,13 +452,11 @@ EOF;
         if ($mode == 'proofs') {
             $userMessage = $this->lang("proofsMessage");
             $customMessage = $account["customProofsMessage"];
-            $pricingData = '';
         } 
         else
         {
             $userMessage = $this->lang("printsMessage");
             $customMessage = $account["customPrintsMessage"];
-            $pricingData = $this->loadPricingData();
         }
                                                         
         $thumb = $this->lang("thumb");
@@ -592,7 +591,6 @@ EOF;
         $dataAttributes["username"] = $_SESSION["user"];
         $dataAttributes["critical-error-message"] = $this->lang("criticalErrorMessage");
         $dataAttributes["mode"] = $mode;
-        $dataAttributes["pricing-data"] = $pricingData;
         $mainBar = $this->caProofsBar($dataAttributes, $message);
         $subBar = $this->caSubBar($pageHtml, true, false, $proofsChosenCount, $mode);
 
@@ -624,19 +622,6 @@ EOF;
     private function showPrintsScreen()
     {                                    
         return $this->showThumbsScreen('prints');
-    }
-
-    private function loadPricingData()
-    {
-        $pricingData = simplexml_load_file($this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_pricing.xml");
-        
-        if ($pricingData === false) {
-            $this->destroySession();
-            $this->terminateScript("Missing or broken user pricing file");
-        } else {
-           $pricingDataJson = json_encode($pricingData);
-           return $pricingDataJson;
-        }    
     }
 
     private function caProofsBar($dataAttributes, $message)
@@ -968,6 +953,23 @@ EOF;
 
         return $pages;
     }
+    
+    private function appTemplates() 
+    {
+    
+        $html=<<<EOF
+            <script type="text/html" id="ca_order_line_tmpl">
+                <select id="ca_order_line_size">
+                    <option value="--">Select..</option>
+                    <% _.each(data.pricingModel.mounts, function(mount){ %>
+                        <option value="<%= mount.mount %>"><%= mount.mount %></option>
+                    <% }); %>    
+                </select>
+        </script>
+EOF;
+        return $html;    
+    
+    }
 
     private function pageHtml($pageIndex, $thumbsPerPage, $numberOfThumbs)
     {
@@ -1000,6 +1002,7 @@ EOF;
         }
 
         $output.= '</div>';
+        $output.= $this->appTemplates(); 
         return $output;
 
     }
