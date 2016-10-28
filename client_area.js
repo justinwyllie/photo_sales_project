@@ -336,19 +336,18 @@
   
      var renderPricingArea = function(ref) {
           //console.log(pricingModel);
-          console.log('basket', basket);
-          console.log(ref);
+
           
           //filter the bsaket for this ref
           //use the filtered basket to instanitae a basketCollectionView
           //call the render method on that which uses the order line view to show the indivual order lines
           
           //be aware that the ids have been cpied from the main basket 
-          var basketForThisImage = basket.byImage(ref);
-          console.log('basketForThisImage2', basketForThisImage);
+          //var basketForThisImage = basket.byImage(ref);
+
           
           //hmm what is the lifespan of this?
-          var basketCollectionView = new app.BasketCollectionView({collection: basketForThisImage});  
+          var basketCollectionView = new app.BasketCollectionView({collection: basket, ref: ref});  
           
           
   
@@ -454,15 +453,15 @@
       }
       
       
-      if (mode === "prints") {
-          var pricingModel = $('.ca_menu_bar').data('pricing-data');
-          //popuate from backend session (which itself may have been reloaded via html5 data when they logged in)
-          var basket = new app.BasketCollection();
-          basket.fetch().then(function() {
-            });
+    if (mode === "prints") {
+        //popuate from backend session (which itself may have been reloaded via html5 data when they logged in)
+        var pricingModel = new app.PricingModel();
+        pricingModel.fetch().then(function(x) {
+            var basket = new app.BasketCollection({pricingModel: pricingModel});
+            basket.fetch();                                  
+        });
           
-      
-      }
+    }
   
   });
 
