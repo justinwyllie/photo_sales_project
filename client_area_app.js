@@ -31,7 +31,6 @@ var caApp = (function (Backbone) {
         
         initialize: function(options) {
             this.pricingModel = options.pricingModel.get("pricingModel");
-            console.log("pricingModel", this.pricingModel);
         },
         
         byImage: function (ref) {
@@ -49,7 +48,6 @@ var caApp = (function (Backbone) {
         template: null,
         initialize: function() {
             tmpl =  $('#ca_order_line_tmpl').html();
-            console.log("template is", tmpl);
             this.template = _.template(tmpl);
         },
         render: function() {
