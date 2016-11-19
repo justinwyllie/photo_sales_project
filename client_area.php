@@ -190,7 +190,6 @@ class ClientArea
     public function controller()
     {
         $reqAddress = $_SERVER["PHP_SELF"];
-        var_dump("debug", $reqAddress);
 
         if ((isset($_SESSION["user"])) && (!empty($_POST["action"])) && ($_POST["action"] !== "login")) {
             $this->action = $_POST["action"];

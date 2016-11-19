@@ -212,9 +212,10 @@
   
           var viewportWidth = $(window).width();
           var safeImageWidth = viewportWidth - 100;
-          if (safeImageWidth < enforcedMinWidth)  {
-              safeImageWidth = enforcedMinWidth;
-          }
+
+          //if (safeImageWidth < enforcedMinWidth)  {
+          //    safeImageWidth = enforcedMinWidth;
+          //}
           
           var viewportHeight = $(window).height();
           if (mode === 'prints') {
@@ -223,9 +224,9 @@
               var heightAdjuster = 100;    
           }
           safeImageHeight = viewportHeight -   heightAdjuster;
-          if (safeImageHeight < enforcedMinHeight)  {
-              safeImageHeight = enforcedMinHeight;
-          }
+          //if (safeImageHeight < enforcedMinHeight)  {
+          //    safeImageHeight = enforcedMinHeight;
+          //}
                             
           var usedImageWidth;
           //TODO handle case of no image sizes
@@ -237,8 +238,8 @@
                var resizedProportion = safeImageHeight / actualImageHeight;
                usedImageWidth = Math.round(actualImageWidth *  resizedProportion);
           } else if ((actualImageWidth > safeImageWidth)  && (actualImageHeight > safeImageHeight)) {    
-              var widthExceedsRatio = actualImageWidth /  actualImageWidth;
-              var heightExceedsRatio = actualImageHeight /  actualImageHeight;
+              var widthExceedsRatio = actualImageWidth /  safeImageWidth;
+              var heightExceedsRatio = actualImageHeight /  safeImageHeight;
               if (widthExceedsRatio >  heightExceedsRatio) {
                    lightBox.find("img").css({"width": safeImageWidth + ".px", "height": "auto"});
                    usedImageWidth = safeImageWidth; 
