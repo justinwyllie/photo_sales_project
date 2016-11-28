@@ -21,7 +21,7 @@ class imageProvider {
 
     //absolute path on your system to the client_area_files directory
     //TODO - it would be nice if this didn't have to be set in all the PHP files
-    private $clientAreaDirectory = "/var/www/vhosts/justinwylliephotography.com/client_area_files";
+    private $clientAreaDirectory = "/var/www/vhosts/mms-oxford.com/jwp.mms-oxford.com/client_area_files";
 
     public function __construct($size, $mode, $file, $user) {
         $this->user = $user;

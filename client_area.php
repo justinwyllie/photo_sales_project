@@ -33,7 +33,7 @@ class ClientArea
     public function __construct()
     {   
         //absolute path on your system to the client_area_files directory
-        $this->clientAreaDirectory = "/var/www/vhosts/justinwylliephotography.com/client_area_files";
+        $this->clientAreaDirectory = "/var/www/vhosts/mms-oxford.com/jwp.mms-oxford.com/client_area_files";
 
         $this->optionsPath = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_options.xml";
         $this->accountsPath = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_accounts.xml";
