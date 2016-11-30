@@ -40,9 +40,9 @@ class ClientAreaAPI
         $result = new stdClass();
         $basket = $_SESSION["basket"];
         //dummy data
-        $basket[] = array("id"=>1, "image" => "image001.jpg", "print_price"=>"5.00", "size"=>"9x6", "mount_price"=>"15.00", "mount_style"=>"White", "frame_style"=>"A", "frame_price"=>"25.00", "qty"=>"1");
-        $basket[] = array("id"=>3, "image" => "image001.jpg", "print_price"=>"5.00", "size"=>"9x6", "mount_price"=>"15.00", "mount_style"=>"White", "frame_style"=>"C", "frame_price"=>"50.00", "qty"=>"2");
-        $basket[] = array("id"=>2, "image" => "image002.jpg", "size"=>"9x6", "print_price"=>"5.00");
+        $basket[] = array("id"=>1, "image" => "image-001.jpg", "print_price"=>"5.00", "size"=>"9x6", "mount_price"=>"15.00", "mount_style"=>"White", "frame_style"=>"A", "frame_price"=>"25.00", "qty"=>"1");
+        $basket[] = array("id"=>3, "image" => "image-001.jpg", "print_price"=>"5.00", "size"=>"9x6", "mount_price"=>"15.00", "mount_style"=>"White", "frame_style"=>"C", "frame_price"=>"50.00", "qty"=>"2");
+        $basket[] = array("id"=>2, "image" => "image-002.jpg", "size"=>"9x6", "print_price"=>"5.00");
           
         return $basket;
   

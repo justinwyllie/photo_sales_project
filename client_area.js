@@ -205,7 +205,9 @@
           var overLay = $('<div></div>').attr("id", "ca_lightbox_overlay");
   
           var actualImageWidth = $(this).data("image-width");
-          var actualImageHeight = $(this).data("image-height");
+          var actualImageHeight = $(this).data("image-height"); 
+          //TODO - what if same?  
+          var ratio = (Math.max(actualImageWidth, actualImageHeight)) / (Math.min(actualImageWidth, actualImageHeight));
           
           var enforcedMinWidth = 300;
           var enforcedMinHeight = 300;
@@ -265,11 +267,13 @@
           $("body").append(lightBox);
           
           if (mode == 'prints') {
-              renderPricingArea(ref);
+              console.log('rendering price area with ref', ref, basketCollection);
+              renderPricingArea(ref, ratio, basketCollection);
           }
           
           
           var offset = Math.floor(usedImageWidth / 2);
+          console.log('offset', usedImageWidth, offset);
           lightBox.css("margin-left", "-" + offset + "px");
           
           $("body").scrollTop(0);
@@ -335,20 +339,11 @@
   
       }
   
-     var renderPricingArea = function(ref) {
-          //console.log(pricingModel);
-
-          
-          //filter the bsaket for this ref
-          //use the filtered basket to instanitae a basketCollectionView
-          //call the render method on that which uses the order line view to show the indivual order lines
-          
-          //be aware that the ids have been cpied from the main basket 
-          //var basketForThisImage = basket.byImage(ref);
-
+     var renderPricingArea = function(ref, ratio, basket) {
           
           //hmm what is the lifespan of this?
-          var basketCollectionView = new app.BasketCollectionView({collection: basket, ref: ref});  
+          console.log('renderPricingArea called with', ref, ratio, basket);
+          var basketCollectionView = new app.BasketCollectionView({collection: basket, ref: ref, ratio: ratio, pricingModel: pricingModel});  
           
           
   
@@ -453,13 +448,15 @@
   
       }
       
-      
+    //TODO - these are globals in the outer closure. can we improve this?   
+    var pricingModel;
+    var basketCollection;  
     if (mode === "prints") {
         //popuate from backend session (which itself may have been reloaded via html5 data when they logged in)
-        var pricingModel = new app.PricingModel();
+        pricingModel = new app.PricingModel();
         pricingModel.fetch().then(function(x) {
-            var basket = new app.BasketCollection({pricingModel: pricingModel});
-            basket.fetch();                                  
+            basketCollection = new app.BasketCollection();
+            basketCollection.fetch();                                  
         });
           
     }
