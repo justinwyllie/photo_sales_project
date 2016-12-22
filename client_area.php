@@ -958,10 +958,10 @@ EOF;
     
         $html=<<<EOF
             <script type="text/html" id="ca_order_line_tmpl">
-                <select id="ca_order_line_size">
+                <select class="ca_order_line_size">
                     <option value="--">Select..</option>
-                    <% _.each(data.pricingModel.mounts, function(mount){ %>
-                        <option value="<%= mount.mount %>"><%= mount.mount %></option>
+                    <% _.each(printSizes.sizeGroup.sizes.size, function(size){ %>
+                        <option value="<%= size.value %>"><%= size.display %></option>
                     <% }); %>    
                 </select>
         </script>

@@ -207,7 +207,9 @@
           var actualImageWidth = $(this).data("image-width");
           var actualImageHeight = $(this).data("image-height"); 
           //TODO - what if same?  
-          var ratio = (Math.max(actualImageWidth, actualImageHeight)) / (Math.min(actualImageWidth, actualImageHeight));
+          var ratio = (Math.max(actualImageWidth, actualImageHeight)) / (Math.min(actualImageWidth, actualImageHeight)).toFixed(2);
+          ratio = ratio.toFixed(2);
+          console.log("ratio", ratio);
           
           var enforcedMinWidth = 300;
           var enforcedMinHeight = 300;
@@ -266,9 +268,10 @@
           $("body").append(overLay);
           $("body").append(lightBox);
           
-          if (mode == 'prints') {
-              console.log('rendering price area with ref', ref, basketCollection);
-              renderPricingArea(ref, ratio, basketCollection);
+          if (mode == 'prints') {                                                             
+              //basketCollection, pricingModel are globals set up on page load. TODO  
+              console.log('rendering price area with ref', ref, basketCollection, pricingModel);
+              renderPricingArea(ref, ratio, basketCollection, pricingModel);
           }
           
           
@@ -339,11 +342,11 @@
   
       }
   
-     var renderPricingArea = function(ref, ratio, basket) {
+     var renderPricingArea = function(ref, ratio, basketCollection, pricingModel) {
           
           //hmm what is the lifespan of this?
-          console.log('renderPricingArea called with', ref, ratio, basket);
-          var basketCollectionView = new app.BasketCollectionView({collection: basket, ref: ref, ratio: ratio, pricingModel: pricingModel});  
+          console.log('DEBUG', pricingModel);
+          var basketCollectionView = new app.BasketCollectionView({collection: basketCollection, ref: ref, ratio: ratio, pricingModel: pricingModel});  
           
           
   
@@ -454,7 +457,8 @@
     if (mode === "prints") {
         //popuate from backend session (which itself may have been reloaded via html5 data when they logged in)
         pricingModel = new app.PricingModel();
-        pricingModel.fetch().then(function(x) {
+        console.log("pricingModel", pricingModel);
+        pricingModel.fetch().then(function() {
             basketCollection = new app.BasketCollection();
             basketCollection.fetch();                                  
         });

@@ -51,8 +51,8 @@ class ClientAreaAPI
   public function getPricing() 
   {                                          
       $pricingModel = simplexml_load_file($this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_pricing.xml" );
-      $obj = new stdClass();
-      $obj->pricingModel = $pricingModel;
+      //$obj = new stdClass();
+      // $obj->pricingModel = $pricingModel;
       if ($pricingModel === false) 
       {
           //TODO implement this
@@ -60,7 +60,7 @@ class ClientAreaAPI
           //$this->terminateScript("Missing or broken user options file for " . $user);
       }   
          
-      return $obj;
+      return $pricingModel;
   }
   
   

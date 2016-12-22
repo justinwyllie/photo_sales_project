@@ -42,195 +42,196 @@
     </frames>
     
 
-<!-- a size_group section will match to the ratio of the image and show the size of prints with their pricing
+<!-- a sizeGroup section will match to the ratio of the image and show the size of prints with their pricing
 you offer. this sample file shows 4 standard ratios.
 the software will match the closest ratio. in cases where it is not an exact match you will have to crop the order.
 standard ratios e.g. 1.5(3:2), 1:1 and 1.25 (5:4) and (16:9) will cover most cases. but if you crop to unusual sizes
 you will have a problem - in such a case you will need to crop the final image or frame it to fit.
 
 for each ratio match you can offer multiple sizes.
+ratios must be to 2 decimal places e.g. 1.50 not 1.5 and 1.00 not 1
 
 for the display section (what the user sees) use &quot; for "
 
-if you don't offer mounted prints just leave out the mounted_price elements. 
+if you don't offer mounted prints just leave out the mountedPrice elements. 
 
-if you don't offer a frame style for a given print size just leave it out of the frame_prices section for that size
+if you don't offer a frame style for a given print size just leave it out of the framePrices section for that size
 
-prices must be to 2 decimal places 
+prices must be to 2 decimal places  
 
 - framed assumes mounting - is in road map to offer option for framed but not mounted
 -->
 
-    <print_sizes>
+    <printSizes>
 
-        <size_group>
-            <ratio>1.5</ratio>
+        <sizeGroup>
+            <ratio>1.50</ratio>
             <sizes>
                 <size>
                     <value>9x6</value>
                     <display>9&quot;  x 6&quot;</display>
-                    <print_price>3.00</print_price>
-                    <mounted_price>15.00</mounted_price>
-                    <frame_prices>
-                        <frame_price>
+                    <printPrice>3.00</printPrice>
+                    <mountedPrice>15.00</mountedPrice>
+                    <framePrices>
+                        <framePrice>
                             <style>A</style>
                             <price>20.00</price>
-                        </frame_price>
-                        <frame_price>
+                        </framePrice>
+                        <framePrice>
                             <style>B</style>
                             <price>20.00</price>
-                        </frame_price>
-                        <frame_price>
+                        </framePrice>
+                        <framePrice>
                             <style>C</style>
                             <price>50.00</price>
-                        </frame_price>
-                        <frame_price>
+                        </framePrice>
+                        <framePrice>
                             <style>D</style>
                             <price>50.00</price>
-                        </frame_price>
-                    </frame_prices>
+                        </framePrice>
+                    </framePrices>
                 </size>
               <size>
                     <value>12x8</value>
                     <display>12&quot;  x 8&quot;</display>
-                    <print_price>3.50</print_price>
-                    <mounted_price>20.00</mounted_price>
-                    <frame_prices>
-                        <frame_price>
+                    <printPrice>3.50</printPrice>
+                    <mountedPrice>20.00</mountedPrice>
+                    <framePrices>
+                        <framePrice>
                             <style>A</style>
                             <price>25.00</price>
-                        </frame_price>
-                        <frame_price>
+                        </framePrice>
+                        <framePrice>
                             <style>B</style>
                             <price>25.00</price>
-                        </frame_price>
-                        <frame_price>
+                        </framePrice>
+                        <framePrice>
                             <style>C</style>
                             <price>60.00</price>
-                        </frame_price>
-                        <frame_price>
+                        </framePrice>
+                        <framePrice>
                             <style>D</style>
                             <price>60.00</price>
-                        </frame_price>
-                    </frame_prices>
+                        </framePrice>
+                    </framePrices>
                 </size>
             </sizes>
-        </size_group>
+        </sizeGroup>
 
-        <size_group>
+        <sizeGroup>
             <ratio>1.25</ratio>
             <sizes>
                 <size>
                     <value>10x8</value>
                     <display>10&quot;  x 8&quot;</display>
-                    <print_price>3.50</print_price>
-                    <mounted_price>20.00</mounted_price>
-                    <frame_prices>
-                        <frame_price>
+                    <printPrice>3.50</printPrice>
+                    <mountedPrice>20.00</mountedPrice>
+                    <framePrices>
+                        <framePrice>
                             <style>A</style>
                             <price>25.00</price>
-                        </frame_price>
-                        <frame_price>
+                        </framePrice>
+                        <framePrice>
                             <style>B</style>
                             <price>25.00</price>
-                        </frame_price>
-                        <frame_price>
+                        </framePrice>
+                        <framePrice>
                             <style>C</style>
                             <price>60.00</price>
-                        </frame_price>
-                        <frame_price>
+                        </framePrice>
+                        <framePrice>
                             <style>D</style>
                             <price>60.00</price>
-                        </frame_price>
-                    </frame_prices>
+                        </framePrice>
+                    </framePrices>
 
                 </size>
               <size>
                     <value>20x16</value>
                     <display>20&quot;  x 16&quot;</display>
-                    <print_price>4.00</print_price>
-                    <mounted_price>25.00</mounted_price>
-                    <frame_prices>
-                        <frame_price>
+                    <printPrice>4.00</printPrice>
+                    <mountedPrice>25.00</mountedPrice>
+                    <framePrices>
+                        <framePrice>
                             <style>A</style>
                             <price>35.00</price>
-                        </frame_price>
-                        <frame_price>
+                        </framePrice>
+                        <framePrice>
                             <style>B</style>
                             <price>35.00</price>
-                        </frame_price>
-                    </frame_prices>
+                        </framePrice>
+                    </framePrices>
                 </size>
             </sizes>
-        </size_group>
+        </sizeGroup>
 
-        <size_group>
-            <ratio>1</ratio>
+        <sizeGroup>
+            <ratio>1.00</ratio>
             <sizes>
                 <size>
                     <value>10x10</value>
                     <display>10&quot;  x 10&quot;</display>
-                    <print_price>3.50</print_price>
-                    <mounted_price>20.00</mounted_price>
-                    <frame_prices>
-                        <frame_price>
+                    <printPrice>3.50</printPrice>
+                    <mountedPrice>20.00</mountedPrice>
+                    <framePrices>
+                        <framePrice>
                             <style>A</style>
                             <price>25.00</price>
-                        </frame_price>
-                        <frame_price>
+                        </framePrice>
+                        <framePrice>
                             <style>B</style>
                             <price>25.00</price>
-                        </frame_price>
-                        <frame_price>
+                        </framePrice>
+                        <framePrice>
                             <style>C</style>
                             <price>60.00</price>
-                        </frame_price>
-                        <frame_price>
+                        </framePrice>
+                        <framePrice>
                             <style>D</style>
                             <price>60.00</price>
-                        </frame_price>
-                    </frame_prices>  
+                        </framePrice>
+                    </framePrices>  
                 </size>
               <size>
                     <value>15x15</value>
                     <display>15&quot;  x 15&quot;</display>
-                    <print_price>4.00</print_price>
-                    <mounted_price>25.00</mounted_price>
-                     <frame_prices>
-                        <frame_price>
+                    <printPrice>4.00</printPrice>
+                    <mountedPrice>25.00</mountedPrice>
+                     <framePrices>
+                        <framePrice>
                             <style>A</style>
                             <price>35.00</price>
-                        </frame_price>
-                        <frame_price>
+                        </framePrice>
+                        <framePrice>
                             <style>B</style>
                             <price>35.00</price>
-                        </frame_price>
-                    </frame_prices>
+                        </framePrice>
+                    </framePrices>
                 </size>
             </sizes>
-        </size_group>
+        </sizeGroup>
 
-        <size_group>
+        <sizeGroup>
             <ratio>1.77</ratio>
             <sizes>
                 <size>
                     <value>16x9</value>
                     <display>16&quot;  x 9&quot;</display>
-                    <print_price>4.50</print_price>
-                    <mounted_price>20.00</mounted_price>
-                    <frame_prices>
-                        <frame_price>
+                    <printPrice>4.50</printPrice>
+                    <mountedPrice>20.00</mountedPrice>
+                    <framePrices>
+                        <framePrice>
                             <style>A</style>
                             <price>35.00</price>
-                        </frame_price>
-                        <frame_price>
+                        </framePrice>
+                        <framePrice>
                             <style>B</style>
                             <price>35.00</price>
-                        </frame_price>
-                    </frame_prices>  
+                        </framePrice>
+                    </framePrices>  
                 </size>
             </sizes>
-        </size_group>
+        </sizeGroup>
 
-    </print_sizes>
+    </printSizes>
 </client_area_pricing>

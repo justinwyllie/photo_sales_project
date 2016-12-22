@@ -55,22 +55,41 @@ var caApp = (function (Backbone) {
         },
         
         render: function() {
-            //var html = this.model.get('id') + this.model.get('image') + this.model.get('frame_style')   ; //in fact from template   & prob. a list
-            
-            //we need the priceModel we have it pricingModel
-            //drop-down of print sizes showing selected | drop-down of mount styles showing selected or 'Select..' | drop-down of frame styles showing style or 'Select..' | qty - box | update button | delete button
             var data = {};
-            //this actually is a model - we want the json representation here?
-            data.pricingModel = this.options.pricingModel;
-            console.log('and here is our orderLine ', this.options, this.model);
-            //data.pricingModel = pricingModel;
-            var html = this.template(data);
-            var html = this.options.ref;
-            this.$el.html(html);
-            return this;
+            var pricingModel = this.options.pricingModel.toJSON();
+            //pull out only the size we want
+            var applicableSizeGroup = null;
+            that = this;
+            _.each(pricingModel.printSizes.sizeGroup, function(sizeGroup) {
+                if (sizeGroup.ratio == that.options.ratio) {
+                    applicableSizeGroup = sizeGroup;    
+                }
+            });
+            //TODO what is applicableSizeGroup is null i.e. no match? it means the pricing xml file has not been set up for the ratio of this image. 
+            //what to do? ideally notify owneer by an ajax call to send an email - we can't display anything
+            console.log("applicableSizeGroup", applicableSizeGroup);
+            
+            if (applicableSizeGroup === null) 
+            {
+                //TODO front-end language strings
+                //this works because the first time the user wld see this and would not be able to order anything so we would not see this repeated. not very elegant. TDOO
+                var html = "Sorry. A configuration error has occured. Please contact the site owner." ;
+                this.$el.html(html);
+                return this;
+            }  
+            else 
+            {
+                pricingModel.printSizes.sizeGroup = applicableSizeGroup;
+                data = pricingModel;
+                if (this.model !== null) {
+                    data.order = this.model.toJSON();
+                }
+                console.log("DATA", data);
+                var html = this.template(data);
+                this.$el.html(html);
+                return this;    
+            }
         }    
-        
-    
     });
     
    
@@ -88,9 +107,10 @@ var caApp = (function (Backbone) {
         
         render: function() {
             this.$el.html() ;
+            //1. render existing orders
             this.collection.each(function(orderLine) {
                console.log('orderLine is', this, orderLine)  ;
-               if (orderLine.get('image') == this.options.ref) {
+               if (orderLine.get('image') == (this.options.ref + 'sss')) {   //the being rendered image is in the basketColletion i.e. it already has an order line 
                   //TODO - is each one deleted from memory by the assignment?
                   //orderLine is an item in the order e.g. a print with its size, mount, frame etc.
                   var orderLineView = new app.OrderLineView({model: orderLine, ref: this.options.ref, 
@@ -99,6 +119,11 @@ var caApp = (function (Backbone) {
                 }
 
 	       }, this);
+           //2. render a fresh blank order line
+          var orderLineView = new app.OrderLineView({model: null, ref: this.options.ref, 
+                    ratio: this.options.ratio, pricingModel: this.options.pricingModel});
+          this.$el.append(orderLineView.render().$el);
+           
         
         }
     
