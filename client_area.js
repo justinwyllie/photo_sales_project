@@ -217,7 +217,7 @@
           var viewportHeight = $(window).height();
           
           var safeImageWidth = viewportWidth - 100;
-          var safeImageHeight = viewportHeight - heightAdjuster;
+          var safeImageHeight = viewportHeight - 100;
           var heightAdjuster = 100;      
 
           var usedImageWidth;
@@ -259,43 +259,23 @@
             var lightBoxWidthFraction = 0.95;
             var lightBoxWidthPercent = (100*lightBoxWidthFraction)  + '%';
             var lightBoxWidth = maxPopupWidth + 'px'; 
+           
             
+            lightBox.css({'max-width': lightBoxWidth ,'width': lightBoxWidthPercent}); 
             
-            if  ((viewportWidth - 100)  > maxPopupWidth)
+            if (actualImageHeight > (safeImageHeight)) //height is too big (portrait images on landscape orientation phones)
             {
-               
-                var lightBoxWidthNumericPixels =  maxPopupWidth;
-                
-                if (actualImageWidth > maxPopupWidth) {
-                    usedImageWidth = maxPopupWidth;
-                } 
-                else
-                {
-                    usedImageWidth =  actualImageWidth;   
-                } 
-                
+                //problem is that we can't set img width auto in case it > than width of containing div 
+                //so we have to calculate a new width and set that 
+                var heightExceedsRatio = actualImageHeight /  safeImageHeight;
+                var modifiedWidth = actualImageWidth /  heightExceedsRatio;
+                lightBox.find("img").css({"max-width": Math.floor(modifiedWidth) + "px", "width": "100%"});   
             }
             else
             {
-                
-                safeImageWidth =  (lightBoxWidthFraction * viewportWidth);
-                var lightBoxWidthNumericPixels = safeImageWidth;
-                if (actualImageWidth > safeImageWidth)
-                {
-                    usedImageWidth = safeImageWidth; 
-                }
-                else
-                {
-                    usedImageWidth = actualImageWidth;     
-                }
-              
+                lightBox.find("img").css({"max-width": Math.floor(actualImageWidth) + "px", "width": "100%", "height": "auto"});
             }
-            
-            lightBox.css({'max-width': lightBoxWidth ,'width': lightBoxWidthPercent}); 
-            lightBox.find("img").css({"max-width": Math.floor(actualImageWidth) + "px", "width": "100%", "height": "auto"});
-            
-            //var offset = (lightBoxWidthNumericPixels / 2);
-            //lightBox.css("margin-left", "-" + Math.floor(offset) + "px"); 
+
         }
           
           
