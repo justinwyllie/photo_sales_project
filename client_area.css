@@ -291,17 +291,26 @@ button.ca_menu_button
     text-align: center;
 }
 
-
-
 .ca_lightbox
 {
     border: 1px solid #000000;
     position: absolute;
-    top: 10%;
-    left: 50%;
-    display: inline-block;
+    display: block;
     background-color: #ffffff;
     z-index: 1001; /* > than for #ca_lightbox_overlay */
+}
+
+.ca_lightbox.ca_proofs
+{
+    top: 10%;
+    left: 50%;
+}
+
+.ca_lightbox.ca_prints
+{
+
+    top: 0px;
+    left: 0px;
 }
 
 .ca_print_login.ca_additional_instructions
@@ -400,8 +409,17 @@ NB. For responsiveness to work as expected your container page should include so
 
 }
 
-.ca_pricing_area
+
+
+#ca_pricing_area
 {
-    min-width: 300px;
     font-size: 10px;
+    text-align: left;
+    padding: 10px;
+    width: 100%;
+}
+
+.ca_lightbox_image
+{
+    text-align: left;
 }

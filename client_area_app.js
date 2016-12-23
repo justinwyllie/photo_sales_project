@@ -72,14 +72,14 @@ var caApp = (function (Backbone) {
             if (applicableSizeGroup === null) 
             {
                 //TODO front-end language strings
-                //this works because the first time the user wld see this and would not be able to order anything so we would not see this repeated. not very elegant. TDOO
+                //this works because the first time the user wld see this -if not match to image ratio in prcingModel -  and would not be able to order anything so we would not see this repeated. not very elegant. TDOO
                 var html = "Sorry. A configuration error has occured. Please contact the site owner." ;
                 this.$el.html(html);
                 return this;
             }  
             else 
             {
-                pricingModel.printSizes.sizeGroup = applicableSizeGroup;
+                pricingModel.printSizes.applicableSizeGroup = applicableSizeGroup;
                 data = pricingModel;
                 if (this.model !== null) {
                     data.order = this.model.toJSON();

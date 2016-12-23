@@ -960,7 +960,7 @@ EOF;
             <script type="text/html" id="ca_order_line_tmpl">
                 <select class="ca_order_line_size">
                     <option value="--">Select..</option>
-                    <% _.each(printSizes.sizeGroup.sizes.size, function(size){ %>
+                    <% _.each(printSizes.applicableSizeGroup.sizes.size, function(size){ %>
                         <option value="<%= size.value %>"><%= size.display %></option>
                     <% }); %>    
                 </select>
@@ -1026,7 +1026,7 @@ EOF;
         <script src="$this->backboneUrl"></script>
         <script src="$this->appUrl"></script>
         <script src="$this->jsUrl"></script>
- 
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
         <link rel="stylesheet" href="$this->cssUrl" type="text/css">
 
 EOT;

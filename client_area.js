@@ -182,7 +182,7 @@
           var ref = $(this).data("file-ref");         
           var picPath = $(".ca_menu_bar").data("url-for-mains") + '&file=' + ref;
           
-          var lightBox = $('<div></div>').addClass("ca_lightbox");
+          var lightBox = $('<div></div>').addClass("ca_lightbox " + "ca_" + mode);
           lightBox.append(  $('<div><button class="ca_popup_close ca_lightbox_close_event">x</button></div>').
               addClass("ca_popup_close_bar")  );
   
@@ -211,57 +211,100 @@
           ratio = ratio.toFixed(2);
           console.log("ratio", ratio);
           
-          var enforcedMinWidth = 300;
-          var enforcedMinHeight = 300;
+    
   
           var viewportWidth = $(window).width();
-          var safeImageWidth = viewportWidth - 100;
-
-          //if (safeImageWidth < enforcedMinWidth)  {
-          //    safeImageWidth = enforcedMinWidth;
-          //}
-          
           var viewportHeight = $(window).height();
-          if (mode === 'prints') {
-              var heightAdjuster = 100;      //TODO
-          }  else {
-              var heightAdjuster = 100;    
-          }
-          safeImageHeight = viewportHeight -   heightAdjuster;
-          //if (safeImageHeight < enforcedMinHeight)  {
-          //    safeImageHeight = enforcedMinHeight;
-          //}
-                            
-          var usedImageWidth;
-          //TODO handle case of no image sizes
-          if ((actualImageWidth > safeImageWidth) && (actualImageHeight <= safeImageHeight)) {
-              lightBox.find("img").css({"width": safeImageWidth + ".px", "height": "auto"});
-              usedImageWidth = safeImageWidth; 
-          } else if  ( (actualImageWidth <= safeImageWidth)  && (actualImageHeight > safeImageHeight)) {
-               lightBox.find("img").css({"height": safeImageHeight + ".px", "width": "auto"});
-               var resizedProportion = safeImageHeight / actualImageHeight;
-               usedImageWidth = Math.round(actualImageWidth *  resizedProportion);
-          } else if ((actualImageWidth > safeImageWidth)  && (actualImageHeight > safeImageHeight)) {    
-              var widthExceedsRatio = actualImageWidth /  safeImageWidth;
-              var heightExceedsRatio = actualImageHeight /  safeImageHeight;
-              if (widthExceedsRatio >  heightExceedsRatio) {
-                   lightBox.find("img").css({"width": safeImageWidth + ".px", "height": "auto"});
-                   usedImageWidth = safeImageWidth; 
-              }  else  {
-                  lightBox.find("img").css({"height": safeImageHeight + ".px", "width": "auto"});
-                  var resizedProportion = safeImageHeight / actualImageHeight;
-                  usedImageWidth = Math.round(actualImageWidth *  resizedProportion);
-              }
-              
-          } else {
-               lightBox.find("img").css({"width": actualImageWidth + ".px", "height": "auto"});
-               usedImageWidth = actualImageWidth; 
-          }
           
-          lightBox.css('min-width', usedImageWidth + 'px');
+          var safeImageWidth = viewportWidth - 100;
+          var safeImageHeight = viewportHeight - heightAdjuster;
+          var heightAdjuster = 100;      
+
+          var usedImageWidth;
+          
+          if (mode=="proofs") {   
+          
+            if ((actualImageWidth > safeImageWidth) && (actualImageHeight <= safeImageHeight)) {
+                lightBox.find("img").css({"width": safeImageWidth + ".px", "height": "auto"});
+                usedImageWidth = safeImageWidth; 
+            } else if  ( (actualImageWidth <= safeImageWidth)  && (actualImageHeight > safeImageHeight)) {
+                 lightBox.find("img").css({"height": safeImageHeight + ".px", "width": "auto"});
+                 var resizedProportion = safeImageHeight / actualImageHeight;
+                 usedImageWidth = Math.round(actualImageWidth *  resizedProportion);
+            } else if ((actualImageWidth > safeImageWidth)  && (actualImageHeight > safeImageHeight)) {    
+                var widthExceedsRatio = actualImageWidth /  safeImageWidth;
+                var heightExceedsRatio = actualImageHeight /  safeImageHeight;
+                if (widthExceedsRatio >  heightExceedsRatio) {
+                     lightBox.find("img").css({"width": safeImageWidth + ".px", "height": "auto"});
+                     usedImageWidth = safeImageWidth; 
+                }  else  {
+                    lightBox.find("img").css({"height": safeImageHeight + ".px", "width": "auto"});
+                    var resizedProportion = safeImageHeight / actualImageHeight;
+                    usedImageWidth = Math.round(actualImageWidth *  resizedProportion);
+                }
+                
+            } else {
+                 lightBox.find("img").css({"width": actualImageWidth + ".px", "height": "auto"});
+                 usedImageWidth = actualImageWidth; 
+            }
+            
+            lightBox.css('min-width', usedImageWidth + 'px'); 
+            var offset = Math.floor(usedImageWidth / 2);
+            lightBox.css("margin-left", "-" + offset + "px"); 
+          
+          } 
+          else //TODO formatting is messed up   need to fix to use 4 spaces per indent not 2 - or 6
+        {    //in this scheme we set an overall width for the popup which is centered - a max of 1600 or 95% on smaller screens; the image is sized to fit inside the pop-up and left-aligned but without interpolating; height is always auto which mean be vertical scrolling  
+            var maxPopupWidth = 1600;
+            var lightBoxWidthFraction = 0.95;
+            var lightBoxWidthPercent = (100*lightBoxWidthFraction)  + '%';
+            var lightBoxWidth = maxPopupWidth + 'px'; 
+            
+            
+            if  ((viewportWidth - 100)  > maxPopupWidth)
+            {
+               
+                var lightBoxWidthNumericPixels =  maxPopupWidth;
+                
+                if (actualImageWidth > maxPopupWidth) {
+                    usedImageWidth = maxPopupWidth;
+                } 
+                else
+                {
+                    usedImageWidth =  actualImageWidth;   
+                } 
+                
+            }
+            else
+            {
+                
+                safeImageWidth =  (lightBoxWidthFraction * viewportWidth);
+                var lightBoxWidthNumericPixels = safeImageWidth;
+                if (actualImageWidth > safeImageWidth)
+                {
+                    usedImageWidth = safeImageWidth; 
+                }
+                else
+                {
+                    usedImageWidth = actualImageWidth;     
+                }
+              
+            }
+            
+            lightBox.css({'max-width': lightBoxWidth ,'width': lightBoxWidthPercent}); 
+            lightBox.find("img").css({"max-width": Math.floor(actualImageWidth) + "px", "width": "100%", "height": "auto"});
+            
+            //var offset = (lightBoxWidthNumericPixels / 2);
+            //lightBox.css("margin-left", "-" + Math.floor(offset) + "px"); 
+        }
+          
+          
+          
+             
+          
   
           if (mode === 'prints') {
-              lightBox.append('<div id="ca_pricing_area">PR</div>');
+              lightBox.append('<div id="ca_pricing_area"></div>');
           }
                      
           $(".ca_message_pop_up").remove();
@@ -275,9 +318,7 @@
           }
           
           
-          var offset = Math.floor(usedImageWidth / 2);
-          console.log('offset', usedImageWidth, offset);
-          lightBox.css("margin-left", "-" + offset + "px");
+  
           
           $("body").scrollTop(0);
   
