@@ -413,7 +413,7 @@ NB. For responsiveness to work as expected your container page should include so
 
 #ca_pricing_area
 {
-    font-size: 10px;
+
     text-align: left;
     padding: 10px;
     width: 100%;
@@ -422,4 +422,9 @@ NB. For responsiveness to work as expected your container page should include so
 .ca_lightbox_image
 {
     text-align: left;
+}
+
+.ca_form_control
+{
+    display: inline-block;
 }

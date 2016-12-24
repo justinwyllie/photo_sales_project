@@ -119,5 +119,8 @@
     <field name="checkoutButtonText">
         Checkout
     </field>
+    <field name="select_size">
+        Select size..
+    </field> 
 
 </strings>

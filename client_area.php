@@ -956,10 +956,12 @@ EOF;
     private function appTemplates() 
     {
     
+        $select =  $this->lang("select_size");
+    
         $html=<<<EOF
             <script type="text/html" id="ca_order_line_tmpl">
-                <select class="ca_order_line_size">
-                    <option value="--">Select..</option>
+                <select class="ca_form_control ca_order_line_size">
+                    <option value="--">$select</option>
                     <% _.each(printSizes.applicableSizeGroup.sizes.size, function(size){ %>
                         <option value="<%= size.value %>"><%= size.display %></option>
                     <% }); %>    
