@@ -415,8 +415,12 @@ NB. For responsiveness to work as expected your container page should include so
 {
 
     text-align: left;
-    padding: 10px;
     width: 100%;
+}
+
+.ca_row_header
+{
+    font-weight: bold;
 }
 
 .ca_lightbox_image
@@ -426,5 +430,15 @@ NB. For responsiveness to work as expected your container page should include so
 
 .ca_form_control
 {
-    display: inline-block;
+    
+}
+
+.ca_qty_input
+{
+   
+}
+
+.ca_order_info
+{
+    color: #ff0000;
 }

@@ -16,28 +16,34 @@
 
 <!-- one <mount> entry per mount style you offer. or none if you do not offer mounted prints -->
     <mounts>
-        <mount>White</mount>
-        <mount>Off-White</mount>
+        <mount>
+            <display>White</display>
+            <value>white</value>
+        </mount>
+        <mount>
+            <display>Off-White</display>
+            <value>off-white</value>
+        </mount>
     </mounts>
 
 
 <!-- the frames that you offer. the label is used in the pricing section -->
     <frames>
         <frame>
-            <label>A</label>
-            <name>Ivory</name>
+            <value>ivory</value>
+            <display>Ivory</display>
         </frame>
         <frame>
-            <label>B</label>
-            <name>White</name>
+            <value>white</value>
+            <display>White</display>
         </frame>
         <frame>
-            <label>C</label>
-            <name>Chocolate</name>
+            <value>chocolate</value>
+            <display>Chocolate</display>
         </frame>
         <frame>
-            <label>D</label>
-            <name>Black</name>
+            <value>black</value>
+            <display>Black</display>
         </frame>
     </frames>
     

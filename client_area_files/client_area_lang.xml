@@ -121,6 +121,48 @@
     </field>
     <field name="select_size">
         Select size..
+    </field>
+    <field name="select">
+        Select..
+    </field>  
+    <field name="print_size">
+        Print Size
     </field> 
+    <field name="mount">
+        Mount
+    </field> 
+    <field name="no_mount">
+        No Mount
+    </field> 
+    <field name="frame">
+        Frame
+    </field>
+    <field name="no_frame">
+        No Frame
+    </field>  
+    <field name="quantity">
+        Qty
+    </field> 
+    <field name="update">
+        Update
+    </field>
+    <field name="add">
+        Add
+    </field> 
+    <field name="remove">
+        Remove
+    </field>  
+    <field name="configError">
+        Sorry. A configuration error has occured. Please contact the site owner.
+    </field>  
+    <field name="sizeFeedback">
+        Specify size.
+    </field>  
+    <field name="qtyFeedback">
+        Specify quantity.
+    </field> 
+    <field name="invalid">
+        Invalid.
+    </field>  
 
 </strings>

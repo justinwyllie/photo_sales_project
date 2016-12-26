@@ -14,6 +14,8 @@
             <backboneUrl>/backbone.js</backboneUrl>
             <!-- web path to the CSS file -->
             <cssUrl>/client_area.css</cssUrl>
+            <!-- Bootstrap CSS CDN -->
+            <bootstrapCSSUrl>https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css</bootstrapCSSUrl>
 
             <adminEmail>info@justinwylliephotography.com</adminEmail>
             <appName>Photo ordering system.</appName>

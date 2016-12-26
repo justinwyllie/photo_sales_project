@@ -284,7 +284,7 @@
           
   
           if (mode === 'prints') {
-              lightBox.append('<div id="ca_pricing_area"></div>');
+              lightBox.append('<div id="ca_pricing_area" class="container-fluid"></div>');
           }
                      
           $(".ca_message_pop_up").remove();
@@ -475,15 +475,14 @@
     //TODO - these are globals in the outer closure. can we improve this?   
     var pricingModel;
     var basketCollection;  
-    if (mode === "prints") {
+    if (mode === "prints") {  //eventually the proofs part will be appified as well. TODO
         //popuate from backend session (which itself may have been reloaded via html5 data when they logged in)
+        app.init();
         pricingModel = new app.PricingModel();
-        console.log("pricingModel", pricingModel);
-        pricingModel.fetch().then(function() {
-            basketCollection = new app.BasketCollection();
-            basketCollection.fetch();                                  
-        });
-          
+        pricingModel.fetch();
+        basketCollection = new app.BasketCollection();
+        basketCollection.fetch();   
+         
     }
   
   });

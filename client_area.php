@@ -15,9 +15,10 @@
  */
 
 
+
 session_start();
 $clientArea = new ClientArea;
-$clientArea->controller();  //sets everything up
+$clientArea->controller();  //sets everything up  : sets the action to run
 $clientArea->run();         //runs the determined action
 
 
@@ -139,6 +140,7 @@ class ClientArea
         $this->appUrl = $systemOptions->appUrl . "";
         $this->underscoreUrl = $systemOptions->underscoreUrl . "";
         $this->backboneUrl = $systemOptions->backboneUrl . "";
+        $this->bootstrapCSSUrl = $systemOptions->bootstrapCSSUrl . "";
         $this->cssUrl = $systemOptions->cssUrl . "";
         $this->adminEmail = $systemOptions->adminEmail . "";
         $this->appName = $systemOptions->appName . "";
@@ -953,24 +955,87 @@ EOF;
         return $pages;
     }
     
+    //TODO - put these into a file 
     private function appTemplates() 
     {
     
-        $select =  $this->lang("select_size");
+        $select =  $this->lang("select");
+        $printSize =  $this->lang("print_size");
+        $mount =  $this->lang("mount");
+        $noMount =  $this->lang("no_mount");
+        $frame =  $this->lang("frame");
+        $noFrame =  $this->lang("no_frame");
+        $qty =  $this->lang("quantity");
+        $update =  $this->lang("update");
+        $remove =  $this->lang("remove");
+        $add =  $this->lang("add");
+        $sizeFeedback = $this->lang("sizeFeedback");
+        $qtyFeedback = $this->lang("qtyFeedback");
     
         $html=<<<EOF
             <script type="text/html" id="ca_order_line_tmpl">
-                <select class="ca_form_control ca_order_line_size">
-                    <option value="--">$select</option>
-                    <% _.each(printSizes.applicableSizeGroup.sizes.size, function(size){ %>
-                        <option value="<%= size.value %>"><%= size.display %></option>
-                    <% }); %>    
-                </select>
+                <div class="col-xs-2">
+                    <div class="form-group ca_print_size_group ">
+                        <select class="ca_form_control form-control ca_print_size_event">
+                          <option value="--">$select</option>
+                          <% _.each(printSizes.applicableSizeGroup.sizes.size, function(size){ %>
+                              <option value="<%= size.value %>"><%= size.display %></option>
+                          <% }); %>    
+                        </select>
+                    </div>    
+                </div>
+                <div class="col-xs-2">
+                    <div class="form-group ca_mount_group">
+                        <select class="ca_form_control form-control ca_mount_event">
+                          <option value="--">$select</option>
+                          <% _.each(mounts.mount, function(mount){ %>
+                              <option value="<%= mount.value %>"><%= mount.display %></option>
+                          <% }); %> 
+                          <option value="no_mount">$noMount</option>   
+                        </select>
+                    </div>
+                </div>
+                <div class="col-xs-2">
+                    <div class="form-group ca_frame_group">
+                        <select class="ca_form_control form-control ca_frame_event">
+                          <option value="--">$select</option>
+                          <% _.each(frames.frame, function(frame){ %>
+                              <option value="<%= frame.value %>"><%= frame.display %></option>
+                          <% }); %> 
+                          <option value="no_frame">$noFrame</option>   
+                        </select>
+                    </div>
+                </div>
+                <div class="col-xs-2">
+                    <div class="form-group ca_qty_group">
+                        <input type="text" class="ca_qty_input form-control ca_qty_event" >
+                    </div>  
+                </div>
+                <div class="col-xs-4">
+                      <% if (mode == 'new') { %>
+                          <button type="button" class="ca_add">$add</button>
+                      <% } else { %>
+                          <button type="button">$update</button>
+                          <button type="button">$remove</button>
+                      <% } %>
+                      <div class="ca_order_info"></div>
+                </div>
+        </script>
+        <script type="text/html" id="ca_order_line_row_head_tmpl">
+                <div class="row ca_row_header">
+                      <div class="col-xs-2">$printSize</div>
+                      <div class="col-xs-2">$mount</div>
+                      <div class="col-xs-2">$frame</div>
+                      <div class="col-xs-2">$qty</div>
+                      <div class="col-xs-4"></div>
+                </div>
         </script>
 EOF;
         return $html;    
     
     }
+    
+    
 
     private function pageHtml($pageIndex, $thumbsPerPage, $numberOfThumbs)
     {
@@ -1030,6 +1095,7 @@ EOF;
         <script src="$this->jsUrl"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
         <link rel="stylesheet" href="$this->cssUrl" type="text/css">
+        <link rel="stylesheet" href="$this->bootstrapCSSUrl" type="text/css">
 
 EOT;
 

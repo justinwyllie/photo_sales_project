@@ -34,7 +34,46 @@ class ClientAreaAPI
         $this->outputJson($content);
     
     }
+    
+    //MODEL METHODS
+    
+    public function getPricing() 
+    {                                          
+        $pricingModel = simplexml_load_file($this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_pricing.xml" );
+        //$obj = new stdClass();
+        // $obj->pricingModel = $pricingModel;
+        if ($pricingModel === false) 
+        {
+          //TODO implement this
+          //$this->destroySession();
+          //$this->terminateScript("Missing or broken user options file for " . $user);
+        }   
+         
+        return $pricingModel;
+    }
+    
+    //TODO this is basically the same as the  setLang method in CLientArea - it would be nice to make them share a common helper class or something
+    public function getLangStrings() 
+    {                                          
+        $strings = simplexml_load_file($this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_lang.xml" );
+        if ($strings === false) 
+        {
+          //TODO implement this
+          //$this->destroySession();
+          //$this->terminateScript("Missing or broken user options file for " . $user);
+        } 
+        $langStrings = array();
+        foreach ($strings->field as $field) {
+            $fieldName = $field["name"] . "";
+            $fieldValue = trim($field . "");
+            $langStrings[$fieldName] = $fieldValue;
+        }
+        return  $langStrings;
   
+    }
+  
+  
+    //COLLECTION METHODS
     public function getBasket() 
     {
         $result = new stdClass();
@@ -48,20 +87,7 @@ class ClientAreaAPI
   
   }
   
-  public function getPricing() 
-  {                                          
-      $pricingModel = simplexml_load_file($this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_pricing.xml" );
-      //$obj = new stdClass();
-      // $obj->pricingModel = $pricingModel;
-      if ($pricingModel === false) 
-      {
-          //TODO implement this
-          //$this->destroySession();
-          //$this->terminateScript("Missing or broken user options file for " . $user);
-      }   
-         
-      return $pricingModel;
-  }
+
   
   
   private function outputJson($output) {
