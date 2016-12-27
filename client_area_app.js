@@ -5,6 +5,10 @@ var caApp = (function (Backbone) {
     
         app.langStrings = new app.LangStrings;
         app.langStrings.fetch();
+        app.pricingModel = new app.PricingModel();
+        app.pricingModel.fetch();
+        app.basketCollection = new app.BasketCollection();
+        app.basketCollection.fetch();   
     
     }
     

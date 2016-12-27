@@ -291,8 +291,7 @@
           $("body").append(lightBox);
           
           if (mode == 'prints') {                                                             
-              //basketCollection, pricingModel are globals set up on page load. TODO  
-              renderPricingArea(ref, ratio, basketCollection, pricingModel);
+              renderPricingArea(ref, ratio, app.basketCollection, app.pricingModel);
           }
           
           
@@ -469,17 +468,10 @@
   
       }
       
-    //TODO - these are globals in the outer closure. can we improve this?   
-    var pricingModel;
-    var basketCollection;  
+ 
     if (mode === "prints") {  //eventually the proofs part will be appified as well. TODO
         //popuate from backend session (which itself may have been reloaded via html5 data when they logged in)
         app.init();
-        pricingModel = new app.PricingModel();
-        pricingModel.fetch();
-        basketCollection = new app.BasketCollection();
-        basketCollection.fetch();   
-         
     }
   
   });
