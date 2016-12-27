@@ -14,7 +14,7 @@ var caApp = (function (Backbone) {
     
     //MODELS
     
-    //PricingModel Model
+    //PricingModel Model                                                                                                                                                                                                       
     app.PricingModel = Backbone.Model.extend({
        url: "/api/v1/pricing",
        
@@ -40,6 +40,31 @@ var caApp = (function (Backbone) {
             "frame_style":null,
             "frame_price":null,
             "qty":0
+        },
+        
+        //NB - if you add an error field make sure there is a matching form group in the view. ca_modelAttributeName_group. 
+        //displayModelErrors in the view will add an error class to this field
+        validate: function(attrs, options) {
+            var errState = false;
+            var errData = {};
+            errData.errString = "";
+            errData.fields = [];
+            
+            if (attrs.print_size == '--') {
+                errState = true;
+            } 
+            
+            if (isNaN(attrs.qty) || (attrs.qty === "") || (attrs.qty == 0) || !Number.isInteger(parseInt(attrs.qty)))  {
+                errState = true;
+                errData.errString = errData.errString + app.langStrings.get("qtyFeedback") ;
+                errData.fields.push('qty');   
+            }
+            
+            if (errState) {
+                errData.errString = app.langStrings.get("invalid") + " " + errData.errString;
+                return errData;
+            }
+        
         }
     
     });
@@ -73,8 +98,8 @@ var caApp = (function (Backbone) {
         className: 'row', 
         template: null,
         initialize: function(options) {
-            this.listenTo(this.model, "change:print_size", this.createFrameDropDown);
-            this.listenTo(this.model, "change:mount_price", this.createMountDropDown);
+            this.listenTo(this.model, "change:print_size", this.updateDropDowns);
+            this.listenTo(this.model, "invalid", this.displayModelErrors);
             var tmpl =  $('#ca_order_line_tmpl').html();
             this.template = _.template(tmpl);
             this.options = options;
@@ -98,8 +123,34 @@ var caApp = (function (Backbone) {
            'change .ca_print_size_event': 'onChangePrintSize' ,
            'change .ca_mount_event': 'onChangeMount',
            'change .ca_frame_event': 'onChangeFrame',
-           'click .ca_qty_event': 'onChangeQty'
+           'change .ca_qty_event': 'onChangeQty'
         }, 
+        
+        updateDropDowns: function() {
+            this.createFrameDropDown();
+            this.createMountDropDown();
+        },
+        
+        displayModelErrors: function() {
+            that = this;
+            _.each(this.model.validationError.fields, function(field) {
+                that.$el.find('.ca_' + field + '_group').addClass("has-error");
+            });
+            this.$el.find(".ca_order_info").html(this.model.validationError.errString);     
+        },
+        
+        clearErrors: function(field) {
+            that = this;
+            if (typeof(field) !== "undefined") {
+                that.$el.find('.ca_' + field + '_group').removeClass("has-error");    
+            }  else {
+                _.each(that.model.validationError.fields, function(field) {
+                    that.$el.find('.ca_' + field + '_group').removeClass("has-error");
+                });
+            }
+            this.$el.find(".ca_order_info").html("");     
+        },
+        
         
         createMountDropDown: function() {
             var container = this.$el.find('#ca_mount_group select');
@@ -151,7 +202,6 @@ var caApp = (function (Backbone) {
             var sizeSelected = evt.currentTarget.value;
             if (sizeSelected != '--')
             {
-                this.model.set('size', sizeSelected);
                 //set mount pricing for this print size
                 var pricingModel = this.options.pricingModelJSON;
                 var that = this;
@@ -166,56 +216,30 @@ var caApp = (function (Backbone) {
         
         onChangeMount: function(evt) {
             var mount = evt.currentTarget.value;
-            if ((mount != '--') && (mount != 'no_mount'))
-            {
-                this.model.set('mount', mount);
-            }
+            this.model.set('mount_style', mount);
         },
         
         
         onChangeFrame: function(evt) {
             var frame = evt.currentTarget.value;
-            if ((frame != '--') && (frame != 'no_frame'))
-            {
-                this.model.set('frame', frame);
-            }
+            this.model.set('frame_style', frame);
         },
         
        onChangeQty: function(evt) {
-            var qty = parseInt(evt.currentTarget.value);
-            if (!isNaN(qty) && Number.isInteger(qty))
-            {
-                this.model.set('qty', qty);
-            }
+            this.clearErrors('qty');
+            var qty = evt.currentTarget.value;
+            this.model.set({'qty': qty}, {validate: true});
         },
  
         
         onAdd: function() {
-            //minimum validation
-            var size = this.model.get("size");
-            var qty =  this.model.get("qty");
-            var errString = app.langStrings.get("invalid") + " ";
-            var errState = false;
-            
-            if (size === null) {
-                this.$el.find('.ca_print_size_group').addClass("has-error");
-                this.$el.find('.ca_print_size_group select').addClass("form-control-danger");
-                errString = errString + app.langStrings.get("sizeFeedback") + " ";
-                errState = true;
-            }
-            
-           if (qty == 0) {
-                this.$el.find('.ca_qty_group').addClass("has-error");
-                this.$el.find('.ca_qty_group input').addClass("form-control-danger");
-                errString = errString + app.langStrings.get("qtyFeedback");
-                errState = true;
-            }
-            
-            if (errState) {
-                this.$el.find(".ca_order_info").html(errString);    
-            }
-            
-            
+            this.clearErrors();
+            //what to do?
+            //check model is in valid state.
+            //do we save the model or add it to the collection and save that?
+            //it has to end up in the collection.
+           //..then of course some redrawing which should see the just added on appear as an updatable row
+
             
         },
         

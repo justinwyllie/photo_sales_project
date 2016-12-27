@@ -1000,7 +1000,7 @@ EOF;
                 </div>
                 <div class="col-xs-2">
                     <div class="form-group ca_qty_group">
-                        <input type="text" class="ca_qty_input form-control ca_qty_event" >
+                        <input type="text" id="ca_qty_field" class="ca_qty_input form-control ca_qty_event" >
                     </div>  
                 </div>
                 <div class="col-xs-4">
