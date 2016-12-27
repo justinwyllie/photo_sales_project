@@ -131,13 +131,13 @@
     <field name="mount">
         Mount
     </field> 
-    <field name="no_mount">
+    <field name="noMount">
         No Mount
     </field> 
     <field name="frame">
         Frame
     </field>
-    <field name="no_frame">
+    <field name="noFrame">
         No Frame
     </field>  
     <field name="quantity">

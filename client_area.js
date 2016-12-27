@@ -209,8 +209,7 @@
           //TODO - what if same?  
           var ratio = (Math.max(actualImageWidth, actualImageHeight)) / (Math.min(actualImageWidth, actualImageHeight)).toFixed(2);
           ratio = ratio.toFixed(2);
-          console.log("ratio", ratio);
-          
+         
     
   
           var viewportWidth = $(window).width();
@@ -293,7 +292,6 @@
           
           if (mode == 'prints') {                                                             
               //basketCollection, pricingModel are globals set up on page load. TODO  
-              console.log('rendering price area with ref', ref, basketCollection, pricingModel);
               renderPricingArea(ref, ratio, basketCollection, pricingModel);
           }
           
@@ -366,7 +364,6 @@
      var renderPricingArea = function(ref, ratio, basketCollection, pricingModel) {
           
           //hmm what is the lifespan of this?
-          console.log('DEBUG', pricingModel);
           var basketCollectionView = new app.BasketCollectionView({collection: basketCollection, ref: ref, ratio: ratio, pricingModel: pricingModel});  
           
           

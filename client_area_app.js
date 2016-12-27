@@ -26,15 +26,15 @@ var caApp = (function (Backbone) {
     
     //OrderLine model
     app.OrderLineModel = Backbone.Model.extend({
-       defaults: {
+        defaults: {
             "id": null,
             "image": null,
             "print_price": "0.00",
-            "size":null,
+            "print_size":null,
             "mount_price":null,
             "mount_style":null,
             "frame_style":null,
-            "frame_price":"0.00",
+            "frame_price":null,
             "qty":0
         }
     
@@ -45,7 +45,7 @@ var caApp = (function (Backbone) {
     //Basket - collection of OrderLine Models
     //calling fetch on a collection with an array of objects populates the collection with the models - one model with one element in the array
     app.BasketCollection =  Backbone.Collection.extend({
-        model: app.OrderLine,
+        model: app.OrderLineModel,
         url: "/api/v1/basket",
         
         initialize: function(options) {
@@ -69,9 +69,24 @@ var caApp = (function (Backbone) {
         className: 'row', 
         template: null,
         initialize: function(options) {
+            this.listenTo(this.model, "change:print_size", this.createFrameDropDown);
+            this.listenTo(this.model, "change:mount_price", this.createMountDropDown);
             var tmpl =  $('#ca_order_line_tmpl').html();
             this.template = _.template(tmpl);
             this.options = options;
+            //TODO - pricingModelJSON should really be immuatable 
+            this.options.pricingModelJSON = this.options.pricingModel.toJSON();
+           
+            var applicableSizeGroup = null;
+            that = this;
+            _.each(this.options.pricingModelJSON.printSizes.sizeGroup, function(sizeGroup) {
+                if (sizeGroup.ratio == that.options.ratio) {
+                    applicableSizeGroup = sizeGroup;    
+                }
+            });
+            //TODO what is applicableSizeGroup is null i.e. no match? it means the pricing xml file has not been set up for the ratio of this image. 
+            //what to do? ideally notify owneer by an ajax call to send an email - we can't display anything
+            this.options.pricingModelJSON.printSizes.applicableSizeGroup = applicableSizeGroup;
         },
         
         events: {
@@ -82,11 +97,66 @@ var caApp = (function (Backbone) {
            'click .ca_qty_event': 'onChangeQty'
         }, 
         
+        createMountDropDown: function() {
+            var container = this.$el.find('#ca_mount_group select');
+            var tmpl =  $('#ca_order_line_mount_select_options').html();
+            var template = _.template(tmpl);
+            var data = {};
+            data.langStrings = {};
+            data.langStrings.select = app.langStrings.get("select");
+            data.langStrings.noMount = app.langStrings.get("noMount");
+            data.pricingModel = this.options.pricingModelJSON;
+            data.mountPrice = this.model.get("mount_price");
+            var html = template(data);
+            container.prop("disabled", false);
+            container.find('option').remove().end().append(html);
+          },
+          
+         createFrameDropDown: function() {
+            var container = this.$el.find('#ca_frame_group select');
+            var tmpl =  $('#ca_order_line_frame_select_options').html();
+            var template = _.template(tmpl);
+            var data = {};
+            data.pricingModel = this.options.pricingModelJSON;
+            data.langStrings = {};
+            data.langStrings.select = app.langStrings.get("select");
+            data.langStrings.noFrame = app.langStrings.get("noFrame");
+            //pull out the frame prices for the curent print size
+            var printSize = this.model.get("print_size");
+            data.framePrices = null;
+            _.each(data.pricingModel.printSizes.applicableSizeGroup.sizes.size, function(size) {
+                if (printSize == size.value) {
+                    data.framePrices = size.framePrices;    
+                }     
+            });
+            
+            var framesCodeToDisplay = [];
+            _.each(data.pricingModel.frames.frame, function(frame) {
+                framesCodeToDisplay[frame.value] = frame.display;   
+            })
+            _.each(data.framePrices.framePrice, function(framePrice) {
+                framePrice.displayName =   framesCodeToDisplay[framePrice.style];  
+            })
+            
+            var html = template(data);
+            container.prop("disabled", false);
+            container.find('option').remove().end().append(html);
+          },
+        
         onChangePrintSize: function(evt) {
-            var size = evt.currentTarget.value;
-            if (size != '--')
+            var sizeSelected = evt.currentTarget.value;
+            if (sizeSelected != '--')
             {
-                this.model.set('size', size);
+                this.model.set('size', sizeSelected);
+                //set mount pricing for this print size
+                var pricingModel = this.options.pricingModelJSON;
+                var that = this;
+                _.each(this.options.pricingModelJSON.printSizes.applicableSizeGroup.sizes.size, function(size) {
+                    if (size.value == sizeSelected) {
+                        that.model.set('print_size', size.value);
+                        that.model.set('mount_price', size.mountedPrice);
+                     }
+                });
             }
         },
         
@@ -147,22 +217,10 @@ var caApp = (function (Backbone) {
         
         render: function() {
             var data = {};
-            var pricingModel = this.options.pricingModel.toJSON();
-            //pull out only the size we want from the pricingModel
-            var applicableSizeGroup = null;
-            that = this;
-            _.each(pricingModel.printSizes.sizeGroup, function(sizeGroup) {
-                if (sizeGroup.ratio == that.options.ratio) {
-                    applicableSizeGroup = sizeGroup;    
-                }
-            });
-            //TODO what is applicableSizeGroup is null i.e. no match? it means the pricing xml file has not been set up for the ratio of this image. 
-            //what to do? ideally notify owneer by an ajax call to send an email - we can't display anything
-            console.log("applicableSizeGroup", applicableSizeGroup);
-            
-            if (applicableSizeGroup === null) 
+            var pricingModel = this.options.pricingModelJSON;
+              
+            if (this.options.applicableSizeGroup === null) 
             {
-                
                 //this works because the first time the user wld see this -if not match to image ratio in prcingModel -  and would not be able to order anything so we would not see this repeated in multiple order line rows. not very elegant. TDOO
                 var html = app.langStrings.get("configError");
                 this.$el.html(html);
@@ -170,7 +228,6 @@ var caApp = (function (Backbone) {
             }  
             else 
             {
-                pricingModel.printSizes.applicableSizeGroup = applicableSizeGroup;
                 data = pricingModel;
                 data.order = this.model.toJSON();
                 data.mode = this.options.mode;
@@ -191,7 +248,6 @@ var caApp = (function (Backbone) {
                  this.options = options;  
                  var tmplRoWHead =  $('#ca_order_line_row_head_tmpl').html(); 
                  this.tmplRoWHead = _.template(tmplRoWHead);
-                 console.log('the options are', options);
                  this.render();
         },
         
@@ -201,8 +257,7 @@ var caApp = (function (Backbone) {
             this.$el.html(this.tmplRoWHead());
             //1. render existing orders
             this.collection.each(function(orderLine) {
-               console.log('orderLine is', this, orderLine)  ;
-               if (orderLine.get('image') == (this.options.ref + 'sss')) {   //the being rendered image is in the basketColletion i.e. it already has an order line 
+                if (orderLine.get('image') == (this.options.ref + 'sss')) {   //the being rendered image is in the basketColletion i.e. it already has an order line 
                   //TODO - is each one deleted from memory by the assignment?
                   //orderLine is an item in the order e.g. a print with its size, mount, frame etc.
                   var orderLineView = new app.OrderLineView({model: orderLine, ref: this.options.ref, 

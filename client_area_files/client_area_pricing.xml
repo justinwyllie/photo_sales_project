@@ -30,19 +30,19 @@
 <!-- the frames that you offer. the label is used in the pricing section -->
     <frames>
         <frame>
-            <value>ivory</value>
+            <value>A</value>
             <display>Ivory</display>
         </frame>
         <frame>
-            <value>white</value>
+            <value>B</value>
             <display>White</display>
         </frame>
         <frame>
-            <value>chocolate</value>
+            <value>C</value>
             <display>Chocolate</display>
         </frame>
         <frame>
-            <value>black</value>
+            <value>D</value>
             <display>Black</display>
         </frame>
     </frames>
@@ -65,7 +65,8 @@ if you don't offer a frame style for a given print size just leave it out of the
 
 prices must be to 2 decimal places  
 
-- framed assumes mounting - is in road map to offer option for framed but not mounted
+the price for the print is the price. the price for the mounts and the frames is the additional cost. 
+
 -->
 
     <printSizes>
@@ -77,7 +78,7 @@ prices must be to 2 decimal places
                     <value>9x6</value>
                     <display>9&quot;  x 6&quot;</display>
                     <printPrice>3.00</printPrice>
-                    <mountedPrice>15.00</mountedPrice>
+                    <mountedPrice>5.00</mountedPrice>
                     <framePrices>
                         <framePrice>
                             <style>A</style>
@@ -101,7 +102,7 @@ prices must be to 2 decimal places
                     <value>12x8</value>
                     <display>12&quot;  x 8&quot;</display>
                     <printPrice>3.50</printPrice>
-                    <mountedPrice>20.00</mountedPrice>
+                    <mountedPrice>8.00</mountedPrice>
                     <framePrices>
                         <framePrice>
                             <style>A</style>
@@ -131,7 +132,7 @@ prices must be to 2 decimal places
                     <value>10x8</value>
                     <display>10&quot;  x 8&quot;</display>
                     <printPrice>3.50</printPrice>
-                    <mountedPrice>20.00</mountedPrice>
+                    <mountedPrice>8.00</mountedPrice>
                     <framePrices>
                         <framePrice>
                             <style>A</style>
@@ -156,7 +157,7 @@ prices must be to 2 decimal places
                     <value>20x16</value>
                     <display>20&quot;  x 16&quot;</display>
                     <printPrice>4.00</printPrice>
-                    <mountedPrice>25.00</mountedPrice>
+                    <mountedPrice>10.00</mountedPrice>
                     <framePrices>
                         <framePrice>
                             <style>A</style>
@@ -178,7 +179,7 @@ prices must be to 2 decimal places
                     <value>10x10</value>
                     <display>10&quot;  x 10&quot;</display>
                     <printPrice>3.50</printPrice>
-                    <mountedPrice>20.00</mountedPrice>
+                    <mountedPrice>8.00</mountedPrice>
                     <framePrices>
                         <framePrice>
                             <style>A</style>
@@ -202,7 +203,7 @@ prices must be to 2 decimal places
                     <value>15x15</value>
                     <display>15&quot;  x 15&quot;</display>
                     <printPrice>4.00</printPrice>
-                    <mountedPrice>25.00</mountedPrice>
+                    <mountedPrice>10.00</mountedPrice>
                      <framePrices>
                         <framePrice>
                             <style>A</style>
@@ -224,7 +225,7 @@ prices must be to 2 decimal places
                     <value>16x9</value>
                     <display>16&quot;  x 9&quot;</display>
                     <printPrice>4.50</printPrice>
-                    <mountedPrice>20.00</mountedPrice>
+                    <mountedPrice>8.00</mountedPrice>
                     <framePrices>
                         <framePrice>
                             <style>A</style>
