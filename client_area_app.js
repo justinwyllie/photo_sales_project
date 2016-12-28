@@ -5,6 +5,7 @@ var caApp = (function (Backbone) {
     
         app.langStrings = new app.LangStrings;
         app.langStrings.fetch();
+        //TODO this should be immutable
         app.pricingModel = new app.PricingModel();
         app.pricingModel.fetch();
         app.basketCollection = new app.BasketCollection();
@@ -14,11 +15,117 @@ var caApp = (function (Backbone) {
     
     //MODELS
     
-    //PricingModel Model                                                                                                                                                                                                       
+    //PricingModel Model   
+    //TODO make immutable
+    //TODO use xpath instead of loops where possible                                                                                                                                                                                                     
     app.PricingModel = Backbone.Model.extend({
-       url: "/api/v1/pricing",
+        url: "/api/v1/pricing",
+        defaults: {
+            sizesForRatio: null,
+            printPriceAndMountPriceForRatioAndSize: null,
+            framePriceMatrixForGivenRatioAndSize: null,
+            frameDisplayNamesCodesLookup: null,
+            sizeGroupForRatioAndSize: null
+
+       },
        
-    
+       /*
+       *  returns array of size blocks
+        */
+       getSizesForRatio: function (imageRatio) {
+            that = this;    
+            var sizesForRatio = this.get("sizesForRatio"); 
+            if (sizesForRatio !== null) {
+                return  sizesForRatio;
+            }  else {
+                var printSizes = this.get("printSizes");
+                var sizeGroupForRatio = null;
+                _.each(printSizes.sizeGroup, function(sizeGroup) {
+                        if (sizeGroup.ratio == imageRatio) {
+                            sizeGroupForRatio = sizeGroup.sizes.size;    
+                        }
+                });
+                
+                this.set("sizesForRatio", sizeGroupForRatio);
+                return sizeGroupForRatio;    
+            }          
+       
+       },
+       
+       /*
+       * returns an individual size block as object
+       */
+       getSizeGroupForRatioAndSize: function(imageRatio, printSize) {
+            that = this;
+            var sizeBlock = null;
+            var sizeGroupForRatioAndSize = this.get("sizeGroupForRatioAndSize");
+            if (sizeGroupForRatioAndSize !== null) {
+                return sizeGroupForRatioAndSize;
+            }    else {
+                var sizeGroups = this.getSizesForRatio(imageRatio);
+                _.each(sizeGroups, function(size) {
+                    if (size.value == printSize) {
+                        sizeBlock = size;   
+                    }
+                }); 
+            
+            this.set("sizeGroupForRatioAndSize", sizeBlock);    
+            return sizeBlock;  
+           
+           } 
+       
+       }, 
+       
+        getPrintPriceAndMountPriceForRatioAndSize: function(imageRatio, printSize) {
+            that = this;
+            var printPriceAndMountPriceForRatioAndSize = this.get("printPriceAndMountPriceForRatioAndSize");
+            if (printPriceAndMountPriceForRatioAndSize !== null) {
+                return printPriceAndMountPriceForRatioAndSize;
+            } else {
+                var mountPrice = null;
+                var printPrice = null;
+                var sizeGroup = this.getSizeGroupForRatioAndSize(imageRatio, printSize);
+                
+                var ret = {mountPrice: sizeGroup.mountPrice, printPrice: sizeGroup.printPrice};
+                this.set("printPriceAndMountPriceForRatioAndSize",  ret);
+                return ret ;    
+            
+            } 
+       },
+       
+       getFramePriceMatrixForGivenRatioAndSize: function(imageRatio, printSize) {
+            var framePriceMatrixForGivenRatioAndSize = this.get("framePriceMatrixForGivenRatioAndSize");
+                if (framePriceMatrixForGivenRatioAndSize !== null) {
+                return  framePriceMatrixForGivenRatioAndSize;
+            } else {
+                var framePrices = null;
+                var size = this.getSizeGroupForRatioAndSize(imageRatio, printSize);
+            
+                this.set("framePriceMatrixForGivenRatioAndSize", size.framePrices);
+                return size.framePrices;
+            }
+       
+       },
+       
+       getFrameDisplayNamesCodesLookup: function() {
+            var  frameDisplayNamesCodesLookup = this.get("frameDisplayNamesCodesLookup");
+            if (frameDisplayNamesCodesLookup !== null) {
+                return frameDisplayNamesCodesLookup; 
+            } else  {
+                 var pictureFrames = this.get("frames");
+                 var framesCodeToDisplay = {};
+                 _.each(pictureFrames.frame, function(frame) {
+                    framesCodeToDisplay[frame.value] = frame.display;   
+                });
+                
+                this.set("frameDisplayNamesCodesLookup", framesCodeToDisplay);
+                return framesCodeToDisplay;
+            
+            }
+       
+       }
+       
+       
    
     });
     
@@ -32,14 +139,97 @@ var caApp = (function (Backbone) {
     app.OrderLineModel = Backbone.Model.extend({
         defaults: {
             "id": null,
-            "image": null,
-            "print_price": "0.00",
+            "image_ref": null,
+            "image_ratio": null,
+            "print_price": null,
             "print_size":null,
             "mount_price":null,
             "mount_style":null,
             "frame_style":null,
             "frame_price":null,
-            "qty":0
+             "qty":0
+        },
+        
+        initialize: function() {
+            this.on("change:frame_style", function() {
+                this.setFramePrice();    
+            });   
+            this.on("change:print_size", function() {
+                this.setPrintPrice(); 
+                this.setMountPrice();   
+            });  
+        
+        },
+        
+        setFramePrice: function() {
+            var printSize = this.get("print_size");
+            var frameStyle =  this.get("frame_style");
+            var imageRatio = this.get("image_ratio");
+            var applicableFramePrice = null;
+            if ((printSize !== null) && (frameStyle !== null) && (imageRatio !== null)) {
+                var pricingModel = app.pricingModel.toJSON();
+                that = this;
+                _.each(pricingModel.printSizes.sizeGroup, function(sizeGroup) {
+                    if (sizeGroup.ratio == imageRatio) {
+                        _.each(sizeGroup.sizes.size, function(size) {
+                            if (size.value == printSize) {
+                                _.each(size.framePrices.framePrice, function(framePrice) {
+                                    if (framePrice.style == frameStyle) {
+                                        applicableFramePrice = framePrice.price;
+                                    }
+                                });
+                            }
+                       });
+                    }
+                });    
+            }
+            
+            this.set("frame_price", applicableFramePrice);
+        },
+        
+        setPrintPrice: function() {
+            var printSize = this.get("print_size");
+            var imageRatio = this.get("image_ratio");
+            var printPrice = null;
+            //TODO do something about all these repeated loops!  - maybe a method on the pricingModel that cahces them there so we only need to run these once after all the pricing model is immutable... 
+            if ((printSize !== null) && (imageRatio !== null)) {
+                var pricingModel = app.pricingModel.toJSON();
+                that = this;
+                _.each(pricingModel.printSizes.sizeGroup, function(sizeGroup) {
+                    if (sizeGroup.ratio == imageRatio) {
+                        _.each(sizeGroup.sizes.size, function(size) {
+                            if (size.value == printSize) {
+                                printPrice = size.printPrice;
+                            }
+                       });
+                    }
+                });    
+            }
+            
+           this.set("print_price", printPrice); 
+        },
+        
+        setMountPrice: function() {
+            var printSize = this.get("print_size");
+            var imageRatio = this.get("image_ratio");
+            var mountPrice = null;
+            //TODO do something about all these repeated loops!  - maybe a method on the pricingModel that cahces them there so we only need to run these once after all the pricing model is immutable... 
+            if ((printSize !== null) && (imageRatio !== null)) {
+                var pricingModel = app.pricingModel.toJSON();
+                that = this;
+                _.each(pricingModel.printSizes.sizeGroup, function(sizeGroup) {
+                    if (sizeGroup.ratio == imageRatio) {
+                        _.each(sizeGroup.sizes.size, function(size) {
+                            if (size.value == printSize) {
+                                mountPrice = size.mountPrice;
+                            }
+                       });
+                    }
+                });    
+            }
+            
+           this.set("mount_price", mountPrice); 
+
         },
         
         //NB - if you add an error field make sure there is a matching form group in the view. ca_modelAttributeName_group. 
@@ -98,24 +288,14 @@ var caApp = (function (Backbone) {
         className: 'row', 
         template: null,
         initialize: function(options) {
-            this.listenTo(this.model, "change:print_size", this.updateDropDowns);
             this.listenTo(this.model, "invalid", this.displayModelErrors);
             var tmpl =  $('#ca_order_line_tmpl').html();
             this.template = _.template(tmpl);
             this.options = options;
-            //TODO - pricingModelJSON should really be immuatable 
+            this.model.set("image_ref", this.options.ref);
+            this.model.set("image_ratio", this.options.ratio);
             this.options.pricingModelJSON = this.options.pricingModel.toJSON();
-           
-            var applicableSizeGroup = null;
-            that = this;
-            _.each(this.options.pricingModelJSON.printSizes.sizeGroup, function(sizeGroup) {
-                if (sizeGroup.ratio == that.options.ratio) {
-                    applicableSizeGroup = sizeGroup;    
-                }
-            });
-            //TODO what is applicableSizeGroup is null i.e. no match? it means the pricing xml file has not been set up for the ratio of this image. 
-            //what to do? ideally notify owneer by an ajax call to send an email - we can't display anything
-            this.options.pricingModelJSON.printSizes.applicableSizeGroup = applicableSizeGroup;
+
         },
         
         events: {
@@ -126,10 +306,6 @@ var caApp = (function (Backbone) {
            'change .ca_qty_event': 'onChangeQty'
         }, 
         
-        updateDropDowns: function() {
-            this.createFrameDropDown();
-            this.createMountDropDown();
-        },
         
         displayModelErrors: function() {
             that = this;
@@ -144,75 +320,44 @@ var caApp = (function (Backbone) {
             if (typeof(field) !== "undefined") {
                 that.$el.find('.ca_' + field + '_group').removeClass("has-error");    
             }  else {
-                _.each(that.model.validationError.fields, function(field) {
-                    that.$el.find('.ca_' + field + '_group').removeClass("has-error");
-                });
+                that.$el.find('.has-error').removeClass("has-error");
             }
             this.$el.find(".ca_order_info").html("");     
         },
-        
-        
-        createMountDropDown: function() {
-            var container = this.$el.find('#ca_mount_group select');
-            var tmpl =  $('#ca_order_line_mount_select_options').html();
-            var template = _.template(tmpl);
-            var data = {};
-            data.langStrings = {};
-            data.langStrings.select = app.langStrings.get("select");
-            data.langStrings.noMount = app.langStrings.get("noMount");
-            data.pricingModel = this.options.pricingModelJSON;
-            data.mountPrice = this.model.get("mount_price");
-            var html = template(data);
-            container.prop("disabled", false);
-            container.find('option').remove().end().append(html);
-          },
-          
-         createFrameDropDown: function() {
-            var container = this.$el.find('#ca_frame_group select');
-            var tmpl =  $('#ca_order_line_frame_select_options').html();
-            var template = _.template(tmpl);
-            var data = {};
-            data.pricingModel = this.options.pricingModelJSON;
-            data.langStrings = {};
-            data.langStrings.select = app.langStrings.get("select");
-            data.langStrings.noFrame = app.langStrings.get("noFrame");
-            //pull out the frame prices for the curent print size
-            var printSize = this.model.get("print_size");
-            data.framePrices = null;
-            _.each(data.pricingModel.printSizes.applicableSizeGroup.sizes.size, function(size) {
-                if (printSize == size.value) {
-                    data.framePrices = size.framePrices;    
-                }     
-            });
-            
-            var framesCodeToDisplay = [];
-            _.each(data.pricingModel.frames.frame, function(frame) {
-                framesCodeToDisplay[frame.value] = frame.display;   
-            })
-            _.each(data.framePrices.framePrice, function(framePrice) {
-                framePrice.displayName =   framesCodeToDisplay[framePrice.style];  
-            })
-            
-            var html = template(data);
-            container.prop("disabled", false);
-            container.find('option').remove().end().append(html);
-          },
         
         onChangePrintSize: function(evt) {
             var sizeSelected = evt.currentTarget.value;
             if (sizeSelected != '--')
             {
-                //set mount pricing for this print size
-                var pricingModel = this.options.pricingModelJSON;
-                var that = this;
-                _.each(this.options.pricingModelJSON.printSizes.applicableSizeGroup.sizes.size, function(size) {
-                    if (size.value == sizeSelected) {
-                        that.model.set('print_size', size.value);
-                        that.model.set('mount_price', size.mountedPrice);
-                     }
-                });
+                this.model.set('print_size', sizeSelected);
+                this.model.set('mount_style', null);
+                this.model.set('frame_style', null); 
+                this.model.set('frame_price', null); 
+                this.model.set('qty', 0);
+             }
+            else    //no size selected
+            {
+                this.resetOrderValues();
             }
+            
+            this.render();
+
         },
+        
+        //reset the order but not the id or the image_ref - so an existing order is still the same one
+        resetOrderValues: function() {
+            this.model.set( 
+                {
+                    "print_price": null, 
+                    "print_size":null, 
+                    "mount_price":null, 
+                    "mount_style":null, 
+                    "frame_style":null, 
+                    "frame_price":null, 
+                     "qty":0
+                });
+        },
+        
         
         onChangeMount: function(evt) {
             var mount = evt.currentTarget.value;
@@ -238,31 +383,37 @@ var caApp = (function (Backbone) {
             //check model is in valid state.
             //do we save the model or add it to the collection and save that?
             //it has to end up in the collection.
-           //..then of course some redrawing which should see the just added on appear as an updatable row
-
-            
+           //..then of course some redrawing which should see the just added on appear as an updatable row and a new fresh row underneath that.... 
+           console.log("ORDER!", this.model)   ;
+           
         },
         
         render: function() {
             var data = {};
             var pricingModel = this.options.pricingModelJSON;
-              
-            if (this.options.applicableSizeGroup === null) 
-            {
-                //this works because the first time the user wld see this -if not match to image ratio in prcingModel -  and would not be able to order anything so we would not see this repeated in multiple order line rows. not very elegant. TDOO
-                var html = app.langStrings.get("configError");
-                this.$el.html(html);
-                return this;
-            }  
-            else 
-            {
-                data = pricingModel;
-                data.order = this.model.toJSON();
-                data.mode = this.options.mode;
-                var html = this.template(data);
-                this.$el.html(html);
-                return this;    
+            data = app.pricingModel.toJSON();
+            data.applicableSizesGroup = app.pricingModel.getSizesForRatio(this.options.ratio);
+            data.order = this.model.toJSON();
+            data.mode = this.options.mode;
+            
+            data.langStrings = {};
+            data.langStrings.select = app.langStrings.get("select");
+            data.langStrings.noFrame = app.langStrings.get("noFrame");
+            data.langStrings.noMount = app.langStrings.get("noMount");
+            
+            var printSize = this.model.get("print_size");  
+            data.mountPrice = null;
+            data.framePrices = null;
+            
+            if (printSize !== null) {
+                data.mountPrice = app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(this.options.ratio, printSize).mountPrice;
+                data.framePrices =  app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(this.options.ratio, printSize);
+                data.frameStylesToDisplay = app.pricingModel.getFrameDisplayNamesCodesLookup();
             }
+            
+            var html = this.template(data);
+            this.$el.html(html);
+            return this;    
         }    
     });
     

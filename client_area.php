@@ -959,12 +959,9 @@ EOF;
     private function appTemplates() 
     {
     
-        $select =  $this->lang("select");
         $printSize =  $this->lang("print_size");
         $mount =  $this->lang("mount");
-        $noMount =  $this->lang("no_mount");
         $frame =  $this->lang("frame");
-        $noFrame =  $this->lang("no_frame");
         $qty =  $this->lang("quantity");
         $update =  $this->lang("update");
         $remove =  $this->lang("remove");
@@ -976,25 +973,37 @@ EOF;
             <script type="text/html" id="ca_order_line_tmpl">
                 <div class="col-xs-2">
                     <div class="form-group ca_print_size_group ">
-                        <select class="ca_form_control form-control ca_print_size_event">
-                          <option value="--">$select</option>
-                          <% _.each(printSizes.applicableSizeGroup.sizes.size, function(size){ %>
-                              <option value="<%= size.value %>"><%= size.display %> [<%= currency.symbol %><%= size.printPrice %>]</option>
-                          <% }); %>    
+                        <select class="ca_form_control form-control ca_print_size_group ca_print_size_event">
+                            <option value="--"><%= langStrings.select %></option>
+                            <% _.each(applicableSizesGroup, function(size){ %>
+                                <option value="<%= size.value %>"><%= size.display %> [<%= currency.symbol %><%= size.printPrice %>]</option>
+                            <% }); %>    
                         </select>
                     </div>    
                 </div>
                 <div class="col-xs-2">
-                    <div class="form-group" id="ca_mount_group">
-                        <select class="ca_form_control form-control ca_mount ca_mount_event" disabled="disabled">
-                            <option value="--">$select</option>
+                    <div class="form-group ca_mount_group">
+                        <select class="ca_form_control form-control ca_mount ca_mount_event" >
+                            <option value="--"><%= langStrings.select %></option>
+                            <% if (mountPrice !== null) { %>
+                                <% _.each(mounts.mount, function(mount){ %>
+                                  <option value="<%= mount.value %>"><%= mount.display %> [+ <%= currency.symbol %><%= mountPrice %>]</option>
+                                <% }); %> 
+                                <option value="no_mount"><%= langStrings.noMount %></option>
+                            <% } %>
                         </select>    
                     </div>
                 </div>
                 <div class="col-xs-2">
-                    <div class="form-group" id="ca_frame_group">
-                        <select class="ca_form_control form-control ca_frame ca_frame_event" disabled="disabled">
-                          <option value="--">$select</option>
+                    <div class="form-group ca_frame_group">
+                        <select class="ca_form_control form-control ca_frame ca_frame_event" >
+                            <option value="--"><%= langStrings.select %></option>
+                            <% if (framePrices !== null) { %>
+                                <% _.each(framePrices.framePrice, function(framePrice){ %>
+                                    <option value="<%= framePrice.style %>"><%= frameStylesToDisplay[framePrice.style] %> [+ <%= currency.symbol %><%= framePrice.price %>]</option>
+                                <% }); %> 
+                                <option value="no_frame"><%= langStrings.noFrame %></option>
+                            <% } %>  
                         </select>
                     </div>
                 </div>
@@ -1022,20 +1031,7 @@ EOF;
                       <div class="col-xs-4"></div>
                 </div>
         </script>
-        <script type="text/html" id="ca_order_line_mount_select_options">
-                <option value="--"><%= langStrings.select %></option>
-                    <% _.each(pricingModel.mounts.mount, function(mount){ %>
-                              <option value="<%= mount.value %>"><%= mount.display %> [+ <%= pricingModel.currency.symbol %><%= mountPrice %>]</option>
-                    <% }); %> 
-                <option value="no_mount"><%= langStrings.noMount %></option>   
-        </script>
-        <script type="text/html" id="ca_order_line_frame_select_options">
-                <option value="--"><%= langStrings.select %></option>
-                    <% _.each(framePrices.framePrice, function(framePrice){ %>
-                              <option value="<%= framePrice.style %>"><%= framePrice.displayName %> [+ <%= pricingModel.currency.symbol %><%= framePrice.price %>]</option>
-                    <% }); %> 
-                <option value="no_frame"><%= langStrings.noFrame %></option>   
-        </script>
+ 
 EOF;
         return $html;    
     

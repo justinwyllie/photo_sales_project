@@ -78,7 +78,7 @@ the price for the print is the price. the price for the mounts and the frames is
                     <value>9x6</value>
                     <display>9&quot;  x 6&quot;</display>
                     <printPrice>3.00</printPrice>
-                    <mountedPrice>5.00</mountedPrice>
+                    <mountPrice>5.00</mountPrice>
                     <framePrices>
                         <framePrice>
                             <style>A</style>
@@ -102,7 +102,7 @@ the price for the print is the price. the price for the mounts and the frames is
                     <value>12x8</value>
                     <display>12&quot;  x 8&quot;</display>
                     <printPrice>3.50</printPrice>
-                    <mountedPrice>8.00</mountedPrice>
+                    <mountPrice>8.00</mountPrice>
                     <framePrices>
                         <framePrice>
                             <style>A</style>
@@ -132,7 +132,7 @@ the price for the print is the price. the price for the mounts and the frames is
                     <value>10x8</value>
                     <display>10&quot;  x 8&quot;</display>
                     <printPrice>3.50</printPrice>
-                    <mountedPrice>8.00</mountedPrice>
+                    <mountPrice>8.00</mountPrice>
                     <framePrices>
                         <framePrice>
                             <style>A</style>
@@ -157,7 +157,7 @@ the price for the print is the price. the price for the mounts and the frames is
                     <value>20x16</value>
                     <display>20&quot;  x 16&quot;</display>
                     <printPrice>4.00</printPrice>
-                    <mountedPrice>10.00</mountedPrice>
+                    <mountPrice>10.00</mountPrice>
                     <framePrices>
                         <framePrice>
                             <style>A</style>
@@ -179,7 +179,7 @@ the price for the print is the price. the price for the mounts and the frames is
                     <value>10x10</value>
                     <display>10&quot;  x 10&quot;</display>
                     <printPrice>3.50</printPrice>
-                    <mountedPrice>8.00</mountedPrice>
+                    <mountPrice>8.00</mountPrice>
                     <framePrices>
                         <framePrice>
                             <style>A</style>
@@ -203,7 +203,7 @@ the price for the print is the price. the price for the mounts and the frames is
                     <value>15x15</value>
                     <display>15&quot;  x 15&quot;</display>
                     <printPrice>4.00</printPrice>
-                    <mountedPrice>10.00</mountedPrice>
+                    <mountPrice>10.00</mountPrice>
                      <framePrices>
                         <framePrice>
                             <style>A</style>
@@ -225,7 +225,7 @@ the price for the print is the price. the price for the mounts and the frames is
                     <value>16x9</value>
                     <display>16&quot;  x 9&quot;</display>
                     <printPrice>4.50</printPrice>
-                    <mountedPrice>8.00</mountedPrice>
+                    <mountPrice>8.00</mountPrice>
                     <framePrices>
                         <framePrice>
                             <style>A</style>
