@@ -119,12 +119,17 @@ var caApp = (function (Backbone) {
                 return  cache.framePriceMatrixForGivenRatioAndSize[imageRatio][printSize];
             } else {
                 var size = this.getSizeGroupForRatioAndSize(imageRatio, printSize);
+                var framePricesObj = {};
+                _.each(size.framePrices.framePrice, function(framePrice) {
+                   framePricesObj[framePrice.style] = framePrice.price;
+                });
                 if (!cache.framePriceMatrixForGivenRatioAndSize.hasOwnProperty(imageRatio)) {
                     cache.framePriceMatrixForGivenRatioAndSize[imageRatio] = {};    
                 }
-                cache.framePriceMatrixForGivenRatioAndSize[imageRatio][printSize] =  size.framePrices;
+                
+                cache.framePriceMatrixForGivenRatioAndSize[imageRatio][printSize] =  framePricesObj;
                 this.set("cache", cache); 
-                return size.framePrices;
+                return framePricesObj;
             }
        
        },
@@ -170,101 +175,65 @@ var caApp = (function (Backbone) {
             "mount_style":null,
             "frame_style":null,
             "frame_price":null,
+            "frame_display_name": null,
              "qty":0
         },
         
         initialize: function() {
             this.on("change:frame_style", function() {
-                this.setFramePrice();    
+                this.setFramePriceAndDisplayName();    
             });   
             this.on("change:print_size", function() {
                 this.setPrintPrice(); 
                 this.setMountPrice();   
             });  
-        
         },
         
-        setFramePrice: function() {
+        setFramePriceAndDisplayName: function() {
             var printSize = this.get("print_size");
             var frameStyle =  this.get("frame_style");
             var imageRatio = this.get("image_ratio");
             var applicableFramePrice = null;
+            var applicableFrameDisplayName = null;
             if ((printSize !== null) && (frameStyle !== null) && (imageRatio !== null)) {
-                var pricingModel = app.pricingModel.toJSON();
-                that = this;
-                _.each(pricingModel.printSizes.sizeGroup, function(sizeGroup) {
-                    if (sizeGroup.ratio == imageRatio) {
-                        _.each(sizeGroup.sizes.size, function(size) {
-                            if (size.value == printSize) {
-                                _.each(size.framePrices.framePrice, function(framePrice) {
-                                    if (framePrice.style == frameStyle) {
-                                        applicableFramePrice = framePrice.price;
-                                    }
-                                });
-                            }
-                       });
-                    }
-                });    
+                var framePrices = app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(imageRatio, printSize);    
+                applicableFramePrice =   framePrices[frameStyle];
+                applicableFrameDisplayName = app.pricingModel.getFrameDisplayNamesCodesLookup()[frameStyle];
+                
             }
-            
-            this.set("frame_price", applicableFramePrice);
+            this.set({"frame_price": applicableFramePrice, "frame_display_name": applicableFrameDisplayName});
         },
         
         setPrintPrice: function() {
             var printSize = this.get("print_size");
             var imageRatio = this.get("image_ratio");
             var printPrice = null;
-            //TODO do something about all these repeated loops!  - maybe a method on the pricingModel that cahces them there so we only need to run these once after all the pricing model is immutable... 
             if ((printSize !== null) && (imageRatio !== null)) {
-                var pricingModel = app.pricingModel.toJSON();
-                that = this;
-                _.each(pricingModel.printSizes.sizeGroup, function(sizeGroup) {
-                    if (sizeGroup.ratio == imageRatio) {
-                        _.each(sizeGroup.sizes.size, function(size) {
-                            if (size.value == printSize) {
-                                printPrice = size.printPrice;
-                            }
-                       });
-                    }
-                });    
+                var printPrice = app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(imageRatio, printSize).printPrice;  
+                
             }
-            
-           this.set("print_price", printPrice); 
+            this.set("print_price", printPrice); 
+           
         },
         
         setMountPrice: function() {
             var printSize = this.get("print_size");
             var imageRatio = this.get("image_ratio");
             var mountPrice = null;
-            //TODO do something about all these repeated loops!  - maybe a method on the pricingModel that cahces them there so we only need to run these once after all the pricing model is immutable... 
             if ((printSize !== null) && (imageRatio !== null)) {
-                var pricingModel = app.pricingModel.toJSON();
-                that = this;
-                _.each(pricingModel.printSizes.sizeGroup, function(sizeGroup) {
-                    if (sizeGroup.ratio == imageRatio) {
-                        _.each(sizeGroup.sizes.size, function(size) {
-                            if (size.value == printSize) {
-                                mountPrice = size.mountPrice;
-                            }
-                       });
-                    }
-                });    
+                var mountPrice = app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(imageRatio, printSize).mountPrice;      
             }
-            
            this.set("mount_price", mountPrice); 
-
         },
-        
-        //NB - if you add an error field make sure there is a matching form group in the view. ca_modelAttributeName_group. 
-        //displayModelErrors in the view will add an error class to this field
+
         validate: function(attrs, options) {
             var errState = false;
             var errData = {};
             errData.errString = "";
             errData.fields = [];
-            
-            if (attrs.print_size == '--') {
+            if ((attrs.print_size == '--') || (attrs.print_size == null)) {
                 errState = true;
+                errData.errString =  errData.errString + app.langStrings.get("sizeFeedback") + " ";
             } 
             
             if (isNaN(attrs.qty) || (attrs.qty === "") || (attrs.qty == 0) || !Number.isInteger(parseInt(attrs.qty)))  {
@@ -326,7 +295,7 @@ var caApp = (function (Backbone) {
            'change .ca_print_size_event': 'onChangePrintSize' ,
            'change .ca_mount_event': 'onChangeMount',
            'change .ca_frame_event': 'onChangeFrame',
-           'change .ca_qty_event': 'onChangeQty'
+           'change .ca_qty_event': 'onChangeQty'     /* input is better but is not fully supported in IE9. keyup doesn't capture backspace. keydown is too soon - fires before change */
         }, 
         
         
@@ -396,18 +365,19 @@ var caApp = (function (Backbone) {
        onChangeQty: function(evt) {
             this.clearErrors('qty');
             var qty = evt.currentTarget.value;
-            this.model.set({'qty': qty}, {validate: true});
+            this.model.set({'qty': qty});
+            console.log("m", this.model.get("qty"));
         },
  
         
         onAdd: function() {
-            this.clearErrors();
-            //what to do?
-            //check model is in valid state.
-            //do we save the model or add it to the collection and save that?
-            //it has to end up in the collection.
-           //..then of course some redrawing which should see the just added on appear as an updatable row and a new fresh row underneath that.... 
-           console.log("ORDER!", this.model)   ;
+
+           if (this.model.isValid()) {
+                this.clearErrors();
+                console.log("SENDING ORDER");
+                app.basketCollection.create(this.model.toJSON());
+           }
+
            
         },
         

@@ -995,12 +995,12 @@ EOF;
                     </div>
                 </div>
                 <div class="col-xs-2">
-                    <div class="form-group ca_frame_group">
+                    <div class="form-group ca_frame_group">      
                         <select class="ca_form_control form-control ca_frame ca_frame_event" >
                             <option value="--"><%= langStrings.select %></option>
                             <% if (framePrices !== null) { %>
-                                <% _.each(framePrices.framePrice, function(framePrice){ %>
-                                    <option value="<%= framePrice.style %>"><%= frameStylesToDisplay[framePrice.style] %> [+ <%= currency.symbol %><%= framePrice.price %>]</option>
+                                <% _.each(framePrices, function(framePrice, frameStyle){ %>
+                                    <option value="<%= frameStyle %>"><%= frameStylesToDisplay[frameStyle] %> [+ <%= currency.symbol %><%= framePrice %>]</option>
                                 <% }); %> 
                                 <option value="no_frame"><%= langStrings.noFrame %></option>
                             <% } %>  
