@@ -976,7 +976,7 @@ EOF;
                         <select class="ca_form_control form-control ca_print_size_group ca_print_size_event">
                             <option value="--"><%= langStrings.select %></option>
                             <% _.each(applicableSizesGroup, function(size){ %>
-                                <option value="<%= size.value %>"><%= size.display %> [<%= currency.symbol %><%= size.printPrice %>]</option>
+                                <option value="<%= size.value %>" <% if (order.print_size == size.value) { %> selected <% } %>><%= size.display %> [<%= currency.symbol %><%= size.printPrice %>]</option>
                             <% }); %>    
                         </select>
                     </div>    

@@ -65,6 +65,8 @@ if you don't offer a frame style for a given print size just leave it out of the
 
 prices must be to 2 decimal places  
 
+size values must be expressed without spaces e.g. 12x8 not 12 x 8
+
 the price for the print is the price. the price for the mounts and the frames is the additional cost. 
 
 -->

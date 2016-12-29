@@ -17,26 +17,34 @@ var caApp = (function (Backbone) {
     
     //PricingModel Model   
     //TODO make immutable
-    //TODO use xpath instead of loops where possible                                                                                                                                                                                                     
+    //TODO use xpath instead of loops where possible      
+    //TODO there is some duplication here                                                                                                                                                                                               
     app.PricingModel = Backbone.Model.extend({
         url: "/api/v1/pricing",
         defaults: {
-            sizesForRatio: null,
-            printPriceAndMountPriceForRatioAndSize: null,
-            framePriceMatrixForGivenRatioAndSize: null,
-            frameDisplayNamesCodesLookup: null,
-            sizeGroupForRatioAndSize: null
-
+          cache: {}
+       },
+       
+       initialize: function() {
+            var cacheStructure = {
+            
+            };
+            cacheStructure.sizesForRatio = {};
+            cacheStructure.sizeGroupForRatioAndSize = {};
+            cacheStructure.printPriceAndMountPriceForRatioAndSize = {};
+            cacheStructure.framePriceMatrixForGivenRatioAndSize = {};
+            cacheStructure.frameDisplayNamesCodesLookups  = {};
+            this.set("cache", cacheStructure);
+       
        },
        
        /*
        *  returns array of size blocks
         */
        getSizesForRatio: function (imageRatio) {
-            that = this;    
-            var sizesForRatio = this.get("sizesForRatio"); 
-            if (sizesForRatio !== null) {
-                return  sizesForRatio;
+            var cache =  this.get("cache");
+            if (cache.sizesForRatio.hasOwnProperty(imageRatio)) {
+                return cache.sizesForRatio[imageRatio];
             }  else {
                 var printSizes = this.get("printSizes");
                 var sizeGroupForRatio = null;
@@ -46,7 +54,8 @@ var caApp = (function (Backbone) {
                         }
                 });
                 
-                this.set("sizesForRatio", sizeGroupForRatio);
+                cache.sizesForRatio[imageRatio] = sizeGroupForRatio;
+                this.set("cache", cache);
                 return sizeGroupForRatio;    
             }          
        
@@ -56,12 +65,11 @@ var caApp = (function (Backbone) {
        * returns an individual size block as object
        */
        getSizeGroupForRatioAndSize: function(imageRatio, printSize) {
-            that = this;
-            var sizeBlock = null;
-            var sizeGroupForRatioAndSize = this.get("sizeGroupForRatioAndSize");
-            if (sizeGroupForRatioAndSize !== null) {
-                return sizeGroupForRatioAndSize;
-            }    else {
+            var cache =  this.get("cache");
+            if ((cache.sizeGroupForRatioAndSize.hasOwnProperty(imageRatio)) && (cache.sizeGroupForRatioAndSize[imageRatio].hasOwnProperty(printSize))) {
+                return cache.sizeGroupForRatioAndSize[imageRatio][printSize];
+            }   else {
+                var sizeBlock = null;
                 var sizeGroups = this.getSizesForRatio(imageRatio);
                 _.each(sizeGroups, function(size) {
                     if (size.value == printSize) {
@@ -69,60 +77,75 @@ var caApp = (function (Backbone) {
                     }
                 }); 
             
-            this.set("sizeGroupForRatioAndSize", sizeBlock);    
+            if (!cache.sizeGroupForRatioAndSize.hasOwnProperty(imageRatio)) {
+                cache.sizeGroupForRatioAndSize[imageRatio] = {};    
+            }
+            cache.sizeGroupForRatioAndSize[imageRatio][printSize] = sizeBlock;
+            this.set("cache", cache);   
             return sizeBlock;  
            
            } 
        
        }, 
        
+       /*
+       * returns object
+       */
         getPrintPriceAndMountPriceForRatioAndSize: function(imageRatio, printSize) {
-            that = this;
-            var printPriceAndMountPriceForRatioAndSize = this.get("printPriceAndMountPriceForRatioAndSize");
-            if (printPriceAndMountPriceForRatioAndSize !== null) {
-                return printPriceAndMountPriceForRatioAndSize;
+            var cache =  this.get("cache");
+            if ((cache.printPriceAndMountPriceForRatioAndSize.hasOwnProperty(imageRatio)) && (cache.printPriceAndMountPriceForRatioAndSize[imageRatio].hasOwnProperty(printSize))) {
+                return cache.printPriceAndMountPriceForRatioAndSize[imageRatio][printSize];
             } else {
                 var mountPrice = null;
                 var printPrice = null;
-                var sizeGroup = this.getSizeGroupForRatioAndSize(imageRatio, printSize);
-                
+                var sizeGroup = this.getSizeGroupForRatioAndSize(imageRatio, printSize);                  
                 var ret = {mountPrice: sizeGroup.mountPrice, printPrice: sizeGroup.printPrice};
-                this.set("printPriceAndMountPriceForRatioAndSize",  ret);
+                if (!cache.printPriceAndMountPriceForRatioAndSize.hasOwnProperty(imageRatio)) {
+                    cache.printPriceAndMountPriceForRatioAndSize[imageRatio] = {};    
+                }
+                cache.printPriceAndMountPriceForRatioAndSize[imageRatio][printSize] = ret;
+                this.set("cache", cache); 
                 return ret ;    
             
             } 
        },
        
+       /*
+       * returns object
+       */
        getFramePriceMatrixForGivenRatioAndSize: function(imageRatio, printSize) {
-            var framePriceMatrixForGivenRatioAndSize = this.get("framePriceMatrixForGivenRatioAndSize");
-                if (framePriceMatrixForGivenRatioAndSize !== null) {
-                return  framePriceMatrixForGivenRatioAndSize;
+            var cache =  this.get("cache");
+            if ((cache.framePriceMatrixForGivenRatioAndSize.hasOwnProperty(imageRatio)) && (cache.framePriceMatrixForGivenRatioAndSize[imageRatio].hasOwnProperty(printSize))) {
+                return  cache.framePriceMatrixForGivenRatioAndSize[imageRatio][printSize];
             } else {
-                var framePrices = null;
                 var size = this.getSizeGroupForRatioAndSize(imageRatio, printSize);
-            
-                this.set("framePriceMatrixForGivenRatioAndSize", size.framePrices);
+                if (!cache.framePriceMatrixForGivenRatioAndSize.hasOwnProperty(imageRatio)) {
+                    cache.framePriceMatrixForGivenRatioAndSize[imageRatio] = {};    
+                }
+                cache.framePriceMatrixForGivenRatioAndSize[imageRatio][printSize] =  size.framePrices;
+                this.set("cache", cache); 
                 return size.framePrices;
             }
        
        },
-       
+
+       /*
+       * returns object
+       */        
        getFrameDisplayNamesCodesLookup: function() {
-            var  frameDisplayNamesCodesLookup = this.get("frameDisplayNamesCodesLookup");
-            if (frameDisplayNamesCodesLookup !== null) {
-                return frameDisplayNamesCodesLookup; 
+            var cache =  this.get("cache");
+            if (cache.frameDisplayNamesCodesLookup != undefined) {
+                return cache.frameDisplayNamesCodesLookup; 
             } else  {
                  var pictureFrames = this.get("frames");
                  var framesCodeToDisplay = {};
                  _.each(pictureFrames.frame, function(frame) {
                     framesCodeToDisplay[frame.value] = frame.display;   
                 });
-                
-                this.set("frameDisplayNamesCodesLookup", framesCodeToDisplay);
+                cache.frameDisplayNamesCodesLookup =  framesCodeToDisplay;
+                this.set("cache", cache);
                 return framesCodeToDisplay;
-            
             }
-       
        }
        
        
