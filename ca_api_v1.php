@@ -78,17 +78,35 @@ class ClientAreaAPI
     {
         $result = new stdClass();
         $basket = $_SESSION["basket"];
-        //dummy data
-        $basket[] = array("id"=>1, "image" => "image-001.jpg", "print_price"=>"5.00", "size"=>"9x6", "mount_price"=>"15.00", "mount_style"=>"White", "frame_style"=>"A", "frame_price"=>"25.00", "qty"=>"1");
-        $basket[] = array("id"=>3, "image" => "image-001.jpg", "print_price"=>"5.00", "size"=>"9x6", "mount_price"=>"15.00", "mount_style"=>"White", "frame_style"=>"C", "frame_price"=>"50.00", "qty"=>"2");
-        $basket[] = array("id"=>2, "image" => "image-002.jpg", "size"=>"9x6", "print_price"=>"5.00");
-          
         return $basket;
   
-  }
+    }
+    
+    public function postBasket()
+    {
+        $newOrderLine = file_get_contents('php://input');
+        $newId = $this->generateUniqueOrderId();
+        $order = json_decode($newOrderLine);
+        $order->id = $newId;
+        $_SESSION["basket"][] = $order;
+        return $order;
+
+    }
   
 
-  
+    private function generateUniqueOrderId()
+    {
+        $id = 0;
+        $basket = $_SESSION["basket"];
+        foreach ($basket as $order) {
+            if ($order->id > $id) {
+                $id = $order->id;
+            }
+        }
+        
+        return $id + 1;
+ 
+    } 
   
   private function outputJson($output) {
       header("Content-type: application/json");

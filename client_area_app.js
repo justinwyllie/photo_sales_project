@@ -260,8 +260,12 @@ var caApp = (function (Backbone) {
         url: "/api/v1/basket",
         
         initialize: function(options) {
-            
+            this.on("add", function() {
+                console.log("collection", this);
+            });    
         },
+        
+     
         
         byImage: function (ref) {
           filtered = this.filter(function (orderLine) {
@@ -374,8 +378,7 @@ var caApp = (function (Backbone) {
 
            if (this.model.isValid()) {
                 this.clearErrors();
-                console.log("SENDING ORDER");
-                app.basketCollection.create(this.model.toJSON());
+                app.basketCollection.create(this.model.toJSON(), {wait: true});
            }
 
            
