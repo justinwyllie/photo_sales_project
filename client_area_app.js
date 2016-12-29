@@ -420,10 +420,11 @@ var caApp = (function (Backbone) {
         el: "#ca_pricing_area", 
         
         initialize: function(options) {
-                 this.options = options;  
-                 var tmplRoWHead =  $('#ca_order_line_row_head_tmpl').html(); 
-                 this.tmplRoWHead = _.template(tmplRoWHead);
-                 this.render();
+                this.listenTo(this.collection, "add", this.render);
+                this.options = options;  
+                var tmplRoWHead =  $('#ca_order_line_row_head_tmpl').html(); 
+                this.tmplRoWHead = _.template(tmplRoWHead);
+                this.render();
         },
         
         render: function() {
@@ -432,7 +433,7 @@ var caApp = (function (Backbone) {
             this.$el.html(this.tmplRoWHead());
             //1. render existing orders
             this.collection.each(function(orderLine) {
-                if (orderLine.get('image') == (this.options.ref + 'sss')) {   //the being rendered image is in the basketColletion i.e. it already has an order line 
+                if (orderLine.get('image_ref') == (this.options.ref)) {   //the being rendered image is in the basketColletion i.e. it already has an order line 
                   //TODO - is each one deleted from memory by the assignment?
                   //orderLine is an item in the order e.g. a print with its size, mount, frame etc.
                   var orderLineView = new app.OrderLineView({model: orderLine, ref: this.options.ref, 

@@ -93,7 +93,7 @@ class ClientAreaAPI
 
     }
   
-
+    //HELPERS
     private function generateUniqueOrderId()
     {
         $id = 0;
