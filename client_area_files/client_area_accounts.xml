@@ -2,19 +2,19 @@
 <client_area_accounts>
 
     <account username="nascimento">
-        <password>testextra</password>
+        <password>xxx</password>
         <human_name>Decio</human_name>
     </account>
 
 
     <account username="nascimento2">
-        <password>testextra2</password>
+        <password>xxx</password>
         <human_name>Decio2</human_name>
     </account>
 
 
     <account username="professor_george">
-        <password>lincoln</password>
+        <password>xxx</password>
         <human_name>Professor George</human_name>
     </account>
 
@@ -24,17 +24,17 @@
     </account>
 
     <account username="sims">
-        <password>littlebury</password>
+        <password>xxx</password>
         <human_name>Julie and Allen</human_name>
     </account>
 
     <account username="patterson">
-        <password>dc123</password>
+        <password>xxx</password>
         <human_name>David and Lynda</human_name>
     </account>
 
     <account username="lambourne">
-        <password>littlebury</password>
+        <password>xxx</password>
         <human_name>Charlotte and Darren</human_name>
     </account>
 
