@@ -2,7 +2,7 @@
 <client_area_accounts>
 
     <account username="nascimento">
-        <password>xxxxs</password>
+        <password>xxxxsx</password>
         <human_name>Decio</human_name>
     </account>
 
@@ -15,7 +15,7 @@
 
     <account username="professor_george">
         <password>xxxt</password>
-        <human_name>Professor George</human_name>
+        <human_name>Professore</human_name>
     </account>
 
     <account username="roberts">
