@@ -164,5 +164,8 @@
     <field name="invalid">
         Invalid.
     </field>  
+   <field name="price">
+        Price
+    </field>  
 
 </strings>

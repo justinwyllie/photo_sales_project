@@ -169,61 +169,77 @@ var caApp = (function (Backbone) {
             "id": null,
             "image_ref": null,
             "image_ratio": null,
-            "print_price": null,
             "print_size":null,
-            "mount_price":null,
             "mount_style":null,
             "frame_style":null,
-            "frame_price":null,
             "frame_display_name": null,
-             "qty":0
+            "print_price": 0,
+            "mount_price":0,
+            "frame_price":0,
+            "qty":1,
+            "total_price": "0.00"
         },
         
         initialize: function() {
-            this.on("change:frame_style", function() {
-                this.setFramePriceAndDisplayName();    
-            });   
             this.on("change:print_size", function() {
-                this.setPrintPrice(); 
-                this.setMountPrice();   
-            });  
+                this.resetOrderLine();    
+                this.setPrices();
+            }); 
+            this.on("change:mount_style", function() {
+                this.setPrices();    
+            });
+            this.on("change:frame_style", function() {
+                this.setPrices();    
+            });
+            this.on("change:qty", function() {
+                this.setPrices();    
+            });
         },
         
-        setFramePriceAndDisplayName: function() {
+        resetOrderLine: function() {
+            this.set( 
+                {
+       
+                    "mount_style":null, 
+                    "frame_style":null, 
+                    "print_price": 0, 
+                    "mount_price":0,
+                    "frame_price":0,
+                    "total_price":0,  
+                });
+        },
+        
+        setPrices: function() {
             var printSize = this.get("print_size");
-            var frameStyle =  this.get("frame_style");
             var imageRatio = this.get("image_ratio");
-            var applicableFramePrice = null;
-            var applicableFrameDisplayName = null;
-            if ((printSize !== null) && (frameStyle !== null) && (imageRatio !== null)) {
+            var mountStyle =  this.get("mount_style"); 
+            var frameStyle =  this.get("frame_style"); 
+            var qty = this.get("qty"); 
+            var totalPrice = 0;
+            
+            if (printSize !== null) {
+                var printPrice = app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(imageRatio, printSize).printPrice;
+                this.set("print_price", printPrice);
+                totalPrice = qty * printPrice;
+            }
+            
+             if (mountStyle !== null) {
+                var mountPrice = app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(imageRatio, printSize).mountPrice;  
+                this.set("mount_price", printPrice);
+                totalPrice = totalPrice + (qty * mountPrice);
+            }
+            
+            if (frameStyle !== null) {
                 var framePrices = app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(imageRatio, printSize);    
-                applicableFramePrice =   framePrices[frameStyle];
-                applicableFrameDisplayName = app.pricingModel.getFrameDisplayNamesCodesLookup()[frameStyle];
-                
+                var applicableFramePrice =   framePrices[frameStyle];
+                var applicableFrameDisplayName = app.pricingModel.getFrameDisplayNamesCodesLookup()[frameStyle];
+                this.set({"frame_price": applicableFramePrice, "frame_display_name": applicableFrameDisplayName});
+                totalPrice = totalPrice + (qty * applicableFramePrice);
             }
-            this.set({"frame_price": applicableFramePrice, "frame_display_name": applicableFrameDisplayName});
-        },
+            
+            totalPrice = totalPrice.toFixed(2);
+            this.set("total_price", totalPrice);
         
-        setPrintPrice: function() {
-            var printSize = this.get("print_size");
-            var imageRatio = this.get("image_ratio");
-            var printPrice = null;
-            if ((printSize !== null) && (imageRatio !== null)) {
-                var printPrice = app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(imageRatio, printSize).printPrice;  
-                
-            }
-            this.set("print_price", printPrice); 
-           
-        },
-        
-        setMountPrice: function() {
-            var printSize = this.get("print_size");
-            var imageRatio = this.get("image_ratio");
-            var mountPrice = null;
-            if ((printSize !== null) && (imageRatio !== null)) {
-                var mountPrice = app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(imageRatio, printSize).mountPrice;      
-            }
-           this.set("mount_price", mountPrice); 
         },
 
         validate: function(attrs, options) {
@@ -231,7 +247,8 @@ var caApp = (function (Backbone) {
             var errData = {};
             errData.errString = "";
             errData.fields = [];
-            if ((attrs.print_size == '--') || (attrs.print_size == null)) {
+            
+            if (attrs.print_size == null) {
                 errState = true;
                 errData.errString =  errData.errString + app.langStrings.get("sizeFeedback") + " ";
             } 
@@ -285,6 +302,7 @@ var caApp = (function (Backbone) {
         template: null,
         initialize: function(options) {
             this.listenTo(this.model, "invalid", this.displayModelErrors);
+            this.listenTo(this.model, "change:total_price", this.render);
             var tmpl =  $('#ca_order_line_tmpl').html();
             this.template = _.template(tmpl);
             this.options = options;
@@ -321,49 +339,30 @@ var caApp = (function (Backbone) {
             this.$el.find(".ca_order_info").html("");     
         },
         
+        processSelects: function(val) {
+        
+            if (val == "--") {
+                val = null;
+            }
+            return val;
+        
+        },
+        
         onChangePrintSize: function(evt) {
             var sizeSelected = evt.currentTarget.value;
-            if (sizeSelected != '--')
-            {
-                this.model.set('print_size', sizeSelected);
-                this.model.set('mount_style', null);
-                this.model.set('frame_style', null); 
-                this.model.set('frame_price', null); 
-                this.model.set('qty', 0);
-             }
-            else    //no size selected
-            {
-                this.resetOrderValues();
-            }
-            
-            this.render();
+            this.model.set('print_size', this.processSelects(sizeSelected));
+            console.log("test", this.model.get("print_size"));
+         },
 
-        },
-        
-        //reset the order but not the id or the image_ref - so an existing order is still the same one
-        resetOrderValues: function() {
-            this.model.set( 
-                {
-                    "print_price": null, 
-                    "print_size":null, 
-                    "mount_price":null, 
-                    "mount_style":null, 
-                    "frame_style":null, 
-                    "frame_price":null, 
-                     "qty":0
-                });
-        },
-        
-        
         onChangeMount: function(evt) {
             var mount = evt.currentTarget.value;
-            this.model.set('mount_style', mount);
+            this.model.set('mount_style', this.processSelects(mount));
         },
         
         
         onChangeFrame: function(evt) {
             var frame = evt.currentTarget.value;
-            this.model.set('frame_style', frame);
+            this.model.set('frame_style', this.processSelects(frame));
         },
         
        onChangeQty: function(evt) {

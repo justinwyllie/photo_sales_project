@@ -960,6 +960,7 @@ EOF;
     {
     
         $printSize =  $this->lang("print_size");
+        $price =  $this->lang("price");
         $mount =  $this->lang("mount");
         $frame =  $this->lang("frame");
         $qty =  $this->lang("quantity");
@@ -987,9 +988,9 @@ EOF;
                             <option value="--"><%= langStrings.select %></option>
                             <% if (mountPrice !== null) { %>
                                 <% _.each(mounts.mount, function(mount){ %>
-                                  <option value="<%= mount.value %>"><%= mount.display %> [+ <%= currency.symbol %><%= mountPrice %>]</option>
+                                  <option value="<%= mount.value %>" <% if (order.mount_style == mount.value) { %> selected <% } %>><%= mount.display %> [+ <%= currency.symbol %><%= mountPrice %>]</option>
                                 <% }); %> 
-                                <option value="no_mount"><%= langStrings.noMount %></option>
+                                <option value="--"><%= langStrings.noMount %></option>
                             <% } %>
                         </select>    
                     </div>
@@ -1000,19 +1001,24 @@ EOF;
                             <option value="--"><%= langStrings.select %></option>
                             <% if (framePrices !== null) { %>
                                 <% _.each(framePrices, function(framePrice, frameStyle){ %>
-                                    <option value="<%= frameStyle %>"><%= frameStylesToDisplay[frameStyle] %> [+ <%= currency.symbol %><%= framePrice %>]</option>
+                                    <option value="<%= frameStyle %>" <% if (order.frame_style == frameStyle) { %> selected <% } %>><%= frameStylesToDisplay[frameStyle] %> [+ <%= currency.symbol %><%= framePrice %>]</option>
                                 <% }); %> 
-                                <option value="no_frame"><%= langStrings.noFrame %></option>
+                                <option value="--"><%= langStrings.noFrame %></option>
                             <% } %>  
                         </select>
                     </div>
                 </div>
                 <div class="col-xs-2">
                     <div class="form-group ca_qty_group">
-                        <input type="text" id="ca_qty_field" class="ca_qty_input form-control ca_qty_event" >
+                        <input type="text" id="ca_qty_field" class="ca_qty_input form-control ca_qty_event" value="<%= order.qty %>">
                     </div>  
                 </div>
-                <div class="col-xs-4">
+                 <div class="col-xs-2">
+                    <div class="form-group ca_price_group">
+                        <span><%= currency.symbol %><%= order.total_price %></span>
+                    </div>  
+                </div>
+                <div class="col-xs-2">
                       <% if (mode == 'new') { %>
                           <button type="button" class="ca_add">$add</button>
                       <% } else { %>
@@ -1028,7 +1034,8 @@ EOF;
                       <div class="col-xs-2">$mount</div>
                       <div class="col-xs-2">$frame</div>
                       <div class="col-xs-2">$qty</div>
-                      <div class="col-xs-4"></div>
+                      <div class="col-xs-2">$price</div>
+                      <div class="col-xs-2"></div>
                 </div>
         </script>
  
