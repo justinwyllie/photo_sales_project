@@ -182,13 +182,18 @@ var caApp = (function (Backbone) {
             "mount_price":0,
             "frame_price":0,
             "qty":1,
-            "total_price": "0.00"
+            "total_price": "0.00",
+            "edit_mode": ""
         },
         
         initialize: function() {
             this.on("change:print_size", function() {
-                this.resetOrderLine();    
-                this.setPrices();
+                var printSize = this.get("print_size");
+                if (printSize === null) {
+                    this.completeResetOrderLine();
+                }  else {
+                    this.setPrices();
+                }
             }); 
             this.on("change:mount_style", function() {
                 this.setPrices();    
@@ -201,7 +206,7 @@ var caApp = (function (Backbone) {
             });
         },
         
-        resetOrderLine: function() {
+        completeResetOrderLine: function() {
             this.set( 
                 {
        
@@ -210,7 +215,10 @@ var caApp = (function (Backbone) {
                     "print_price": 0, 
                     "mount_price":0,
                     "frame_price":0,
-                    "total_price":0,  
+                    "total_price":"0.00",
+                    "qty": 0,
+                    "edit_mode": "edit" 
+                     
                 });
         },
         
@@ -221,19 +229,19 @@ var caApp = (function (Backbone) {
             var frameStyle =  this.get("frame_style"); 
             var qty = this.get("qty"); 
             var totalPrice = 0;
-            
+
             if (printSize !== null) {
                 var printPrice = app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(imageRatio, printSize).printPrice;
                 this.set("print_price", printPrice);
                 totalPrice = qty * printPrice;
             }
-            
-             if ((mountStyle !== null) && (mountStyle !=- "no_mount")) {
+               
+             if ((mountStyle !== null) && (mountStyle !== "no_mount")) {
                 var mountPrice = app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(imageRatio, printSize).mountPrice;  
                 this.set("mount_price", printPrice);
                 totalPrice = totalPrice + (qty * mountPrice);
             }
-            
+                
             if ((frameStyle !== null) && (frameStyle !== "no_frame")) {
                 var framePrices = app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(imageRatio, printSize);    
                 var applicableFramePrice =   framePrices[frameStyle];
@@ -241,10 +249,10 @@ var caApp = (function (Backbone) {
                 this.set({"frame_price": applicableFramePrice, "frame_display_name": applicableFrameDisplayName});
                 totalPrice = totalPrice + (qty * applicableFramePrice);
             }
-            
+                
             totalPrice = totalPrice.toFixed(2);
-            this.set("total_price", totalPrice);
-        
+            this.set({"total_price": totalPrice, "edit_mode": "edit"});
+             
         },
 
         validate: function(attrs, options) {
@@ -283,7 +291,6 @@ var caApp = (function (Backbone) {
         
         initialize: function(options) {
             this.on("add", function() {
-                console.log("collection", this);
             });    
         },
         
@@ -308,6 +315,7 @@ var caApp = (function (Backbone) {
         initialize: function(options) {
             this.listenTo(this.model, "invalid", this.displayModelErrors);
             this.listenTo(this.model, "change:total_price", this.render);
+            this.listenTo(this.model, "sync", this.modelSynced);
             var tmpl =  $('#ca_order_line_tmpl').html();
             this.template = _.template(tmpl);
             this.options = options;
@@ -318,12 +326,13 @@ var caApp = (function (Backbone) {
         },
         
         events: {
-           'click .ca_add': 'onAdd',
+           'click .ca_add_event': 'onAdd',
+           'click .ca_update_event': 'onUpdate',
            'change .ca_print_size_event': 'onChangePrintSize' ,
            'change .ca_mount_event': 'onChangeMount',
            'change .ca_frame_event': 'onChangeFrame',
            'input .ca_qty_event': 'onChangeQty',     /* input is better but IE9 does not support backspace or delete. keyup doesn't capture backspace. keydown is too soon - fires before change. keypress is deprecated in favour of input */
-           'change .ca_qty_event': 'onChangeQty' /*fully support IE9 at the cost of an unnessary update */
+           'change .ca_qty_event': 'onChangeQty' /* fully support IE9 at the cost of an unnessary update */
         }, 
         
         
@@ -354,10 +363,10 @@ var caApp = (function (Backbone) {
         
         },
         
+        
         onChangePrintSize: function(evt) {
             var sizeSelected = evt.currentTarget.value;
             this.model.set('print_size', this.processSelects(sizeSelected));
-            console.log("test", this.model.get("print_size"));
          },
 
         onChangeMount: function(evt) {
@@ -375,26 +384,51 @@ var caApp = (function (Backbone) {
             this.clearErrors('qty');
             var qty = evt.currentTarget.value;
             this.model.set({'qty': qty});
-            console.log("m", this.model.get("qty"));
         },
  
         
         onAdd: function() {
-
-           if (this.model.isValid()) {
+            if (this.model.isValid()) {
                 this.clearErrors();
                 app.basketCollection.create(this.model.toJSON(), {wait: true});
            }
-
-           
         },
         
+        modelSynced: function(model) {
+            this.render();
+        },
+        
+        updateSuccess: function(model) {
+            console.log("update success");
+            model.set("edit_mode", "saved");
+        },
+        
+       updateError: function(model) {
+            console.log("update err");
+        },
+        
+        onUpdate: function() {
+            if (this.model.isValid()) {
+                this.clearErrors();
+                this.model.save(null, {wait: true, success: this.updateSuccess, error: this.updateError});
+           }
+        },
+
         render: function() {
             var data = {};
             var pricingModel = this.options.pricingModelJSON;
             data = app.pricingModel.toJSON();
             data.applicableSizesGroup = app.pricingModel.getSizesForRatio(this.options.ratio);
             data.order = this.model.toJSON();
+            
+            
+            if (this.model.hasChanged() === false) {
+                data.editStateIcon = "";
+            } else {
+                data.editStateIcon = "glyphicon-" + this.model.get("edit_mode");
+            }
+        
+            
             data.mode = this.options.mode;
             
             data.langStrings = {};

@@ -26,6 +26,9 @@ class ClientAreaAPI
        
         $this->args = explode('/', rtrim($request, '/'));
         $this->endpoint = array_shift($this->args);       //TODO handle e.g. basket/1
+        if (sizeof($this->args) >= 1) {
+            $this->param = array_shift($this->args);
+        }
       
         
         $this->verb = strtolower($_SERVER["REQUEST_METHOD"]);
@@ -78,7 +81,10 @@ class ClientAreaAPI
     {
         $result = new stdClass();
         $basket = $_SESSION["basket"];
-        return $basket;
+        foreach ($basket as $id => $order) {
+            $deIndexedBasket[] = $order;
+        }
+        return $deIndexedBasket;
   
     }
     
@@ -88,7 +94,17 @@ class ClientAreaAPI
         $newId = $this->generateUniqueOrderId();
         $order = json_decode($newOrderLine);
         $order->id = $newId;
-        $_SESSION["basket"][] = $order;
+        $_SESSION["basket"][$newId] = $order;
+        return $order;
+
+    }
+    
+    public function putBasket()
+    {
+        $updatedOrderLine = file_get_contents('php://input');
+        $orderId = $this->param;
+        $order = json_decode($updatedOrderLine);
+        $_SESSION["basket"][$orderId] = $order;
         return $order;
 
     }

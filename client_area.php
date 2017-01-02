@@ -1014,20 +1014,22 @@ EOF;
                         <input type="text" id="ca_qty_field" class="ca_qty_input form-control ca_qty_event" value="<%= order.qty %>">
                     </div>  
                 </div>
-                 <div class="col-xs-2">
+                 <div class="col-xs-1">
                     <div class="form-group ca_price_group">
                         <span><%= currency.symbol %><%= order.total_price %></span>
                     </div>  
                 </div>
-                <div class="col-xs-2">
+                <div class="col-xs-3">
                       <% if (mode == 'new') { %>
-                          <button type="button" class="ca_add">$add</button>
+                          <button type="button" class="ca_add_event">$add</button>
                       <% } else { %>
-                          <button type="button">$update</button>
+                          <span class="ca_edit_icon glyphicon <%= editStateIcon %>"></span>  
+                          <button type="button" class="ca_update_event">$update</button>
                           <button type="button">$remove</button>
                       <% } %>
                       <div class="ca_order_info"></div>
                 </div>
+                
         </script>
         <script type="text/html" id="ca_order_line_row_head_tmpl">
                 <div class="row ca_row_header">
@@ -1035,8 +1037,8 @@ EOF;
                       <div class="col-xs-2">$mount</div>
                       <div class="col-xs-2">$frame</div>
                       <div class="col-xs-2">$qty</div>
-                      <div class="col-xs-2">$price</div>
-                      <div class="col-xs-2"></div>
+                      <div class="col-xs-1">$price</div>
+                      <div class="col-xs-3"></div>
                 </div>
         </script>
  

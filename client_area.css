@@ -442,3 +442,9 @@ NB. For responsiveness to work as expected your container page should include so
 {
     color: #ff0000;
 }
+
+.ca_edit_icon
+{
+    display: inline-block;
+    width: 15px;
+}
