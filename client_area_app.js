@@ -23,6 +23,7 @@ var caApp = (function (Backbone) {
     //this would be solved if the view was removed by backbones remove view method which removes the listenTo's as well
     //currently the lightbox popup is closed by jquery in the jquery app. which is bad as it is outside the app. 
     //but here we expose the basketCollectionView so we could remove it properly in jQuery. TODO
+    //hmm. does thie cascade remove the listenTo's set up in the order line views?       TODO
     app.showPrintPopUp = function(ref, ratio) {
         //reset the basket to what the server believes in case we have got out of sync
         //TOOO - are we getting out of sync? we should know. 
