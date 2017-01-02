@@ -1,6 +1,11 @@
 var caApp = (function (Backbone) {
 	var app = {};
     
+    //shims
+    app.isInt = function(n) {
+        return parseInt(n) == n;
+    }
+    
     app.init = function() {
     
         app.langStrings = new app.LangStrings;
@@ -223,13 +228,13 @@ var caApp = (function (Backbone) {
                 totalPrice = qty * printPrice;
             }
             
-             if (mountStyle !== null) {
+             if ((mountStyle !== null) && (mountStyle !=- "no_mount")) {
                 var mountPrice = app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(imageRatio, printSize).mountPrice;  
                 this.set("mount_price", printPrice);
                 totalPrice = totalPrice + (qty * mountPrice);
             }
             
-            if (frameStyle !== null) {
+            if ((frameStyle !== null) && (frameStyle !== "no_frame")) {
                 var framePrices = app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(imageRatio, printSize);    
                 var applicableFramePrice =   framePrices[frameStyle];
                 var applicableFrameDisplayName = app.pricingModel.getFrameDisplayNamesCodesLookup()[frameStyle];
@@ -253,7 +258,7 @@ var caApp = (function (Backbone) {
                 errData.errString =  errData.errString + app.langStrings.get("sizeFeedback") + " ";
             } 
             
-            if (isNaN(attrs.qty) || (attrs.qty === "") || (attrs.qty == 0) || !Number.isInteger(parseInt(attrs.qty)))  {
+            if (isNaN(attrs.qty) || (attrs.qty === "") || (attrs.qty == 0) || (!app.isInt(attrs.qty)))  {
                 errState = true;
                 errData.errString = errData.errString + app.langStrings.get("qtyFeedback") ;
                 errData.fields.push('qty');   
@@ -317,7 +322,8 @@ var caApp = (function (Backbone) {
            'change .ca_print_size_event': 'onChangePrintSize' ,
            'change .ca_mount_event': 'onChangeMount',
            'change .ca_frame_event': 'onChangeFrame',
-           'change .ca_qty_event': 'onChangeQty'     /* input is better but is not fully supported in IE9. keyup doesn't capture backspace. keydown is too soon - fires before change */
+           'input .ca_qty_event': 'onChangeQty',     /* input is better but IE9 does not support backspace or delete. keyup doesn't capture backspace. keydown is too soon - fires before change. keypress is deprecated in favour of input */
+           'change .ca_qty_event': 'onChangeQty' /*fully support IE9 at the cost of an unnessary update */
         }, 
         
         

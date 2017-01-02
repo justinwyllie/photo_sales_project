@@ -138,6 +138,7 @@ class ClientArea
 
         $this->jsUrl = $systemOptions->jsUrl . "";
         $this->appUrl = $systemOptions->appUrl . "";
+        $this->jQueryUrl = $systemOptions->jQueryUrl . "";
         $this->underscoreUrl = $systemOptions->underscoreUrl . "";
         $this->backboneUrl = $systemOptions->backboneUrl . "";
         $this->bootstrapCSSUrl = $systemOptions->bootstrapCSSUrl . "";
@@ -990,7 +991,7 @@ EOF;
                                 <% _.each(mounts.mount, function(mount){ %>
                                   <option value="<%= mount.value %>" <% if (order.mount_style == mount.value) { %> selected <% } %>><%= mount.display %> [+ <%= currency.symbol %><%= mountPrice %>]</option>
                                 <% }); %> 
-                                <option value="--"><%= langStrings.noMount %></option>
+                                <option value="no_mount" <% if (order.mount_style == "no_mount") { %> selected <% } %>><%= langStrings.noMount %></option>
                             <% } %>
                         </select>    
                     </div>
@@ -1003,7 +1004,7 @@ EOF;
                                 <% _.each(framePrices, function(framePrice, frameStyle){ %>
                                     <option value="<%= frameStyle %>" <% if (order.frame_style == frameStyle) { %> selected <% } %>><%= frameStylesToDisplay[frameStyle] %> [+ <%= currency.symbol %><%= framePrice %>]</option>
                                 <% }); %> 
-                                <option value="--"><%= langStrings.noFrame %></option>
+                                <option value="no_frame" <% if (order.frame_style == "no_frame") { %> selected <% } %>><%= langStrings.noFrame %></option>
                             <% } %>  
                         </select>
                     </div>
@@ -1095,16 +1096,36 @@ EOF;
     }
 
     private function outputHtmlPage($content) {
+    
+        if (!empty($this->jQueryUrl)) 
+        {
+            $jQueryLine = "<script src='$this->jQueryUrl'></script>";
+        }
+        else
+        {
+            $jQueryLine = "";
+        }
+        
+        if (!empty($this->bootstrapCSSUrl))
+        {
+            $bootstrapCSSLine =  "<link rel='stylesheet' href='$this->bootstrapCSSUrl' type='text/css'>";
+        }
+        else
+        {
+             $bootstrapCSSLine = "";
+        }
 
         //build header
         $headerContent = <<<EOT
+        $jQueryLine
         <script src="$this->underscoreUrl"></script>
         <script src="$this->backboneUrl"></script>
         <script src="$this->appUrl"></script>
         <script src="$this->jsUrl"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
         <link rel="stylesheet" href="$this->cssUrl" type="text/css">
-        <link rel="stylesheet" href="$this->bootstrapCSSUrl" type="text/css">
+        $bootstrapCSSLine
+        
 
 EOT;
 

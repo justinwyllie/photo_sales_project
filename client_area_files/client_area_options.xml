@@ -16,8 +16,10 @@
             <cssUrl>/client_area.css</cssUrl>
             <!-- Bootstrap CSS CDN -->
             <bootstrapCSSUrl>https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css</bootstrapCSSUrl>
-
-            <adminEmail>info@justinwylliephotography.com</adminEmail>
+            <!-- use https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js for legacy IE support back to IE6 - untested. may well not work. -->
+            <jQueryUrl>https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js</jQueryUrl>
+ 
+             <adminEmail>info@justinwylliephotography.com</adminEmail>
             <appName>Photo ordering system.</appName>
         </system>
 
