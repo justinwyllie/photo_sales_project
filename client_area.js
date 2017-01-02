@@ -291,7 +291,7 @@
           $("body").append(lightBox);
           
           if (mode == 'prints') {                                                             
-              renderPricingArea(ref, ratio, app.basketCollection, app.pricingModel);
+              renderPricingArea(ref, ratio);
           }
           
           
@@ -360,13 +360,8 @@
   
       }
   
-     var renderPricingArea = function(ref, ratio, basketCollection, pricingModel) {
-          
-          //hmm what is the lifespan of this?
-          var basketCollectionView = new app.BasketCollectionView({collection: basketCollection, ref: ref, ratio: ratio, pricingModel: pricingModel});  
-          
-          
-  
+     var renderPricingArea = function(ref, ratio) {
+          app.showPrintPopUp(ref, ratio);  
      }
   
       var ClientAreaStorage = function(username) {

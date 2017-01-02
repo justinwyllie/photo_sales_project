@@ -18,6 +18,19 @@ var caApp = (function (Backbone) {
     
     }
     
+    //TODO if the user deletes the dom element for this view and all its order views
+    //does that mean that the listenTo bound events are left hanging around? attached to the target - even though the listener no longer exists/cares
+    //this would be solved if the view was removed by backbones remove view method which removes the listenTo's as well
+    //currently the lightbox popup is closed by jquery in the jquery app. which is bad as it is outside the app. 
+    //but here we expose the basketCollectionView so we could remove it properly in jQuery. TODO
+    app.showPrintPopUp = function(ref, ratio) {
+        //reset the basket to what the server believes in case we have got out of sync
+        app.basketCollection.fetch({reset: true}).then(function() {
+            app.basketCollectionView = new app.BasketCollectionView({collection: app.basketCollection, ref: ref, ratio: ratio, pricingModel: app.pricingModel});    
+        });
+        
+    }
+    
     //MODELS
     
     //PricingModel Model   
@@ -316,6 +329,7 @@ var caApp = (function (Backbone) {
             this.listenTo(this.model, "invalid", this.displayModelErrors);
             this.listenTo(this.model, "change:total_price", this.render);
             this.listenTo(this.model, "sync", this.modelSynced);
+            this.listenTo(this.model, "destroy", this.removeMe);
             var tmpl =  $('#ca_order_line_tmpl').html();
             this.template = _.template(tmpl);
             this.options = options;
@@ -328,6 +342,7 @@ var caApp = (function (Backbone) {
         events: {
            'click .ca_add_event': 'onAdd',
            'click .ca_update_event': 'onUpdate',
+           'click .ca_remove_event': 'onRemove',
            'change .ca_print_size_event': 'onChangePrintSize' ,
            'change .ca_mount_event': 'onChangeMount',
            'change .ca_frame_event': 'onChangeFrame',
@@ -399,12 +414,10 @@ var caApp = (function (Backbone) {
         },
         
         updateSuccess: function(model) {
-            console.log("update success");
             model.set("edit_mode", "saved");
         },
         
        updateError: function(model) {
-            console.log("update err");
         },
         
         onUpdate: function() {
@@ -412,6 +425,15 @@ var caApp = (function (Backbone) {
                 this.clearErrors();
                 this.model.save(null, {wait: true, success: this.updateSuccess, error: this.updateError});
            }
+        },
+        
+        //with wait: true, the destroy event triggered by model.destroy is only fired after a successful response from the server. 
+        onRemove: function() {
+            this.model.destroy({wait: true});
+        }, 
+      
+        removeMe: function() {
+              this.remove();
         },
 
         render: function() {

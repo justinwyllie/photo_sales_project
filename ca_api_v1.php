@@ -108,6 +108,16 @@ class ClientAreaAPI
         return $order;
 
     }
+    
+    public function deleteBasket()
+    {
+        $orderId = $this->param;
+        $basket = $_SESSION["basket"];
+        unset($basket[$orderId]);
+        $_SESSION["basket"] = $basket;
+        return  ""; 
+    
+    }
   
     //HELPERS
     private function generateUniqueOrderId()

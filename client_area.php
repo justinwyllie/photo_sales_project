@@ -1025,7 +1025,7 @@ EOF;
                       <% } else { %>
                           <span class="ca_edit_icon glyphicon <%= editStateIcon %>"></span>  
                           <button type="button" class="ca_update_event">$update</button>
-                          <button type="button">$remove</button>
+                          <button type="button" class="ca_remove_event">$remove</button>
                       <% } %>
                       <div class="ca_order_info"></div>
                 </div>
