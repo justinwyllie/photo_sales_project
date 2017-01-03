@@ -27,10 +27,25 @@ var caApp = (function (Backbone) {
     app.showPrintPopUp = function(ref, ratio) {
         //reset the basket to what the server believes in case we have got out of sync
         //TOOO - are we getting out of sync? we should know. 
-        app.basketCollection.fetch({reset: true}).then(function() {
+        //app.basketCollection.fetch({reset: true}).then(function() {
             app.basketCollectionView = new app.BasketCollectionView({collection: app.basketCollection, ref: ref, ratio: ratio, pricingModel: app.pricingModel});    
-        });
+        //});
         
+    }
+    
+    //when you call remove() on a view backbone calls stopListening on that view
+    //this removes any callbacks registered on a target with listenTo - typically a view listenTo's a model (as we do)
+    //however - if we remove a 'parent' view there is no automatic removal of its 'child views' - ones which it created in its render method
+    //and .remove is not called on those child views. each time we render the basketCollectionView we create a new orderLineView per row
+    //but it is the same model each time. each new view (created on each render) binds callbacks to the model.
+    //thus without this management of child views the models just acculumate bound callbacks - for views which no longer exist.
+    //the point is Backbone does not itself have a concept of views and child views and having parent views manage child views
+    //i *think* that this is something that Marionette does with its ItemViewCollection.
+    app.closePrintPopUp = function() {
+        _.each(app.basketCollectionView.childViews, function(childView) {
+           childView.remove();
+        });
+        app.basketCollectionView.remove();
     }
     
     //MODELS
@@ -484,6 +499,7 @@ var caApp = (function (Backbone) {
         
         initialize: function(options) {
                 this.listenTo(this.collection, "add", this.render);
+                this.childViews = new Array();
                 this.options = options;  
                 var tmplRoWHead =  $('#ca_order_line_row_head_tmpl').html(); 
                 this.tmplRoWHead = _.template(tmplRoWHead);
@@ -491,6 +507,7 @@ var caApp = (function (Backbone) {
         },
         
         render: function() {
+            this.childViews = [];
             this.$el.html() ;
             //0. render the headings
             this.$el.html(this.tmplRoWHead());
@@ -501,7 +518,9 @@ var caApp = (function (Backbone) {
                   //orderLine is an item in the order e.g. a print with its size, mount, frame etc.
                   var orderLineView = new app.OrderLineView({model: orderLine, ref: this.options.ref, 
                     mode: 'update', ratio: this.options.ratio, pricingModel: this.options.pricingModel});
+                  this.childViews.push(orderLineView);  
                   this.$el.append(orderLineView.render().$el);
+   
                 }
 
 	       }, this);
@@ -509,6 +528,7 @@ var caApp = (function (Backbone) {
           var orderLine = new app.OrderLineModel();
           var orderLineView = new app.OrderLineView({model: orderLine, ref: this.options.ref, 
                     mode: 'new', ratio: this.options.ratio, pricingModel: this.options.pricingModel});
+          this.childViews.push(orderLineView);          
           this.$el.append(orderLineView.render().$el);
            
         

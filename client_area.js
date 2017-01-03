@@ -77,6 +77,11 @@
   
   
       $("body").on("click", ".ca_lightbox_close_event", function() {
+          //TODO this is all a bit hacky until we have a single app. (and everything is managed by views in regions by an app region manager)
+          var mode =  $(".ca_menu_bar").data("mode");
+          if ((mode == "prints") && (typeof(app.basketCollectionView) !== "undefined")) {
+                app.closePrintPopUp();
+          }
           $(this).closest(".ca_lightbox").remove();
           $("#ca_lightbox_overlay").remove();
       })
@@ -464,7 +469,7 @@
       }
       
  
-    if (mode === "prints") {  //eventually the proofs part will be appified as well. TODO
+    if (mode === "prints") {  //eventually the proofs part will be appified as well. TODO         - may need different inits
         //popuate from backend session (which itself may have been reloaded via html5 data when they logged in)
         app.init();
     }
