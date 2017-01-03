@@ -1,15 +1,6 @@
 <?php
 
 session_start();
-
-//check user is logged in
-if (!empty($_SESSION["user"])) {
-    $user = $_SESSION["user"];
-} else {
-    //TODO handle this better
-    die();
-}
-
 //see http://coreymaynard.com/blog/creating-a-restful-api-with-php/ if you want to do this properly
 
 $API = new ClientAreaAPI($_REQUEST['request'] );
@@ -22,6 +13,18 @@ class ClientAreaAPI
 
     public function __construct($request)
     {
+        //TOOD for now login is handled by the 'old' app. here we just check they've logged in with that
+        if (!empty($_SESSION["user"])) {
+            $this->user = $_SESSION["user"];
+        } else {
+            $obj = new stdClass();
+            $obj->status = "error";
+            $obj->message = "not_logged_in";
+            $this->outputJson($obj);
+
+        }
+
+    
         $this->clientAreaDirectory = $_SESSION["client_area_directory_path"];
        
         $this->args = explode('/', rtrim($request, '/'));
@@ -38,8 +41,21 @@ class ClientAreaAPI
     
     }
     
+    
+    //APP methods
+    
+    public function getSessionStatus()
+    {
+        //if we got this far... 
+        $obj = new stdClass();
+        $obj->status = "success";
+        $obj->message = "";
+        $this->outputJson($obj);
+    }
+    
     //MODEL METHODS
     
+   
     public function getPricing() 
     {                                          
         $pricingModel = simplexml_load_file($this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_pricing.xml" );

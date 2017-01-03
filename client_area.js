@@ -184,6 +184,10 @@
   
                                             
       var thumbSelected = function(mode) {
+      
+          //temporary
+          app.checkSessionAndRun();  
+      
           var ref = $(this).data("file-ref");         
           var picPath = $(".ca_menu_bar").data("url-for-mains") + '&file=' + ref;
           

@@ -1,10 +1,12 @@
-var caApp = (function (Backbone) {
+var caApp = (function (Backbone, $) {
 	var app = {};
     
     //shims
     app.isInt = function(n) {
         return parseInt(n) == n;
     }
+    
+    
     
     app.init = function() {
     
@@ -17,6 +19,9 @@ var caApp = (function (Backbone) {
         app.basketCollection.fetch();   
     
     }
+    
+    
+    //APP methods
     
     //TODO if the user deletes the dom element for this view and all its order views
     //dthis means that the listenTo bound events are left hanging around? attached to the target - even though the listener - the view - no longer exists/cares
@@ -47,6 +52,30 @@ var caApp = (function (Backbone) {
         });
         app.basketCollectionView.remove();
     }
+    
+    
+    app.checkSessionAndRun = function()
+    {
+        var p = $.ajax({
+            url: '/api/v1/sessionStatus',
+            dataType: 'json',
+        });
+        
+        p.then(function(result) {
+            console.log("result", result);
+            //if no session then render login
+            //otherwise execute passed in callback
+        
+        });
+
+    }
+    
+    app.renderLoginScreen = function()
+    {
+        //need a view to render.     #ca_content_area - ultimately this is all that is produced by client_area.php and all content comes from the app.
+    
+    }
+    
     
     //MODELS
     
@@ -537,5 +566,5 @@ var caApp = (function (Backbone) {
     })
     
 	return app;
-}(Backbone));  
+}(Backbone, jQuery));  
   
