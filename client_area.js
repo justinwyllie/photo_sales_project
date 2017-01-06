@@ -72,7 +72,15 @@
   
       $("#ca_content_area").on("click", ".ca_thumb_pic img", function() {  
           var mode =  $(".ca_menu_bar").data("mode");
-          thumbSelected.call(this, mode);
+          if (mode == "prints") {  //TODO temporary hack pending port of proofs to app
+              var that = this;  
+              app.checkSessionAndRun(function() {
+                thumbSelected.call(that, mode);  
+              });
+          }  else {
+                thumbSelected.call(this, mode);
+          }
+          
        });   
   
   
@@ -184,9 +192,6 @@
   
                                             
       var thumbSelected = function(mode) {
-      
-          //temporary
-          app.checkSessionAndRun();  
       
           var ref = $(this).data("file-ref");         
           var picPath = $(".ca_menu_bar").data("url-for-mains") + '&file=' + ref;
@@ -473,10 +478,9 @@
       }
       
  
-    if (mode === "prints") {  //eventually the proofs part will be appified as well. TODO         - may need different inits
-        //popuate from backend session (which itself may have been reloaded via html5 data when they logged in)
-        app.init();
-    }
+
+    app.init();
+
   
   });
 

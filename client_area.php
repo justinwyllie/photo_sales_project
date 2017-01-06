@@ -819,8 +819,15 @@ EOF;
         return $ret;
 
     }
-
+    
     private function showLoginScreen()
+    {
+        $html = $this->appTemplates();
+        return $html;  
+    }
+
+    //TODO this can go when fully ported
+    private function showLoginScreenX()
     {
 
 
@@ -956,20 +963,9 @@ EOF;
         return $pages;
     }
     
-    //TODO - put these into a file 
+    //TODO - put these into a file except the login one? 
     private function appTemplates() 
     {
-    
-        $printSize =  $this->lang("print_size");
-        $price =  $this->lang("price");
-        $mount =  $this->lang("mount");
-        $frame =  $this->lang("frame");
-        $qty =  $this->lang("quantity");
-        $update =  $this->lang("update");
-        $remove =  $this->lang("remove");
-        $add =  $this->lang("add");
-        $sizeFeedback = $this->lang("sizeFeedback");
-        $qtyFeedback = $this->lang("qtyFeedback");
     
         $html=<<<EOF
             <script type="text/html" id="ca_order_line_tmpl">
@@ -1021,11 +1017,11 @@ EOF;
                 </div>
                 <div class="col-xs-3">
                       <% if (mode == 'new') { %>
-                          <button type="button" class="ca_add_event">$add</button>
+                          <button type="button" class="ca_add_event"><%= langStrings.add %></button>
                       <% } else { %>
                           <span class="ca_edit_icon glyphicon <%= editStateIcon %>"></span>  
-                          <button type="button" class="ca_update_event">$update</button>
-                          <button type="button" class="ca_remove_event">$remove</button>
+                          <button type="button" class="ca_update_event"><%= langStrings.update %></button>
+                          <button type="button" class="ca_remove_event"><%= langStrings.remove %></button>
                       <% } %>
                       <div class="ca_order_info"></div>
                 </div>
@@ -1033,13 +1029,27 @@ EOF;
         </script>
         <script type="text/html" id="ca_order_line_row_head_tmpl">
                 <div class="row ca_row_header">
-                      <div class="col-xs-2">$printSize</div>
-                      <div class="col-xs-2">$mount</div>
-                      <div class="col-xs-2">$frame</div>
-                      <div class="col-xs-2">$qty</div>
-                      <div class="col-xs-1">$price</div>
+                      <div class="col-xs-2"><%= langStrings.print_size %></div>
+                      <div class="col-xs-2"><%= langStrings.mount %></div>
+                      <div class="col-xs-2"><%= langStrings.frame %></div>
+                      <div class="col-xs-2"><%= langStrings.quantity %></div>
+                      <div class="col-xs-1"><%= langStrings.price %></div>
                       <div class="col-xs-3"></div>
                 </div>
+        </script>
+        <script type="text/html" id="ca_login_tmpl">
+            <div class="ca_print_login">
+                <form action="" method="post" id="ca_action_form">
+                    <span class="ca_login_error"></span><br>
+                    <span class="ca_your_print_label"><%= langStrings.userName %></span>
+                    <input class="ca_your_print_field" type="text" name="login" id="ca_login_name">
+                    <br class="clear ">
+                    <span class="ca_your_print_label" ><%= langStrings.password %></span>
+                    <input class="ca_your_print_field" type="password" name="password" id="ca_login_password">
+                    <br class="clear">
+                    <button class="ca_standard_button ca_login_button ca_login_button_event" id="login" type="button"><%= langStrings.login %></button>
+                </form>
+            </div>
         </script>
  
 EOF;
@@ -1047,7 +1057,7 @@ EOF;
     
     }
     
-    
+
 
     private function pageHtml($pageIndex, $thumbsPerPage, $numberOfThumbs)
     {

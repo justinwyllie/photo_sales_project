@@ -1,22 +1,29 @@
 var caApp = (function (Backbone, $) {
 	var app = {};
+    //TODO - don't need to attach things to app. unless they are being exported.... 
     
     //shims
     app.isInt = function(n) {
         return parseInt(n) == n;
     }
     
-    
+         
     
     app.init = function() {
     
         app.langStrings = new app.LangStrings;
-        app.langStrings.fetch();
+        app.langStrings.fetch().then(
+            function() {
+                app.renderLoginScreen();
+            }
+        );
         //TODO this should be immutable
         app.pricingModel = new app.PricingModel();
         app.pricingModel.fetch();
         app.basketCollection = new app.BasketCollection();
-        app.basketCollection.fetch();   
+        app.basketCollection.fetch();  
+        app.loginView = new app.LoginView(); 
+        
     
     }
     
@@ -54,7 +61,7 @@ var caApp = (function (Backbone, $) {
     }
     
     
-    app.checkSessionAndRun = function()
+    app.checkSessionAndRun = function(fnc)
     {
         var p = $.ajax({
             url: '/api/v1/sessionStatus',
@@ -62,18 +69,18 @@ var caApp = (function (Backbone, $) {
         });
         
         p.then(function(result) {
-            console.log("result", result);
-            //if no session then render login
-            //otherwise execute passed in callback
-        
+            if (result.status == "success") {
+                fnc();
+            } else {
+                app.renderLoginScreen();
+            }
         });
 
     }
     
     app.renderLoginScreen = function()
     {
-        //need a view to render.     #ca_content_area - ultimately this is all that is produced by client_area.php and all content comes from the app.
-    
+        app.loginView.render();
     }
     
     
@@ -503,6 +510,16 @@ var caApp = (function (Backbone, $) {
             data.langStrings.select = app.langStrings.get("select");
             data.langStrings.noFrame = app.langStrings.get("noFrame");
             data.langStrings.noMount = app.langStrings.get("noMount");
+            data.langStrings.add = app.langStrings.get("add");
+            data.langStrings.update = app.langStrings.get("update");
+            data.langStrings.remove = app.langStrings.get("remove");
+            data.langStrings.password = app.langStrings.get("password");
+            data.langStrings.likeToDo = app.langStrings.get("likeToDo");
+            data.langStrings.select = app.langStrings.get("select");
+            data.langStrings.viewProofs = app.langStrings.get("viewProofs");
+            data.langStrings.orderPrints = app.langStrings.get("orderPrints");
+            data.langStrings.login = app.langStrings.get("login");
+            data.langStrings.userName = app.langStrings.get("userName");
             
             var printSize = this.model.get("print_size");  
             data.mountPrice = null;
@@ -539,7 +556,14 @@ var caApp = (function (Backbone, $) {
             this.childViews = [];
             this.$el.html() ;
             //0. render the headings
-            this.$el.html(this.tmplRoWHead());
+            data = {};
+            data.langStrings = {};
+            data.langStrings.print_size = app.langStrings.get("print_size");
+            data.langStrings.frame = app.langStrings.get("frame");
+            data.langStrings.quantity = app.langStrings.get("quantity");
+            data.langStrings.mount = app.langStrings.get("mount");
+            data.langStrings.price = app.langStrings.get("price");
+            this.$el.html(this.tmplRoWHead(data));
             //1. render existing orders
             this.collection.each(function(orderLine) {
                 if (orderLine.get('image_ref') == (this.options.ref)) {   //the being rendered image is in the basketColletion i.e. it already has an order line 
@@ -563,7 +587,162 @@ var caApp = (function (Backbone, $) {
         
         }
     
-    })
+    });
+    
+    app.LoginView = Backbone.View.extend({
+        el: "#ca_content_area",
+        
+        initialize: function(options) {
+            var loginTmpl =  $('#ca_login_tmpl').html();
+            this.loginTemplate = _.template(loginTmpl);
+            //var modeChoiceTmpl =  $('#ca_modechoice_tmpl').html();
+            //this.modeChoiceTmpl = _.template(tmpl);
+        
+        },
+        
+        events: {
+            'click .ca_login_button': 'doLogin'
+        
+        },
+        
+        doLogin: function() {
+            //TODO - any preliminary validation
+            var user = this.$el.find('ca_login_name');
+            var password = this.$el.find('ca_login_password');
+            
+            var data = {};
+            data.name = user;
+            data.password = password;
+
+            //TODO - do we want to instantiate this each time...          
+            var clientAreaStorage = new ClientAreaStorage(user);
+            if (clientAreaStorage.supported) {
+                data.restoredProofs = app.clientAreaStorage.getValueAsString("ca_proofs")
+                data.restoredProofsPagesVisited = app.clientAreaStorage.getValueAsString("ca_proofs_pages_visited");
+                data.restoredPrints =  app.clientAreaStorage.getValueAsString("ca_prints");
+                data.restoredPrintsPagesVisited =  app.clientAreaStorage.getValueAsString("ca_prints_pages_visited"); 
+            }     
+
+            var p = $.ajax({
+                url: '/api/v1/login',
+                dataType: 'json',
+                data: data,
+                method: 'POST'
+            });
+        
+            p.then(function(result) {
+                if (result.status == "success") {
+                    console.log("logged in");//now show choice screen
+                } else {
+                    this.$el.find('ca_login_error').html(result.message);
+                }
+            });
+
+        },
+        
+        render: function() {
+            data = {};
+            data.langStrings = {};
+            data.langStrings.userName = app.langStrings.get("userName");
+            data.langStrings.password = app.langStrings.get("password");
+            data.langStrings.likeToDo = app.langStrings.get("likeToDo");
+            data.langStrings.select = app.langStrings.get("select");
+            data.langStrings.viewProofs = app.langStrings.get("viewProofs");
+            data.langStrings.orderPrints = app.langStrings.get("orderPrints");
+            data.langStrings.login = app.langStrings.get("login");
+            var html = this.loginTemplate(data);
+            this.$el.html(html);         
+        }
+    
+    
+    });
+    
+    
+    //UTILITIES
+    
+    ClientAreaStorage = function(username) {
+      
+         this.username = username;
+  
+         if ( (JSON && typeof JSON.parse === 'function') && (typeof(Storage) !== "undefined") &&
+             (typeof(Array.prototype.indexOf) === "function")) {
+             this.supported = true;
+         } else {
+             this.supported = false;
+        }
+  
+      }
+  
+      ClientAreaStorage.prototype.getUserKey = function(key)
+      {
+          return this.username  + "_" + key;
+      }
+  
+      ClientAreaStorage.prototype.getValueAsArray = function(key) {
+          var storedString = localStorage.getItem(this.getUserKey(key));
+          if ((storedString === null) || (storedString === "")) {
+              return new Array();
+          }
+          var storedArray = $.parseJSON(storedString);
+          return storedArray;
+      }
+  
+      ClientAreaStorage.prototype.getValueAsString = function(key) {
+          var storedString = localStorage.getItem(this.getUserKey(key));
+          return storedString;
+      }
+  
+      ClientAreaStorage.prototype.setValueFromArray = function(key, data) {
+          var dataAsString = JSON.stringify(data);
+          localStorage.setItem(this.getUserKey(key), dataAsString);
+      }
+  
+      ClientAreaStorage.prototype.addToStorage = function(key, value) {
+  
+          if (!this.supported) {
+              return;
+          }
+  
+          var storedData = this.getValueAsArray(key);
+          if (storedData.indexOf(value) >= 0) {
+              return;
+          } else {
+              storedData.push(value);
+          }
+          this.setValueFromArray(key, storedData);
+  
+      }
+  
+      ClientAreaStorage.prototype.removeFromStorage = function(key, value) {
+  
+          if (!this.supported) {
+              return;
+          }
+  
+          var storedData = this.getValueAsArray(key);
+  
+          var pos = storedData.indexOf(value);
+          if (pos >= 0) {
+              storedData.splice(pos, 1);
+          }
+          this.setValueFromArray(key, storedData);
+  
+      }
+  
+      if (typeof Object.create !== 'function') {
+          Object.create = function (o) {
+              function F() {}
+              F.prototype = o;
+              return new F();
+          };
+      }
+  
+      //ca_proofs, ca_proofs_pages_visited
+      var ClientAreaStorageProofs = function(username) {
+          this.username = username;
+          ClientAreaStorage.call(this);
+      }
+      
     
 	return app;
 }(Backbone, jQuery));  

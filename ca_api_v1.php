@@ -13,31 +13,41 @@ class ClientAreaAPI
 
     public function __construct($request)
     {
-        //TOOD for now login is handled by the 'old' app. here we just check they've logged in with that
-        if (!empty($_SESSION["user"])) {
-            $this->user = $_SESSION["user"];
-        } else {
-            $obj = new stdClass();
-            $obj->status = "error";
-            $obj->message = "not_logged_in";
-            $this->outputJson($obj);
-
-        }
-
     
-        $this->clientAreaDirectory = $_SESSION["client_area_directory_path"];
+         //absolute path on your system to the client_area_files directory
+        $this->clientAreaDirectory = "/var/www/vhosts/mms-oxford.com/jwp_client_area_files";
+
+        $this->accountsPath = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_accounts.xml";
        
         $this->args = explode('/', rtrim($request, '/'));
         $this->endpoint = array_shift($this->args);       //TODO handle e.g. basket/1
         if (sizeof($this->args) >= 1) {
             $this->param = array_shift($this->args);
         }
+        
+        $this->setLangStrings();
+        $this->setAccounts();
       
         
         $this->verb = strtolower($_SERVER["REQUEST_METHOD"]);
         $this->action = $this->verb . ucfirst($this->endpoint);
-        $content = call_user_func_array(array($this, $this->action), array());
-        $this->outputJson($content);
+        
+        //actions which don't require a session. TODO better
+        if (($this->action == "getLangStrings") || ($this->action == "postLogin") ) {
+            $content = call_user_func_array(array($this, $this->action), array());
+            $this->outputJson($content);
+        }
+        
+        if (!empty($_SESSION["user"])) {
+            $this->user = $_SESSION["user"];
+            $content = call_user_func_array(array($this, $this->action), array());
+            $this->outputJson($content);
+        } else {
+            $obj = new stdClass();
+            $obj->status = "error";
+            $obj->message = "not_logged_in";
+            $this->outputJson($obj);
+        }
     
     }
     
@@ -52,6 +62,76 @@ class ClientAreaAPI
         $obj->message = "";
         $this->outputJson($obj);
     }
+    
+    
+    
+    public function postLogin()
+    {       
+        $obj = new stdClass();
+                                                             
+        $user = $_POST['login'];
+        $password = $_POST['password'];
+        $restoredProofs = $_POST['restoredProofs'];                  
+        $restoredProofsPagesVisited = $_POST['restoredProofsPagesVisited'];
+        $restoredPrints = $_POST['restoredPrints'];                  
+        $restoredPrintsPagesVisited = $_POST['restoredPrintsPagesVisited'];
+
+        if (!empty($this->accounts[$user]) && !empty($password) && ($this->accounts[$user]["password"] === $password)) {
+            session_unset();
+
+            $_SESSION["user"] = $user;
+            $_SESSION["proofsPagesVisited"] = array();
+            $_SESSION["proofsChosen"] = array();
+            $_SESSION["printsPagesVisited"] = array();
+            $_SESSION["printsChosen"] = array();
+            $_SESSION["basket"] = array();
+
+            //If the user is logging in try to restore the proofs chosen based on what was stored in html data if it is available
+            if (!empty($restoredProofs)) {
+                $restoredProofsArray = json_decode($restoredProofs);
+                if (is_array($restoredProofsArray)) {
+                    $_SESSION["proofsChosen"] = $restoredProofsArray;
+                }
+            }
+                
+            //If the user is logging in try to restore the proof pages visited chosen based on what was stored in html data if it is available    
+            if (!empty($restoredProofsPagesVisited)) {
+                $restoredProofsPagesVisitedArray = json_decode($restoredProofsPagesVisited);
+                if (is_array($restoredProofsPagesVisitedArray)) {
+
+                    $_SESSION["proofsPagesVisited"] = $restoredProofsPagesVisitedArray;
+                }
+            }
+            
+            //If the user is logging in try to restore the prints chosen based on what was stored in html data if it is available
+            if (!empty($restoredPrints)) {
+                $restoredPrintsArray = json_decode($restoredPrints);
+                if (is_array($restoredPrintssArray)) {
+                    $_SESSION["printsChosen"] = $restoredPrintsArray;
+                }
+            }
+            
+            //If the user is logging in try to restore the prints pages visited chosen based on what was stored in html data if it is available  
+            if (!empty($restoredPrintsPagesVisited)) {
+                $restoredPrintsPagesVisitedArray = json_decode($restoredPrintsPagesVisited);
+                if (is_array($restoredPrintsPagesVisitedArray)) {
+
+                    $_SESSION["printsPagesVisited"] = $restoredPrintsPagesVisitedArray;
+                }
+            }
+                                     
+            $obj->status = "success";
+            $obj->message = "";
+        } else {
+            $obj->status = "error";
+            $obj->message = $this->lang('loginError');
+        }
+        
+        $this->outputJson($obj);
+
+    }
+    
+    
     
     //MODEL METHODS
     
@@ -71,24 +151,9 @@ class ClientAreaAPI
         return $pricingModel;
     }
     
-    //TODO this is basically the same as the  setLang method in CLientArea - it would be nice to make them share a common helper class or something
     public function getLangStrings() 
     {                                          
-        $strings = simplexml_load_file($this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_lang.xml" );
-        if ($strings === false) 
-        {
-          //TODO implement this
-          //$this->destroySession();
-          //$this->terminateScript("Missing or broken user options file for " . $user);
-        } 
-        $langStrings = array();
-        foreach ($strings->field as $field) {
-            $fieldName = $field["name"] . "";
-            $fieldValue = trim($field . "");
-            $langStrings[$fieldName] = $fieldValue;
-        }
-        return  $langStrings;
-  
+        return  $this->langStrings();
     }
   
   
@@ -149,12 +214,67 @@ class ClientAreaAPI
         return $id + 1;
  
     } 
-  
-  private function outputJson($output) {
-      header("Content-type: application/json");
-      echo json_encode($output);
-      exit();
-  }
+    
+    private function setLangStrings()
+    {
+        $this->langStrings = $this->langStrings();
+    }
+
+    
+    private function setAccounts()
+    {
+        $client_area_accounts = simplexml_load_file($this->accountsPath);
+
+        if ($client_area_accounts === false) {
+            $this->criticalError("Error in accounts file or file does not exist");
+        }
+
+        $accounts = array();
+        foreach($client_area_accounts->account as $account) {
+            $username = $account["username"] . "";
+            $accounts[$username]["password"] = $account->password . "";
+            $accounts[$username]["human_name"] = $account->human_name . "";
+
+        }
+
+        $this->accounts = $accounts;
+
+    }
+    
+        
+    private function langStrings()
+    {
+        $strings = simplexml_load_file($this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_lang.xml" );
+        if ($strings === false) 
+        {
+          //TODO implement this
+          //$this->destroySession();
+          //$this->terminateScript("Missing or broken user options file for " . $user);
+        } 
+        $langStrings = array();
+        foreach ($strings->field as $field) {
+            $fieldName = $field["name"] . "";
+            $fieldValue = trim($field . "");
+            $langStrings[$fieldName] = $fieldValue;
+        }
+        return  $langStrings;
+    
+    }
+    
+    private function lang($field)
+    {
+        if (isset($this->langStrings[$field])) {
+            return $this->langStrings[$field];
+        } else {
+            return "";
+        }
+    }
+    
+    private function outputJson($output) {
+        header("Content-type: application/json");
+        echo json_encode($output);
+        exit();
+    }
   
   
  
