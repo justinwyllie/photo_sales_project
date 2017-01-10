@@ -11,18 +11,22 @@ var caApp = (function (Backbone, $) {
     
     app.init = function() {
     
+        //TODO this should be immutable
+        app.pricingModel = new app.PricingModel();
+        
+        app.pricingModel.fetch();
+        app.basketCollection = new app.BasketCollection();
+        app.basketCollection.fetch();  
+        app.loginView = new app.LoginView();
+        app.userData = {};
+        
         app.langStrings = new app.LangStrings;
         app.langStrings.fetch().then(
             function() {
                 app.renderLoginScreen();
             }
         );
-        //TODO this should be immutable
-        app.pricingModel = new app.PricingModel();
-        app.pricingModel.fetch();
-        app.basketCollection = new app.BasketCollection();
-        app.basketCollection.fetch();  
-        app.loginView = new app.LoginView(); 
+ 
         
     
     }
@@ -78,9 +82,9 @@ var caApp = (function (Backbone, $) {
 
     }
     
-    app.renderLoginScreen = function()
+    app.renderLoginScreen = function(msg)
     {
-        app.loginView.render();
+        app.loginView.render(msg);
     }
     
     
@@ -595,32 +599,32 @@ var caApp = (function (Backbone, $) {
         initialize: function(options) {
             var loginTmpl =  $('#ca_login_tmpl').html();
             this.loginTemplate = _.template(loginTmpl);
-            //var modeChoiceTmpl =  $('#ca_modechoice_tmpl').html();
-            //this.modeChoiceTmpl = _.template(tmpl);
+            var modeChoiceTmpl =  $('#ca_mode_choice_tmpl').html();
+            this.modeChoiceTmpl = _.template(modeChoiceTmpl);
         
         },
         
         events: {
-            'click .ca_login_button': 'doLogin'
+            'click .ca_login_button': 'doLogin',
+            'click .ca_choose_activity_event': 'doModeChoice'
         
         },
         
         doLogin: function() {
             //TODO - any preliminary validation
-            var user = this.$el.find('ca_login_name');
-            var password = this.$el.find('ca_login_password');
+            var user = this.$el.find('#ca_login_name').val();
+            var password = this.$el.find('#ca_login_password').val();
             
             var data = {};
             data.name = user;
             data.password = password;
 
-            //TODO - do we want to instantiate this each time...          
             var clientAreaStorage = new ClientAreaStorage(user);
             if (clientAreaStorage.supported) {
-                data.restoredProofs = app.clientAreaStorage.getValueAsString("ca_proofs")
-                data.restoredProofsPagesVisited = app.clientAreaStorage.getValueAsString("ca_proofs_pages_visited");
-                data.restoredPrints =  app.clientAreaStorage.getValueAsString("ca_prints");
-                data.restoredPrintsPagesVisited =  app.clientAreaStorage.getValueAsString("ca_prints_pages_visited"); 
+                data.restoredProofs = clientAreaStorage.getValueAsString("ca_proofs")
+                data.restoredProofsPagesVisited = clientAreaStorage.getValueAsString("ca_proofs_pages_visited");
+                data.restoredPrints =  clientAreaStorage.getValueAsString("ca_prints");
+                data.restoredPrintsPagesVisited =  clientAreaStorage.getValueAsString("ca_prints_pages_visited"); 
             }     
 
             var p = $.ajax({
@@ -630,31 +634,72 @@ var caApp = (function (Backbone, $) {
                 method: 'POST'
             });
         
+            var that = this;
             p.then(function(result) {
                 if (result.status == "success") {
-                    console.log("logged in");//now show choice screen
+                    app.userData = result.userData;
+                    that.renderModeChoice();
                 } else {
-                    this.$el.find('ca_login_error').html(result.message);
+                    app.renderLoginScreen(result.message);
                 }
             });
 
         },
         
-        render: function() {
+        doModeChoice: function() {
+            var mode = this.$el.find("#ca_activity_choice").val();
+            if (mode != "--") {
+            
+                var data = {};
+                data.mode = mode;
+            
+                var p = $.ajax({
+                    url: '/api/v1/modeChoice',
+                    dataType: 'json',
+                    data: data,
+                    method: 'GET'
+                });    
+            
+               var that = this;
+                p.then(function(result) {
+                    if (result.status == "success") {
+                        console.log("show prints or proofs thumbs with pagination etc");
+                     } else {
+                        app.renderLoginScreen(result.message);
+                    }
+                });
+            }
+        },
+        
+        render: function(msg) {
             data = {};
-            data.langStrings = {};
-            data.langStrings.userName = app.langStrings.get("userName");
-            data.langStrings.password = app.langStrings.get("password");
-            data.langStrings.likeToDo = app.langStrings.get("likeToDo");
-            data.langStrings.select = app.langStrings.get("select");
-            data.langStrings.viewProofs = app.langStrings.get("viewProofs");
-            data.langStrings.orderPrints = app.langStrings.get("orderPrints");
-            data.langStrings.login = app.langStrings.get("login");
+            data.langStrings = app.langStrings.toJSON();
+            data.msg = msg;
             var html = this.loginTemplate(data);
             this.$el.html(html);         
+        },
+        
+        renderModeChoice: function() {
+            data = {};
+            data.langStrings = app.langStrings.toJSON(); //TODO do this in other places
+            data.userData = app.userData;
+            
+            if (!data.userData["proofs_on"]) {
+                data.proofsOn = "disabled";  
+            } else {
+                data.proofsOn = "";     
+            }
+            
+            if (!data.userData["prints_on"]) {
+                data.printsOn = "disabled";  
+            } else {
+                data.printsOn = "";     
+            }
+            
+            var html = this.modeChoiceTmpl(data);
+            this.$el.html(html); 
         }
-    
-    
+
     });
     
     

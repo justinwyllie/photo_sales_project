@@ -45,7 +45,7 @@ class ClientAreaAPI
         } else {
             $obj = new stdClass();
             $obj->status = "error";
-            $obj->message = "not_logged_in";
+            $obj->message = $this->lang('loginError');
             $this->outputJson($obj);
         }
     
@@ -63,13 +63,21 @@ class ClientAreaAPI
         $this->outputJson($obj);
     }
     
+    public function getModeChoice()
+    {
+        $obj = new stdClass();
+        $obj->status = "success";
+        $obj->message = "";
+        $this->outputJson($obj);
+    }
+    
     
     
     public function postLogin()
     {       
         $obj = new stdClass();
                                                              
-        $user = $_POST['login'];
+        $user = $_POST['name'];
         $password = $_POST['password'];
         $restoredProofs = $_POST['restoredProofs'];                  
         $restoredProofsPagesVisited = $_POST['restoredProofsPagesVisited'];
@@ -78,6 +86,8 @@ class ClientAreaAPI
 
         if (!empty($this->accounts[$user]) && !empty($password) && ($this->accounts[$user]["password"] === $password)) {
             session_unset();
+            
+            $this->setUserOptions($user);
 
             $_SESSION["user"] = $user;
             $_SESSION["proofsPagesVisited"] = array();
@@ -122,6 +132,7 @@ class ClientAreaAPI
                                      
             $obj->status = "success";
             $obj->message = "";
+            $obj->userData = $this->accounts[$user];
         } else {
             $obj->status = "error";
             $obj->message = $this->lang('loginError');
@@ -238,7 +249,48 @@ class ClientAreaAPI
         }
 
         $this->accounts = $accounts;
+    }
+    
+    private function setUserOptions($user)
+    {
+        $options = simplexml_load_file($this->clientAreaDirectory . DIRECTORY_SEPARATOR . $user .
+            DIRECTORY_SEPARATOR . "options.xml" );
 
+        if ($options === false) {
+             $this->criticalError("Missing or broken user options file for " . $user);
+        } else {
+
+            $this->accounts[$user]["proofs_on"] = (bool) (int) $options->proofsOn;
+            $this->accounts[$user]["prints_on"] = (bool) (int) $options->printsOn;
+            if ($this->accounts[$user]["proofs_on"])
+            {
+                $this->accounts[$user]["customProofsMessage"] = $options->customProofsMessage . "";
+            }
+            if ($this->accounts[$user]["prints_on"])
+            {
+                $this->accounts[$user]["customPrintsMessage"] = $options->customPrintsessage . "";
+            }
+            
+            $this->accounts[$user]["customPrintsMessage"] = $options->customPrintsMessage . "";
+            $this->accounts[$user]["thumbsPerPage"] = (int) $options->thumbsPerPage ;
+            
+         }
+    }
+    
+    private function criticalError($err)
+    {
+            $this->destroySession();
+            $obj = new stdClass();
+            $obj->status = "error";
+            $this->outputJson($obj);
+            
+            //TODO email the message to admin
+    }
+    
+    private function destroySession()
+    {
+       session_unset();
+       session_destroy();
     }
     
         

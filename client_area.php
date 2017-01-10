@@ -193,6 +193,8 @@ class ClientArea
     public function controller()
     {
         $reqAddress = $_SERVER["PHP_SELF"];
+        
+        //var_dump(isset($_SESSION["user"]), $_SERVER["REQUEST_METHOD"]);exit;
 
         if ((isset($_SESSION["user"])) && (!empty($_POST["action"])) && ($_POST["action"] !== "login")) {
             $this->action = $_POST["action"];
@@ -201,6 +203,7 @@ class ClientArea
         } elseif (isset($_SESSION["user"]) && ($_SERVER["REQUEST_METHOD"] === "GET") ) {
             $this->action = "confirmLogoutScreen";
         } elseif (!isset($_SESSION["user"])  && ($_SERVER["REQUEST_METHOD"] === "GET")  ) {
+            //var_dump('here');exit;
             $this->action = "showLoginScreen";
         } elseif (!isset($_SESSION["user"])  && ($_SERVER["REQUEST_METHOD"] === "POST")
                 && (!empty($_POST["action"])) && ($_POST["action"] === "login") ) {
@@ -214,7 +217,8 @@ class ClientArea
         } else {
             $this->action = "terminateScript";
         }
-
+        
+        
     }
 
 
@@ -1048,6 +1052,21 @@ EOF;
                     <input class="ca_your_print_field" type="password" name="password" id="ca_login_password">
                     <br class="clear">
                     <button class="ca_standard_button ca_login_button ca_login_button_event" id="login" type="button"><%= langStrings.login %></button>
+                </form>
+            </div>
+        </script>
+        <script type="text/html" id="ca_mode_choice_tmpl">
+            <div class="ca_print_login">
+                <%= langStrings.hello %> <span class="ca_human_name"><%= userData["human_name"] %></span>. <%= langStrings.chooseOption %>
+                <form action="" method="post" id="ca_action_form">
+                    <input type="hidden" name="action" id="ca_action_field" value="">
+                    <select id="ca_activity_choice" class="ca_select_box">
+                        <option value="--">Select..</option>
+                        <option value="showProofsScreen" <%= proofsOn %>><%= langStrings.viewProofs %></option>
+                        <option value="showPrintsScreen" <%= printsOn %>><%= langStrings.orderPrints %></option>
+                    </select><br>
+                    <button class="ca_large_button ca_choose_activity_event"
+                        type="button"><%= langStrings.go %></button>
                 </form>
             </div>
         </script>

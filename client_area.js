@@ -26,7 +26,7 @@
       })
   
   
-      $("#ca_content_area").on("click", ".ca_choose_activity_event", function() {
+      $("#ca_content_area").on("click", ".ca_choose_activity_eventOLD", function() {
           var val = $("#ca_activity_choice").val();
           if (val !== "0") {
               $("#ca_action_form #ca_action_field").val(val);
@@ -34,7 +34,7 @@
           }
       })
   
-      $("#ca_content_area").on("click", ".ca_login_button_event", function() {
+      $("#ca_content_area").on("click", ".ca_login_button_eventOLD", function() {
   
           var username = $("#ca_login_name").val();
           var clientAreaStorage = new ClientAreaStorage(username);
