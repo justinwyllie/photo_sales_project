@@ -71,6 +71,41 @@ class ClientAreaAPI
         $this->outputJson($obj);
     }
     
+    public function getPrintThumbs()
+    {
+        $obj = new stdClass();
+        
+        $thumbsDir = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
+            DIRECTORY_SEPARATOR . 'prints' . DIRECTORY_SEPARATOR . "thumbs";
+            
+        $files = scandir($thumbsDir);
+
+        $thumbs=array();
+        foreach ($files as $file)
+        {
+        
+            $fileObj = new stdClass();
+            if ( ($file !== ".")  && ($file !== "..") && (is_file($thumbsDir . DIRECTORY_SEPARATOR . $file)) )
+            {
+                //the other info eg. size
+                $fileObj->file = $file;
+                //TODO - in a loop? or at least we should cache the results
+                $imageDimensions = $this->getImageDimensions($mainDir . $file);
+                $fileObj->width =  $imageDimensions["width"];
+                $fileObj->height =  $imageDimensions["height"];
+                $thumbs[] = $fileObj;
+            }
+        }
+ 
+        $obj->thumbs = $thumbs; 
+        $obj->status = "success";
+        $obj->message = "";
+        $this->outputJson($obj);
+    
+    
+    
+    }
+    
     
     
     public function postLogin()
@@ -173,6 +208,7 @@ class ClientAreaAPI
     {
         $result = new stdClass();
         $basket = $_SESSION["basket"];
+        $deIndexedBasket[] = array();
         foreach ($basket as $id => $order) {
             $deIndexedBasket[] = $order;
         }
@@ -321,6 +357,19 @@ class ClientAreaAPI
             return "";
         }
     }
+    
+    private function getImageDimensions($file)
+    {
+        $dimensions = getimagesize($file);
+
+        $result = array();
+        if ($dimensions !== false) {
+            $result["width"] = $dimensions[0];
+            $result["height"] = $dimensions[1];
+        }
+
+        return $result;
+     }
     
     private function outputJson($output) {
         header("Content-type: application/json");

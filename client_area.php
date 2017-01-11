@@ -1070,12 +1070,20 @@ EOF;
                 </form>
             </div>
         </script>
+        <script type="text/html" id="ca_thumb_tmpl">
+            <div class="ca_thumb_pic <%= in_basket_class %>" style="<%= style %>">
+                <img src="<%= source %>" alt="<%= alt %>" >
+                <input type="checkbox" <%= checked %> class="<%= checkbox_class %>">
+                <%= label %>
+            </div>
+        </script>
  
 EOF;
         return $html;    
     
     }
     
+   
 
 
     private function pageHtml($pageIndex, $thumbsPerPage, $numberOfThumbs)
@@ -1162,7 +1170,11 @@ EOT;
 
         $wrappedContent = <<<EOT
             <div id="ca_content_area">
-           $content
+                <div id="ca_menu">
+                </div>
+                <div id="ca_content">
+                $content
+                </div>
             </div>
             <br class="ca_clear">
 EOT;

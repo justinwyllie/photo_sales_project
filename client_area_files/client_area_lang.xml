@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <strings>
-
+    <field name="unknownError">
+        Sorry. An unknown error occurred. Please contact the site owner. 
+    </field>
     <field name="loginError">
         Error logging in. Possibly wrong username/password
     </field>

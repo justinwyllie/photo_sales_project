@@ -17,7 +17,10 @@ var caApp = (function (Backbone, $) {
         app.pricingModel.fetch();
         app.basketCollection = new app.BasketCollection();
         app.basketCollection.fetch();  
+        app.printThumbsCollection = new PrintThumbsCollection();
         app.loginView = new app.LoginView();
+        app.menuView = new MenuView();
+        
         app.userData = {};
         
         app.langStrings = new app.LangStrings;
@@ -26,9 +29,17 @@ var caApp = (function (Backbone, $) {
                 app.renderLoginScreen();
             }
         );
- 
-        
+    };
     
+    app.removeViewAndChildren = function(view) {
+        if (typeof(view) !== 'undefined') {
+            if (typeof(view.childViews) !== "undefined") {
+                 _.each(view.childViews, function(childView) {  
+                    childView.remove();
+                });
+            }
+            view.remove();     
+       }
     }
     
     
@@ -44,6 +55,8 @@ var caApp = (function (Backbone, $) {
         //reset the basket to what the server believes in case we have got out of sync
         //TOOO - are we getting out of sync? we should know. 
         //app.basketCollection.fetch({reset: true}).then(function() {
+        
+            app.removeViewAndChildren(app.basketCollectionView);      
             app.basketCollectionView = new app.BasketCollectionView({collection: app.basketCollection, ref: ref, ratio: ratio, pricingModel: app.pricingModel});    
         //});
         
@@ -58,10 +71,7 @@ var caApp = (function (Backbone, $) {
     //the point is Backbone does not itself have a concept of views and child views and having parent views manage child views
     //i *think* that this is something that Marionette does with its ItemViewCollection.
     app.closePrintPopUp = function() {
-        _.each(app.basketCollectionView.childViews, function(childView) {
-           childView.remove();
-        });
-        app.basketCollectionView.remove();
+        app.removeViewAndChildren(app.basketCollectionView);
     }
     
     
@@ -351,6 +361,12 @@ var caApp = (function (Backbone, $) {
     
     });
     
+    //OrderLine model
+    ThumbModel = Backbone.Model.extend({
+    
+    
+    });
+    
     //COLLECTIONS
     
     //Basket - collection of OrderLine Models
@@ -375,7 +391,50 @@ var caApp = (function (Backbone, $) {
     
     });
     
+    PrintThumbsCollection =  Backbone.Collection.extend({
+        model: ThumbModel,    
+        url: "/api/v1/printThumbs",
+       
+
+    });
+    
     //VIEWS
+    
+    ThumbView =  Backbone.View.extend({
+   
+        initialize: function(options) {
+                this.options = options;  
+                var tmpl =  $('#ca_thumb_tmpl').html(); 
+                this.tmpl = _.template(tmpl);
+        } 
+    
+    })
+    
+    MenuView =  Backbone.View.extend({
+        el:  "#ca_content_area #ca_menu",
+        
+        render: function() {
+            this.$el.html('menu goes here');
+        }
+    
+    })
+    
+    //in Marionette this would be an ItemViewCollection
+    ThumbsView =  Backbone.View.extend({
+        el: "#ca_content_area #ca_content",
+        initialize: function(options) {
+            this.options = options;
+            this.render();
+        
+        },
+        //todo can we have onremove?
+        render: function()
+        {
+        
+            this.$el.html('thumgs here');
+            //loop through collection and display the page.
+        }
+    });
     
     //OrderLine View - a view to display a single order line
     app.OrderLineView = Backbone.View.extend({
@@ -511,20 +570,8 @@ var caApp = (function (Backbone, $) {
             data.mode = this.options.mode;
             
             data.langStrings = {};
-            data.langStrings.select = app.langStrings.get("select");
-            data.langStrings.noFrame = app.langStrings.get("noFrame");
-            data.langStrings.noMount = app.langStrings.get("noMount");
-            data.langStrings.add = app.langStrings.get("add");
-            data.langStrings.update = app.langStrings.get("update");
-            data.langStrings.remove = app.langStrings.get("remove");
-            data.langStrings.password = app.langStrings.get("password");
-            data.langStrings.likeToDo = app.langStrings.get("likeToDo");
-            data.langStrings.select = app.langStrings.get("select");
-            data.langStrings.viewProofs = app.langStrings.get("viewProofs");
-            data.langStrings.orderPrints = app.langStrings.get("orderPrints");
-            data.langStrings.login = app.langStrings.get("login");
-            data.langStrings.userName = app.langStrings.get("userName");
-            
+            data.langStrings = app.langStrings.toJSON();
+                 
             var printSize = this.model.get("print_size");  
             data.mountPrice = null;
             data.framePrices = null;
@@ -561,12 +608,7 @@ var caApp = (function (Backbone, $) {
             this.$el.html() ;
             //0. render the headings
             data = {};
-            data.langStrings = {};
-            data.langStrings.print_size = app.langStrings.get("print_size");
-            data.langStrings.frame = app.langStrings.get("frame");
-            data.langStrings.quantity = app.langStrings.get("quantity");
-            data.langStrings.mount = app.langStrings.get("mount");
-            data.langStrings.price = app.langStrings.get("price");
+            data.langStrings = app.langStrings.toJSON();
             this.$el.html(this.tmplRoWHead(data));
             //1. render existing orders
             this.collection.each(function(orderLine) {
@@ -593,8 +635,10 @@ var caApp = (function (Backbone, $) {
     
     });
     
+    
+    
     app.LoginView = Backbone.View.extend({
-        el: "#ca_content_area",
+        el: "#ca_content_area #ca_content",
         
         initialize: function(options) {
             var loginTmpl =  $('#ca_login_tmpl').html();
@@ -664,6 +708,20 @@ var caApp = (function (Backbone, $) {
                 p.then(function(result) {
                     if (result.status == "success") {
                         console.log("show prints or proofs thumbs with pagination etc");
+                        app.printThumbsCollection.fetch({reset: true}).then(
+                            function() {
+                                app.menuView.render();
+                                //instaniate thumbsView
+                                app.removeViewAndChildren(app.thumbsView);    
+                                app.thumbsView = new ThumbsView({collection: app.printThumbsCollection});
+                            
+                            },
+                            function() {
+                                console.log("TODO - error unknownError");
+                            
+                            }
+                        
+                        )
                      } else {
                         app.renderLoginScreen(result.message);
                     }
