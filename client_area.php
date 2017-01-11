@@ -741,7 +741,7 @@ EOT;
     }
 
 
-    private function showChoiceScreen()
+    private function showChoiceScreenXXX()
     {
 
         $chooseOption = $this->lang("chooseOption");
@@ -826,8 +826,8 @@ EOF;
     
     private function showLoginScreen()
     {
-        $html = $this->appTemplates();
-        return $html;  
+        
+        return ""; //TODO not required - all html comes from outputHtmlPage - ultimately this file loses its controller and only has one purpose: server the starting html structure and the templates   
     }
 
     //TODO this can go when fully ported
@@ -967,7 +967,7 @@ EOF;
         return $pages;
     }
     
-    //TODO - put these into a file except the login one? 
+    //TODO - put these into a file except the login one? in fact this is about all that will be in this file + app html
     private function appTemplates() 
     {
     
@@ -1070,11 +1070,11 @@ EOF;
                 </form>
             </div>
         </script>
-        <script type="text/html" id="ca_thumb_tmpl">
+        <script type="text/html" id="ca_thumb_tmpl">           
             <div class="ca_thumb_pic <%= in_basket_class %>" style="<%= style %>">
-                <img src="<%= source %>" alt="<%= alt %>" >
+                <img src="<%= path %>" alt="<%= alt_text %>" >
                 <input type="checkbox" <%= checked %> class="<%= checkbox_class %>">
-                <%= label %>
+                <span><%= label %></span>
             </div>
         </script>
  
@@ -1178,7 +1178,7 @@ EOT;
             </div>
             <br class="ca_clear">
 EOT;
-
+        $wrappedContent.= $this->appTemplates();
 
         $template = new TemplateEngine($this->template);
         $template->setText();

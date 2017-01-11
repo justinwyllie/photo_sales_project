@@ -401,11 +401,25 @@ var caApp = (function (Backbone, $) {
     //VIEWS
     
     ThumbView =  Backbone.View.extend({
+        tag: 'div',
    
         initialize: function(options) {
                 this.options = options;  
-                var tmpl =  $('#ca_thumb_tmpl').html(); 
-                this.tmpl = _.template(tmpl);
+                var template =  $('#ca_thumb_tmpl').html(); 
+                this.tmpl = _.template(template);
+        },
+        
+        render: function() {
+            var data = this.model.toJSON();
+            data.in_basket_class = "";
+            data.style = "";
+            data.alt_text = "";
+            data.checkbox_class = "";
+            data.checked = "";
+            data.label = data.file;
+            var html = this.tmpl(data);
+            this.$el.html(html);
+            return this; 
         } 
     
     })
@@ -424,15 +438,21 @@ var caApp = (function (Backbone, $) {
         el: "#ca_content_area #ca_content",
         initialize: function(options) {
             this.options = options;
+            this.childViews = new Array();
             this.render();
         
         },
         //todo can we have onremove?
         render: function()
         {
-        
-            this.$el.html('thumgs here');
             //loop through collection and display the page.
+            //first take - just display them all
+            this.$el.html('');
+             this.collection.each(function(thumb) {
+                var thumbView = new ThumbView({model: thumb}) ;
+                this.childViews.push(thumbView);//TODO consider all the places we need to cleanly remove this view
+                this.$el.append(thumbView.render().$el);        //TODO height row equalisation
+	       }, this);
         }
     });
     

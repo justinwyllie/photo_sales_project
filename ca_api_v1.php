@@ -18,6 +18,7 @@ class ClientAreaAPI
         $this->clientAreaDirectory = "/var/www/vhosts/mms-oxford.com/jwp_client_area_files";
 
         $this->accountsPath = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_accounts.xml";
+        $this->imageProvider = "/client_area_image_provider.php";
        
         $this->args = explode('/', rtrim($request, '/'));
         $this->endpoint = array_shift($this->args);       //TODO handle e.g. basket/1
@@ -87,23 +88,16 @@ class ClientAreaAPI
             $fileObj = new stdClass();
             if ( ($file !== ".")  && ($file !== "..") && (is_file($thumbsDir . DIRECTORY_SEPARATOR . $file)) )
             {
-                //the other info eg. size
                 $fileObj->file = $file;
                 //TODO - in a loop? or at least we should cache the results
                 $imageDimensions = $this->getImageDimensions($mainDir . $file);
                 $fileObj->width =  $imageDimensions["width"];
                 $fileObj->height =  $imageDimensions["height"];
+                $fileObj->path =  $this->imageProvider . '?mode=prints&size=thumbs&file=' . $file;   //TODO put imageProvider onto some init and then mode and size can be set f/e
                 $thumbs[] = $fileObj;
             }
         }
- 
-        $obj->thumbs = $thumbs; 
-        $obj->status = "success";
-        $obj->message = "";
-        $this->outputJson($obj);
-    
-    
-    
+        $this->outputJson($thumbs);
     }
     
     
@@ -374,6 +368,12 @@ class ClientAreaAPI
     private function outputJson($output) {
         header("Content-type: application/json");
         echo json_encode($output);
+        exit();
+    }
+    
+    private function outputJson500() {
+        header("Content-type: application/json");
+        header("HTTP/1.1 500 Internal Server Error");
         exit();
     }
   
