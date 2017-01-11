@@ -31,17 +31,7 @@ var caApp = (function (Backbone, $) {
         );
     };
     
-    app.removeViewAndChildren = function(view) {
-        if (typeof(view) !== 'undefined') {
-            if (typeof(view.childViews) !== "undefined") {
-                 _.each(view.childViews, function(childView) {  
-                    childView.remove();
-                });
-            }
-            view.remove();     
-       }
-    }
-    
+   
     
     //APP methods
     
@@ -55,8 +45,8 @@ var caApp = (function (Backbone, $) {
         //reset the basket to what the server believes in case we have got out of sync
         //TOOO - are we getting out of sync? we should know. 
         //app.basketCollection.fetch({reset: true}).then(function() {
-        
-            app.removeViewAndChildren(app.basketCollectionView);      
+            app.basketCollectionView.cleanUp();
+            app.basketCollectionView.remove();     
             app.basketCollectionView = new app.BasketCollectionView({collection: app.basketCollection, ref: ref, ratio: ratio, pricingModel: app.pricingModel});    
         //});
         
@@ -71,7 +61,8 @@ var caApp = (function (Backbone, $) {
     //the point is Backbone does not itself have a concept of views and child views and having parent views manage child views
     //i *think* that this is something that Marionette does with its ItemViewCollection.
     app.closePrintPopUp = function() {
-        app.removeViewAndChildren(app.basketCollectionView);
+        app.basketCollectionView.cleanUp();
+        app.basketCollectionView.remove();
     }
     
     
@@ -447,12 +438,17 @@ var caApp = (function (Backbone, $) {
         {
             //loop through collection and display the page.
             //first take - just display them all
-            this.$el.html('');
+             //HERE - remove login view or ANY view in the region. is this something Marionette does for you?
              this.collection.each(function(thumb) {
                 var thumbView = new ThumbView({model: thumb}) ;
                 this.childViews.push(thumbView);//TODO consider all the places we need to cleanly remove this view
                 this.$el.append(thumbView.render().$el);        //TODO height row equalisation
 	       }, this);
+        } ,
+        
+        cleanUp: function() {
+            _.invoke(this.childViews, 'remove');
+            this.childViews = [];    
         }
     });
     
@@ -651,6 +647,11 @@ var caApp = (function (Backbone, $) {
           this.$el.append(orderLineView.render().$el);
            
         
+        },
+        
+        cleanUp: function() {
+            _.invoke(this.childViews, 'remove');
+            this.childViews = [];    
         }
     
     });
@@ -730,10 +731,14 @@ var caApp = (function (Backbone, $) {
                         console.log("show prints or proofs thumbs with pagination etc");
                         app.printThumbsCollection.fetch({reset: true}).then(
                             function() {
+                                app.menuView.remove();    
+                                app.menuView = new MenuView();
                                 app.menuView.render();
                                 //instaniate thumbsView
-                                app.removeViewAndChildren(app.thumbsView);    
+                                app.thumbsView.cleanUp();
+                                app.thumbsView.remove();    
                                 app.thumbsView = new ThumbsView({collection: app.printThumbsCollection});
+                                
                             
                             },
                             function() {
