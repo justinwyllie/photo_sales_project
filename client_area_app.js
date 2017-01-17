@@ -390,6 +390,50 @@ var caApp = (function (Backbone, $) {
     });
     
     //VIEWS
+    //defines regions of page
+    //a view is always rendered into one of these regions
+    //when we render a new view (or the same view again? - what happens when they change page?  into a region we can cleanly remove
+    //the current view
+    Layout = Backbone.View.extend({
+        el: "#ca_content_area",
+        
+        regions: {
+            menu: {el: '#ca_menu', view: null},
+            main: {el: '#ca_main', view: null},
+            lightbox: {el: '#ca_lightbox', view: null},
+            popup: {el: '#ca_popup', view: null}
+        
+        },
+  
+        
+        initialize: function(options) {
+            
+            //var regions = this.regions;
+            //var loginView = new app.LoginView({el: regionElements.main});
+            //loginView.render();
+            //call renderViewIntoRegion
+
+        },
+        //hmm - pass in the View, its obj params and el and put it all together here?     no
+        //can we pass in a view obj. and dynamically set its el before rendereing it?
+        
+        /*
+        * view View
+        * region one of the possible regions e.g main, menu etc   to render the view into
+        */
+        renderViewIntoRegion: function(view, region)   {
+        
+            if (this.regions[region].view !== null) {
+                this.regions[region].view.remove(); //TODO override remove in views which have to clean up child views    
+            }
+            
+            view.setElement(this.regions[region]);
+            view.render();
+            this.regions[region].view = view;
+        
+        }
+    
+    });
     
     ThumbView =  Backbone.View.extend({
         tag: 'div',
@@ -738,8 +782,6 @@ var caApp = (function (Backbone, $) {
                                 app.thumbsView.cleanUp();
                                 app.thumbsView.remove();    
                                 app.thumbsView = new ThumbsView({collection: app.printThumbsCollection});
-                                
-                            
                             },
                             function() {
                                 console.log("TODO - error unknownError");

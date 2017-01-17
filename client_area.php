@@ -1172,9 +1172,11 @@ EOT;
             <div id="ca_content_area">
                 <div id="ca_menu">
                 </div>
-                <div id="ca_content">
+                <div id="ca_main">
                 $content
                 </div>
+                <div id="ca_lightbox"></div>
+                <div id="ca_popup"></div>
             </div>
             <br class="ca_clear">
 EOT;
