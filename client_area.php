@@ -1135,7 +1135,7 @@ EOF;
     }
 
     private function outputHtmlPage($content) {
-    
+        //TODO dont need content
         if (!empty($this->jQueryUrl)) 
         {
             $jQueryLine = "<script src='$this->jQueryUrl'></script>";
@@ -1173,10 +1173,11 @@ EOT;
                 <div id="ca_menu">
                 </div>
                 <div id="ca_main">
-                $content
                 </div>
-                <div id="ca_lightbox"></div>
-                <div id="ca_popup"></div>
+                <div id="ca_lightbox">
+                 </div>
+                <div id="ca_popup">
+                </div>
             </div>
             <br class="ca_clear">
 EOT;

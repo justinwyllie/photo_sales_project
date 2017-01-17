@@ -18,22 +18,20 @@ var caApp = (function (Backbone, $) {
         app.basketCollection = new app.BasketCollection();
         app.basketCollection.fetch();  
         app.printThumbsCollection = new PrintThumbsCollection();
-        app.loginView = new app.LoginView();
-        app.menuView = new MenuView();
         
         app.userData = {};
-        
+
         app.langStrings = new app.LangStrings;
         app.langStrings.fetch().then(
             function() {
-                app.renderLoginScreen();
+                app.layout = new Layout();
             }
         );
     };
     
    
     
-    //APP methods
+    //APP methods          - these will be moving to view for displaying thumbs... 
     
     //TODO if the user deletes the dom element for this view and all its order views
     //dthis means that the listenTo bound events are left hanging around? attached to the target - even though the listener - the view - no longer exists/cares
@@ -77,16 +75,21 @@ var caApp = (function (Backbone, $) {
             if (result.status == "success") {
                 fnc();
             } else {
-                app.renderLoginScreen();
+                app.renderLoginScreen({message: result.message});
             }
         });
 
     }
     
+    //TODO - this is used as a bailout at the moment.
+    //if something goes wrong we show the login screen with an error message
+    //prob. need to display an error page and also are we notifying the site admin? this could be done in the server app.
     app.renderLoginScreen = function(msg)
     {
-        app.loginView.render(msg);
+        var loginView = new LoginView({message: msg});
+        app.layout.renderViewIntoRegion(loginView , 'main');
     }
+    
     
     
     //MODELS
@@ -390,10 +393,8 @@ var caApp = (function (Backbone, $) {
     });
     
     //VIEWS
-    //defines regions of page
-    //a view is always rendered into one of these regions
-    //when we render a new view (or the same view again? - what happens when they change page?  into a region we can cleanly remove
-    //the current view
+
+    //render a given view into a given region, removing any view currently in that region
     Layout = Backbone.View.extend({
         el: "#ca_content_area",
         
@@ -407,27 +408,18 @@ var caApp = (function (Backbone, $) {
   
         
         initialize: function(options) {
-            
-            //var regions = this.regions;
-            //var loginView = new app.LoginView({el: regionElements.main});
-            //loginView.render();
-            //call renderViewIntoRegion
-
+            var loginView = new LoginView({message: ''});
+            this.renderViewIntoRegion(loginView, 'main');
         },
-        //hmm - pass in the View, its obj params and el and put it all together here?     no
-        //can we pass in a view obj. and dynamically set its el before rendereing it?
-        
-        /*
-        * view View
-        * region one of the possible regions e.g main, menu etc   to render the view into
-        */
+
         renderViewIntoRegion: function(view, region)   {
         
             if (this.regions[region].view !== null) {
                 this.regions[region].view.remove(); //TODO override remove in views which have to clean up child views    
             }
             
-            view.setElement(this.regions[region]);
+            $(this.regions[region].el).append('<div class="viewContainer"></div>');
+            view.setElement($(this.regions[region].el).find('.viewContainer'));
             view.render();
             this.regions[region].view = view;
         
@@ -460,8 +452,7 @@ var caApp = (function (Backbone, $) {
     })
     
     MenuView =  Backbone.View.extend({
-        el:  "#ca_content_area #ca_menu",
-        
+       
         render: function() {
             this.$el.html('menu goes here');
         }
@@ -470,7 +461,6 @@ var caApp = (function (Backbone, $) {
     
     //in Marionette this would be an ItemViewCollection
     ThumbsView =  Backbone.View.extend({
-        el: "#ca_content_area #ca_content",
         initialize: function(options) {
             this.options = options;
             this.childViews = new Array();
@@ -483,10 +473,11 @@ var caApp = (function (Backbone, $) {
             //loop through collection and display the page.
             //first take - just display them all
              //HERE - remove login view or ANY view in the region. is this something Marionette does for you?
+             var that = this;
              this.collection.each(function(thumb) {
                 var thumbView = new ThumbView({model: thumb}) ;
-                this.childViews.push(thumbView);//TODO consider all the places we need to cleanly remove this view
-                this.$el.append(thumbView.render().$el);        //TODO height row equalisation
+                that.childViews.push(thumbView);//TODO consider all the places we need to cleanly remove this view
+                that.$el.append(thumbView.render().$el);        //TODO height row equalisation
 	       }, this);
         } ,
         
@@ -702,7 +693,7 @@ var caApp = (function (Backbone, $) {
     
     
     
-    app.LoginView = Backbone.View.extend({
+    LoginView = Backbone.View.extend({
         el: "#ca_content_area #ca_content",
         
         initialize: function(options) {
@@ -710,6 +701,7 @@ var caApp = (function (Backbone, $) {
             this.loginTemplate = _.template(loginTmpl);
             var modeChoiceTmpl =  $('#ca_mode_choice_tmpl').html();
             this.modeChoiceTmpl = _.template(modeChoiceTmpl);
+            this.options = options;
         
         },
         
@@ -749,10 +741,14 @@ var caApp = (function (Backbone, $) {
                     app.userData = result.userData;
                     that.renderModeChoice();
                 } else {
-                    app.renderLoginScreen(result.message);
+                    that.setMessage(result.message);
                 }
             });
 
+        },
+        
+        setMessage: function(msg) {
+            this.$el.find('.ca_login_error').html(msg);
         },
         
         doModeChoice: function() {
@@ -772,34 +768,37 @@ var caApp = (function (Backbone, $) {
                var that = this;
                 p.then(function(result) {
                     if (result.status == "success") {
-                        console.log("show prints or proofs thumbs with pagination etc");
+
                         app.printThumbsCollection.fetch({reset: true}).then(
                             function() {
-                                app.menuView.remove();    
-                                app.menuView = new MenuView();
-                                app.menuView.render();
-                                //instaniate thumbsView
-                                app.thumbsView.cleanUp();
-                                app.thumbsView.remove();    
-                                app.thumbsView = new ThumbsView({collection: app.printThumbsCollection});
+                                var thumbsView = new ThumbsView({collection: app.printThumbsCollection});
+                                app.layout.renderViewIntoRegion(thumbsView, 'main');
+                                var menuView = new MenuView();
+                                app.layout.renderViewIntoRegion(menuView, 'menu');
                             },
                             function() {
-                                console.log("TODO - error unknownError");
+                                console.log("TODO - error unknownError - 500");
                             
                             }
-                        
                         )
                      } else {
-                        app.renderLoginScreen(result.message);
+                        that.options.message = result.message;
+                        that.render();
                     }
-                });
+                },
+                function() {
+                    console.log("TODO - error unknownError - 500");    
+                }
+                
+                
+                )
             }
         },
         
-        render: function(msg) {
+        render: function() {
             data = {};
             data.langStrings = app.langStrings.toJSON();
-            data.msg = msg;
+            data.msg = this.options.message;
             var html = this.loginTemplate(data);
             this.$el.html(html);         
         },

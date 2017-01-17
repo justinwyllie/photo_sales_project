@@ -70,6 +70,7 @@ class ClientAreaAPI
         $obj->status = "success";
         $obj->message = "";
         $this->outputJson($obj);
+
     }
     
     public function getPrintThumbs()
