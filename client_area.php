@@ -1062,8 +1062,8 @@ EOF;
                     <input type="hidden" name="action" id="ca_action_field" value="">
                     <select id="ca_activity_choice" class="ca_select_box">
                         <option value="--">Select..</option>
-                        <option value="showProofsScreen" <%= proofsOn %>><%= langStrings.viewProofs %></option>
-                        <option value="showPrintsScreen" <%= printsOn %>><%= langStrings.orderPrints %></option>
+                        <option value="proofs" <%= proofsOn %>><%= langStrings.viewProofs %></option>
+                        <option value="prints" <%= printsOn %>><%= langStrings.orderPrints %></option>
                     </select><br>
                     <button class="ca_large_button ca_choose_activity_event"
                         type="button"><%= langStrings.go %></button>

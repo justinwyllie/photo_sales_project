@@ -18,6 +18,7 @@ var caApp = (function (Backbone, $) {
         app.basketCollection = new app.BasketCollection();
         app.basketCollection.fetch();  
         app.printThumbsCollection = new PrintThumbsCollection();
+        app.proofsThumbsCollection = new ProofsThumbsCollection();
         
         app.userData = {};
 
@@ -392,6 +393,11 @@ var caApp = (function (Backbone, $) {
 
     });
     
+    ProofsThumbsCollection =  Backbone.Collection.extend({
+        model: ThumbModel,    
+        url: "/api/v1/proofsThumbs",
+    });
+    
     //VIEWS
 
     //render a given view into a given region, removing any view currently in that region
@@ -427,13 +433,23 @@ var caApp = (function (Backbone, $) {
     
     });
     
-    ThumbView =  Backbone.View.extend({
+    PrintThumbView =  Backbone.View.extend({
         tag: 'div',
    
         initialize: function(options) {
                 this.options = options;  
                 var template =  $('#ca_thumb_tmpl').html(); 
                 this.tmpl = _.template(template);
+        },
+        
+        events: {
+            'click .ca_thumb_pic': 'showPopUp'
+        
+        },
+        
+        showPopUp: function() {
+        
+        
         },
         
         render: function() {
@@ -450,6 +466,18 @@ var caApp = (function (Backbone, $) {
         } 
     
     })
+    
+    
+        app.showPrintPopUp = function(ref, ratio) {
+        //reset the basket to what the server believes in case we have got out of sync
+        //TOOO - are we getting out of sync? we should know. 
+        //app.basketCollection.fetch({reset: true}).then(function() {
+            app.basketCollectionView.cleanUp();
+            app.basketCollectionView.remove();     
+            app.basketCollectionView = new app.BasketCollectionView({collection: app.basketCollection, ref: ref, ratio: ratio, pricingModel: app.pricingModel});    
+        //});
+        
+    }
     
     MenuView =  Backbone.View.extend({
        
@@ -479,15 +507,20 @@ var caApp = (function (Backbone, $) {
             this.render();
         
         },
-        //todo can we have onremove?
+        
         render: function()
         {
             //loop through collection and display the page.
             //first take - just display them all
-             //HERE - remove login view or ANY view in the region. is this something Marionette does for you?
              var that = this;
+             console.log("mode", this.options.mode);
+             var mode = this.options.mode;
              this.collection.each(function(thumb) {
-                var thumbView = new ThumbView({model: thumb}) ;
+                if (mode == 'prints') {
+                    var thumbView = new PrintThumbView({model: thumb}) ;
+                }  else {
+                    var thumbView = new ProofsThumbView({model: thumb}) ;    
+                }
                 that.childViews.push(thumbView);//TODO consider all the places we need to cleanly remove this view
                 that.$el.append(thumbView.render().$el);        //TODO height row equalisation
 	       }, this);
@@ -779,7 +812,7 @@ var caApp = (function (Backbone, $) {
             
                 var data = {};
                 data.mode = mode;
-            
+                //TODO unnecessary call
                 var p = $.ajax({
                     url: '/api/v1/modeChoice',
                     dataType: 'json',
@@ -790,19 +823,26 @@ var caApp = (function (Backbone, $) {
                var that = this;
                 p.then(function(result) {
                     if (result.status == "success") {
+                    
+                        if (mode == 'prints') {
+                            coll =  'printThumbsCollection' ;
+                        } else {
+                            coll =  'proofsThumbsCollection' ;
+                        }
 
-                        app.printThumbsCollection.fetch({reset: true}).then(
+                        app[coll].fetch({reset: true}).then(
                             function() {
-                                var thumbsView = new ThumbsView({collection: app.printThumbsCollection});
+                                var thumbsView = new ThumbsView({collection: app[coll], mode: mode});
                                 app.layout.renderViewIntoRegion(thumbsView, 'main');
                                 var menuView = new MenuView();
                                 app.layout.renderViewIntoRegion(menuView, 'menu');
                             },
-                            function() {
+                           function() {
                                 console.log("TODO - error unknownError - 500");
-                            
                             }
                         )
+            
+                        
                      } else {
                         that.options.message = result.message;
                         that.render();
