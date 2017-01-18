@@ -454,8 +454,20 @@ var caApp = (function (Backbone, $) {
     MenuView =  Backbone.View.extend({
        
         render: function() {
-            this.$el.html('menu goes here');
+            this.$el.html('<button class="test">test</button>');
+        },
+        
+        events: {
+            'click .test': 'test'
+        
+        },
+        
+        test: function() {
+            var loginView = new LoginView({message: ''});
+            app.layout.renderViewIntoRegion(loginView, 'main');
+        
         }
+        
     
     })
     
@@ -484,6 +496,11 @@ var caApp = (function (Backbone, $) {
         cleanUp: function() {
             _.invoke(this.childViews, 'remove');
             this.childViews = [];    
+        },
+        
+        remove: function() {
+            this.cleanUp();
+            Backbone.View.prototype.remove.call(this);
         }
     });
     
@@ -687,6 +704,11 @@ var caApp = (function (Backbone, $) {
         cleanUp: function() {
             _.invoke(this.childViews, 'remove');
             this.childViews = [];    
+        },
+        
+         remove: function() {
+            this.cleanUp();
+            Backbone.View.prototype.remove.call(this);
         }
     
     });
