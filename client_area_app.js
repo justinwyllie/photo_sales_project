@@ -631,7 +631,7 @@ var caApp = (function (Backbone, $) {
         },
         
         updateSuccess: function(model) {
-            model.set("edit_mode", "saved");
+            model.set("edit_mode", "save");
         },
         
        updateError: function(model) {
@@ -664,7 +664,7 @@ var caApp = (function (Backbone, $) {
             if (this.model.hasChanged() === false) {
                 data.editStateIcon = "";
             } else {
-                data.editStateIcon = "glyphicon-" + this.model.get("edit_mode");
+                data.editStateIcon = "fa-" + this.model.get("edit_mode");
             }
         
             

@@ -14,8 +14,8 @@
             <backboneUrl>/backbone.js</backboneUrl>
             <!-- web path to the CSS file -->
             <cssUrl>/client_area.css</cssUrl>
-            <!-- Bootstrap CSS CDN -->
-            <bootstrapCSSUrl>https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css</bootstrapCSSUrl>
+            <!-- FontAwesome CSS CDN -->
+            <fontAwesomeCSSJSUrl>https://use.fontawesome.com/1ade56cfa5.js</fontAwesomeCSSJSUrl>
             <!-- use https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js for legacy IE support back to IE6 - untested. may well not work. -->
             <jQueryUrl>https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js</jQueryUrl>
  

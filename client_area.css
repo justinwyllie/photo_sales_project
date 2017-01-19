@@ -448,3 +448,68 @@ NB. For responsiveness to work as expected your container page should include so
     display: inline-block;
     width: 15px;
 }
+
+//RESPONSIVE
+
+
+.row
+{
+    margin-left: -15px;
+    margin-right: -15px;
+    box-sizing: border-box;
+    
+}
+
+.row:before
+{
+    display: table;
+    content: ' ';
+}
+
+.col-xs-1, col-xs-2, col-xs-3
+{
+    position: relative;
+    min-height: 1px;
+    padding-right: 15px;
+    padding-left: 15px;
+    box-sizing: border-box;
+}
+
+
+@media (min-width: 768px) 
+{ 
+
+    .row
+    {
+        margin-left: -15px;
+        margin-right: -15px;
+        box-sizing: border-box;
+        
+    }
+    
+    .col-sm-1, col-sm-2, col-sm-3
+    {
+        position: relative;
+        min-height: 1px;
+        padding-right: 15px;
+        padding-left: 15px;
+        box-sizing: border-box;
+        float: left;
+    }
+    
+    .col-sm-1
+    {
+        width:  8.33%;
+    }
+
+    .col-sm-2
+    {
+        width:  16.66%;
+    }
+    
+    .col-sm-3
+    {
+        width: 25%;
+    }
+
+}

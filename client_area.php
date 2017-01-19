@@ -141,7 +141,7 @@ class ClientArea
         $this->jQueryUrl = $systemOptions->jQueryUrl . "";
         $this->underscoreUrl = $systemOptions->underscoreUrl . "";
         $this->backboneUrl = $systemOptions->backboneUrl . "";
-        $this->bootstrapCSSUrl = $systemOptions->bootstrapCSSUrl . "";
+        $this->fontAwesomeCSSJSUrl = $systemOptions->fontAwesomeCSSJSUrl . "";
         $this->cssUrl = $systemOptions->cssUrl . "";
         $this->adminEmail = $systemOptions->adminEmail . "";
         $this->appName = $systemOptions->appName . "";
@@ -1023,7 +1023,7 @@ EOF;
                       <% if (mode == 'new') { %>
                           <button type="button" class="ca_add_event"><%= langStrings.add %></button>
                       <% } else { %>
-                          <span class="ca_edit_icon glyphicon <%= editStateIcon %>"></span>  
+                          <span class="ca_edit_icon fa <%= editStateIcon %>"></span>  
                           <button type="button" class="ca_update_event"><%= langStrings.update %></button>
                           <button type="button" class="ca_remove_event"><%= langStrings.remove %></button>
                       <% } %>
@@ -1144,15 +1144,6 @@ EOF;
         {
             $jQueryLine = "";
         }
-        
-        if (!empty($this->bootstrapCSSUrl))
-        {
-            $bootstrapCSSLine =  "<link rel='stylesheet' href='$this->bootstrapCSSUrl' type='text/css'>";
-        }
-        else
-        {
-             $bootstrapCSSLine = "";
-        }
 
         //build header
         $headerContent = <<<EOT
@@ -1161,11 +1152,9 @@ EOF;
         <script src="$this->backboneUrl"></script>
         <script src="$this->appUrl"></script>
         <script src="$this->jsUrl"></script>
+        <script src="$this->fontAwesomeCSSJSUrl"></script>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
         <link rel="stylesheet" href="$this->cssUrl" type="text/css">
-        $bootstrapCSSLine
-        
-
 EOT;
 
         $wrappedContent = <<<EOT
