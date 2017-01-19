@@ -1071,9 +1071,9 @@ EOF;
             </div>
         </script>
         <script type="text/html" id="ca_print_thumb_tmpl">           
-            <div class="ca_thumb_pic ca_print_thumb_pic <%= in_basket_class %>" style="<%= style %>">
+            <div class="ca_thumb_pic ca_print_thumb_pic <%= in_basket_class %>" style="<%= thumbStyle %>">
                 <img src="<%= path %>" alt="<%= alt_text %>" >
-                <span><%= label %></span>
+                <span style="<%= labelStyle %>" ><%= label %></span>
             </div>
         </script>
  

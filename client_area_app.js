@@ -11,6 +11,9 @@ var caApp = (function (Backbone, $) {
     
     app.init = function() {
     
+        //A few variables
+        app.labelHeight = 10; //this sets the height of the lables underneath the thunb images. units: pixels. 
+    
         //TODO this should be immutable
         app.pricingModel = new app.PricingModel();
         
@@ -396,9 +399,20 @@ var caApp = (function (Backbone, $) {
             });
         },
         
+        /*
+        * this ensures that the rows are of equal height when the actual heights of the thumbs differ
+        */
         setMaxHeight: function() {
             console.log('maxheight', this.models.length);
-            this.maxHeight = (120 + 15);
+            var maxHeight = 0;
+            _.each(this.models, function(thumb) {
+                var width = thumb.get('width');
+                if ( width >= maxHeight) {
+                    maxHeight = width;    
+                }    
+            })
+            this.labelHeight = app.labelHeight;
+            this.maxHeight = (maxHeight + this.labelHeight);
         }
         
        
@@ -479,7 +493,8 @@ var caApp = (function (Backbone, $) {
         render: function() {
             var data = this.model.toJSON();
             data.in_basket_class = "";
-            data.style = "height: " + this.options.maxHeight + "px";
+            data.thumbStyle = "height: " + this.options.maxHeight + "px";
+            data.labelStyle = "font-size: " +  this.options.labelHeight + "px";
             data.alt_text = "";
             data.label = data.file;
             var html = this.tmpl(data);
@@ -539,9 +554,9 @@ var caApp = (function (Backbone, $) {
              var mode = this.options.mode;
              this.collection.each(function(thumb) {
                 if (mode == 'prints') {
-                    var thumbView = new PrintThumbView({model: thumb, maxHeight: this.options.maxHeight}) ;
+                    var thumbView = new PrintThumbView({model: thumb, maxHeight: this.options.maxHeight, labelHeight: this.options.labelHeight}) ;
                 }  else {
-                    var thumbView = new ProofsThumbView({model: thumb, maxHeight: this.options.maxHeight}) ;    
+                    var thumbView = new ProofsThumbView({model: thumb, maxHeight: this.options.maxHeight, labelHeight: this.options.labelHeight}) ;    
                 }
                 that.childViews.push(thumbView);//TODO consider all the places we need to cleanly remove this view
                 that.$el.append(thumbView.render().$el);        //TODO height row equalisation
@@ -854,7 +869,7 @@ var caApp = (function (Backbone, $) {
 
                         app[coll].fetch({reset: true}).then(
                             function() {
-                                var thumbsView = new ThumbsView({collection: app[coll], mode: mode, maxHeight: app[coll].maxHeight });
+                                var thumbsView = new ThumbsView({collection: app[coll], mode: mode, maxHeight: app[coll].maxHeight, labelHeight: app[coll].labelHeight });
                                 app.layout.renderViewIntoRegion(thumbsView, 'main');
                                 var menuView = new MenuView();
                                 app.layout.renderViewIntoRegion(menuView, 'menu');
