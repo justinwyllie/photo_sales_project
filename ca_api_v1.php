@@ -80,6 +80,7 @@ class ClientAreaAPI
         $thumbsDir = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
             DIRECTORY_SEPARATOR . 'prints' . DIRECTORY_SEPARATOR . "thumbs";
             
+            
         $files = scandir($thumbsDir);
 
         $thumbs=array();
@@ -91,7 +92,7 @@ class ClientAreaAPI
             {
                 $fileObj->file = $file;
                 //TODO - in a loop? or at least we should cache the results
-                $imageDimensions = $this->getImageDimensions($mainDir . $file);
+                $imageDimensions = $this->getImageDimensions($thumbsDir . DIRECTORY_SEPARATOR . $file);
                 $fileObj->width =  $imageDimensions["width"];
                 $fileObj->height =  $imageDimensions["height"];
                 $fileObj->path =  $this->imageProvider . '?mode=prints&size=thumbs&file=' . $file;   //TODO put imageProvider onto some init and then mode and size can be set f/e

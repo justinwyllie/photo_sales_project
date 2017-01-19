@@ -389,13 +389,37 @@ var caApp = (function (Backbone, $) {
     PrintThumbsCollection =  Backbone.Collection.extend({
         model: ThumbModel,    
         url: "/api/v1/printThumbs",
+        
+        initialize: function() {
+            this.on("reset", function() {
+               this.setMaxHeight();    
+            });
+        },
+        
+        setMaxHeight: function() {
+            console.log('maxheight', this.models.length);
+            this.maxHeight = (120 + 15);
+        }
+        
        
 
     });
     
     ProofsThumbsCollection =  Backbone.Collection.extend({
         model: ThumbModel,    
-        url: "/api/v1/proofsThumbs",
+        url: "/api/v1/proofsThumbs", 
+        
+       //TODO same as  PrintThumbsCollection
+       initialize: function() {
+            this.on("reset", function() {
+               this.setMaxHeight();    
+            });
+        },
+        
+        setMaxHeight: function() {
+            console.log('maxheight', this.models.length);
+            this.maxHeight = '120';
+        }
     });
     
     //VIEWS
@@ -438,12 +462,12 @@ var caApp = (function (Backbone, $) {
    
         initialize: function(options) {
                 this.options = options;  
-                var template =  $('#ca_thumb_tmpl').html(); 
+                var template =  $('#ca_print_thumb_tmpl').html(); 
                 this.tmpl = _.template(template);
         },
         
         events: {
-            'click .ca_thumb_pic': 'showPopUp'
+            'click .ca_print_thumb_pic': 'showPopUp'
         
         },
         
@@ -455,10 +479,8 @@ var caApp = (function (Backbone, $) {
         render: function() {
             var data = this.model.toJSON();
             data.in_basket_class = "";
-            data.style = "";
+            data.style = "height: " + this.options.maxHeight + "px";
             data.alt_text = "";
-            data.checkbox_class = "";
-            data.checked = "";
             data.label = data.file;
             var html = this.tmpl(data);
             this.$el.html(html);
@@ -513,13 +535,13 @@ var caApp = (function (Backbone, $) {
             //loop through collection and display the page.
             //first take - just display them all
              var that = this;
-             console.log("mode", this.options.mode);
+             console.log("mode", this.options);
              var mode = this.options.mode;
              this.collection.each(function(thumb) {
                 if (mode == 'prints') {
-                    var thumbView = new PrintThumbView({model: thumb}) ;
+                    var thumbView = new PrintThumbView({model: thumb, maxHeight: this.options.maxHeight}) ;
                 }  else {
-                    var thumbView = new ProofsThumbView({model: thumb}) ;    
+                    var thumbView = new ProofsThumbView({model: thumb, maxHeight: this.options.maxHeight}) ;    
                 }
                 that.childViews.push(thumbView);//TODO consider all the places we need to cleanly remove this view
                 that.$el.append(thumbView.render().$el);        //TODO height row equalisation
@@ -832,7 +854,7 @@ var caApp = (function (Backbone, $) {
 
                         app[coll].fetch({reset: true}).then(
                             function() {
-                                var thumbsView = new ThumbsView({collection: app[coll], mode: mode});
+                                var thumbsView = new ThumbsView({collection: app[coll], mode: mode, maxHeight: app[coll].maxHeight });
                                 app.layout.renderViewIntoRegion(thumbsView, 'main');
                                 var menuView = new MenuView();
                                 app.layout.renderViewIntoRegion(menuView, 'menu');

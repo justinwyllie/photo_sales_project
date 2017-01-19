@@ -1070,10 +1070,9 @@ EOF;
                 </form>
             </div>
         </script>
-        <script type="text/html" id="ca_thumb_tmpl">           
-            <div class="ca_thumb_pic <%= in_basket_class %>" style="<%= style %>">
+        <script type="text/html" id="ca_print_thumb_tmpl">           
+            <div class="ca_thumb_pic ca_print_thumb_pic <%= in_basket_class %>" style="<%= style %>">
                 <img src="<%= path %>" alt="<%= alt_text %>" >
-                <input type="checkbox" <%= checked %> class="<%= checkbox_class %>">
                 <span><%= label %></span>
             </div>
         </script>
