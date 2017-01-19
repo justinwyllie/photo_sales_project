@@ -23,11 +23,20 @@ Advanced users only beyond this point!
 
 /*
   Font sizes: basically this app. does little with font sizes and will pick up whatever is set on the containing element.
-  In a few places we set font-size explicirty in pixels to control button text and bar height.
-  There is a class .ca_label for smaller label text
-  There is a class to make the message area text easy to change: .ca_message_area    
+  In a few places we set font-size explicitly where otherwise it might overflow from a container. E.g for image labels. Just search for font-size.
+  
 
 */
+
+/*
+  LESS VARIABLES
+  
+*/
+  
+@small-text: 10px;
+@medium-small-text: 15px;
+
+
 
 .ca_message_area
 {
@@ -36,7 +45,7 @@ Advanced users only beyond this point!
 
 .ca_label
 {
-    font-size: 80%;
+    font-size: @small-text;
 }
 
 .ca_proofs_thumbs
@@ -109,26 +118,25 @@ Advanced users only beyond this point!
 }
 
 
-div.ca_thumb_pic
+
+.ca_thumb_pic
 {
     float: left;
     margin-right: 20px;
     margin-top: 10px;
- 
 }
 
-.ca_thumb_pic img
+.ca_thumb_pic span
 {
-    margin-bottom: 5px;
-    box-sizing: border-box;
+    font-size: @small-text;
 }
 
-.ca_thumb_pic.has_order img
+.ca_print_thumb_pic.has_order img
 {
     border: 1px solid #ff0000;
 }
 
-.ca_thumb_pic input[type="checkbox"]
+.ca_proof_thumb_pic input[type="checkbox"]
 {
     float: left;
 }
@@ -137,7 +145,6 @@ div.ca_thumb_pic
 {
     cursor: pointer;
     display: block;
-    margin-bottom: 5px;
 }
 
 .ca_thumb_pic .ca_label
@@ -210,7 +217,7 @@ button.ca_menu_button
 /* label underneath main lightbox image */                  
 .ca_lightbox_controls
 {
-    font-size: 12px;
+    font-size: @medium-small-text;
     height: 15px;
 }
 
@@ -260,7 +267,7 @@ button.ca_menu_button
 .ca_popup_close
 {
     float: right;
-    font-size: 15px;
+    font-size: @medium-small-text;
     background-color: #a9a9a9;
     cursor: pointer;
     margin-right: 5px;
