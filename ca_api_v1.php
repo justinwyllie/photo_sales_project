@@ -103,7 +103,6 @@ class ClientAreaAPI
     }
     
     
-    
     public function postLogin()
     {       
         $obj = new stdClass();
@@ -119,6 +118,7 @@ class ClientAreaAPI
             session_unset();
             
             $this->setUserOptions($user);
+            $this->setOptions();
 
             $_SESSION["user"] = $user;
             $_SESSION["proofsPagesVisited"] = array();
@@ -163,6 +163,7 @@ class ClientAreaAPI
                                      
             $obj->status = "success";
             $obj->message = "";
+            $obj->appData = $this->options;
             $obj->userData = $this->accounts[$user];
         } else {
             $obj->status = "error";
@@ -308,6 +309,25 @@ class ClientAreaAPI
             
          }
     }
+    
+    private function setOptions()
+    {
+        $client_area_options = simplexml_load_file($this->clientAreaDirectory . DIRECTORY_SEPARATOR . 'client_area_options.xml');
+
+        if ($client_area_options === false) {
+            $this->criticalError("Error in options file or file does not exist");
+        }
+
+        $displayOptions = $client_area_options->options->display;
+
+        $options = array();
+        $options["thumbsPerPage"] = (int) $displayOptions->thumbsPerPage;
+        $options["proofsShowLabels"] = (bool) (int) $displayOptions->proofsShowLabels;
+        $options["showNannyingMessageAboutMoreThanOnePage"] = (bool) (int)  $displayOptions->showNannyingMessageAboutMoreThanOnePage;
+
+        $this->options = $options;
+    }
+
     
     private function criticalError($err)
     {

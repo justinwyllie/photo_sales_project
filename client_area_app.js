@@ -24,6 +24,7 @@ var caApp = (function (Backbone, $) {
         app.proofsThumbsCollection = new ProofsThumbsCollection();
         
         app.userData = {};
+        app.appData = {};
 
         app.langStrings = new app.LangStrings;
         app.langStrings.fetch().then(
@@ -831,6 +832,7 @@ var caApp = (function (Backbone, $) {
             p.then(function(result) {
                 if (result.status == "success") {
                     app.userData = result.userData;
+                    app.appData = result.appData;
                     that.renderModeChoice();
                 } else {
                     that.setMessage(result.message);
