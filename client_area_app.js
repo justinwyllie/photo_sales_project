@@ -68,6 +68,18 @@ var caApp = (function (Backbone, $) {
         app.basketCollectionView.remove();
     }
     
+        
+    app.showPrintPopUp = function(ref, ratio) {
+        //reset the basket to what the server believes in case we have got out of sync
+        //TOOO - are we getting out of sync? we should know. 
+        //app.basketCollection.fetch({reset: true}).then(function() {
+            app.basketCollectionView.cleanUp();
+            app.basketCollectionView.remove();     
+            app.basketCollectionView = new app.BasketCollectionView({collection: app.basketCollection, ref: ref, ratio: ratio, pricingModel: app.pricingModel});    
+        //});
+        
+    }
+    
     
     app.checkSessionAndRun = function(fnc)
     {
@@ -327,7 +339,7 @@ var caApp = (function (Backbone, $) {
                 var applicableFrameDisplayName = app.pricingModel.getFrameDisplayNamesCodesLookup()[frameStyle];
                 this.set({"frame_price": applicableFramePrice, "frame_display_name": applicableFrameDisplayName});
                 totalPrice = totalPrice + (qty * applicableFramePrice);
-            }
+            }                                                                                                                                                                                                                                                                     
                 
             totalPrice = totalPrice.toFixed(2);
             this.set({"total_price": totalPrice, "edit_mode": "edit"});
@@ -404,7 +416,6 @@ var caApp = (function (Backbone, $) {
         * this ensures that the rows are of equal height when the actual heights of the thumbs differ
         */
         setMaxHeight: function() {
-            console.log('maxheight', this.models.length);
             var maxHeight = 0;
             _.each(this.models, function(thumb) {
                 var width = thumb.get('width');
@@ -414,6 +425,26 @@ var caApp = (function (Backbone, $) {
             })
             this.labelHeight = app.labelHeight;
             this.maxHeight = (maxHeight + this.labelHeight);
+        },
+        
+        //TODO share this with  ProofsThumbsCollection
+        /*
+        * return the JSON of the given page to use to create a new instance of this collection for the page
+        */
+        pagination: function(perPage, page) {
+            var start = (page - 1) * perPage;
+            var end = (perPage * page);
+            
+            var pageModels =  this.slice(start, end);
+            
+            //see http://stackoverflow.com/questions/41771742/do-i-need-to-destroy-a-backbone-collection for why we do this. esp. my last comment
+            var jsonPages = _.map(pageModels, function(model) {
+               return model.toJSON();
+            });
+            
+            return jsonPages;  
+            
+           
         }
         
        
@@ -432,7 +463,6 @@ var caApp = (function (Backbone, $) {
         },
         
         setMaxHeight: function() {
-            console.log('maxheight', this.models.length);
             this.maxHeight = '120';
         }
     });
@@ -472,6 +502,82 @@ var caApp = (function (Backbone, $) {
     
     });
     
+   
+    PrintsMenuView =  Backbone.View.extend({
+    
+        initialize: function(options) {
+            this.options = options;
+            var buttonsTemplate =  $('#ca_pagination_buttons').html(); 
+            this.buttonsTmpl = _.template(buttonsTemplate);
+        },    
+       
+        render: function() {
+            var data = {};
+            data.total_pages = Math.ceil(this.options.totalThumbs / this.options.thumbsPerPage);
+            data.active = this.options.active;
+            var buttons = this.buttonsTmpl(data);
+            this.$el.html(buttons);
+        },
+        
+        events: {
+            'click .ca_page_number_event': 'changePage'
+        
+        },
+        
+        changePage: function(evt) {
+            var targetPage = $(evt.currentTarget).data('index');
+            var pageModelsJSON = app[coll].pagination(45, targetPage);
+            var pagedCollection = new  Backbone.Collection(pageModelsJSON);
+            var thumbsView = new ThumbsView({collection: pagedCollection, mode: 'prints', maxHeight: app[coll].maxHeight, labelHeight: app[coll].labelHeight });
+            app.layout.renderViewIntoRegion(thumbsView, 'main');
+            this.options.active = targetPage;
+            this.render();
+        } 
+
+        
+    
+    })
+    
+    //in Marionette this would be an ItemViewCollection
+    ThumbsView =  Backbone.View.extend({
+        initialize: function(options) {
+            this.options = options;
+            this.childViews = new Array();
+            this.render();
+        
+        },
+        
+        render: function()
+        {
+            //loop through collection and display the page.
+            //first take - just display them all
+             var mode = this.options.mode;
+             this.collection.each(function(thumb) {
+                if (mode == 'prints') {
+                    var thumbView = new PrintThumbView({model: thumb, maxHeight: this.options.maxHeight, labelHeight: this.options.labelHeight}) ;
+                }  else {
+                    var thumbView = new ProofsThumbView({model: thumb, maxHeight: this.options.maxHeight, labelHeight: this.options.labelHeight}) ;    
+                }
+                
+                this.$el.append(thumbView.render().$el);        //TODO height row equalisation  
+                this.childViews.push(thumbView);//TODO consider all the places we need to cleanly remove this view
+	       }, this);
+        } ,
+        
+        cleanUp: function() {
+            _.invoke(this.childViews, 'remove');
+            //this.childViews = [];    
+            this.childViews.length = 0;   
+        },
+        
+        remove: function() {
+            this.cleanUp();
+            Backbone.View.prototype.remove.call(this);
+        }
+    });     
+    
+    
+    
     PrintThumbView =  Backbone.View.extend({
         tag: 'div',
    
@@ -503,77 +609,27 @@ var caApp = (function (Backbone, $) {
             return this; 
         } 
     
-    })
+    })   
     
     
-        app.showPrintPopUp = function(ref, ratio) {
-        //reset the basket to what the server believes in case we have got out of sync
-        //TOOO - are we getting out of sync? we should know. 
-        //app.basketCollection.fetch({reset: true}).then(function() {
-            app.basketCollectionView.cleanUp();
-            app.basketCollectionView.remove();     
-            app.basketCollectionView = new app.BasketCollectionView({collection: app.basketCollection, ref: ref, ratio: ratio, pricingModel: app.pricingModel});    
-        //});
-        
-    }
     
-    MenuView =  Backbone.View.extend({
-       
-        render: function() {
-            this.$el.html('<button class="test">test</button>');
-        },
-        
-        events: {
-            'click .test': 'test'
-        
-        },
-        
-        test: function() {
-            var loginView = new LoginView({message: ''});
-            app.layout.renderViewIntoRegion(loginView, 'main');
-        
-        }
-        
     
-    })
     
-    //in Marionette this would be an ItemViewCollection
-    ThumbsView =  Backbone.View.extend({
-        initialize: function(options) {
-            this.options = options;
-            this.childViews = new Array();
-            this.render();
-        
-        },
-        
-        render: function()
-        {
-            //loop through collection and display the page.
-            //first take - just display them all
-             var that = this;
-             console.log("mode", this.options);
-             var mode = this.options.mode;
-             this.collection.each(function(thumb) {
-                if (mode == 'prints') {
-                    var thumbView = new PrintThumbView({model: thumb, maxHeight: this.options.maxHeight, labelHeight: this.options.labelHeight}) ;
-                }  else {
-                    var thumbView = new ProofsThumbView({model: thumb, maxHeight: this.options.maxHeight, labelHeight: this.options.labelHeight}) ;    
-                }
-                that.childViews.push(thumbView);//TODO consider all the places we need to cleanly remove this view
-                that.$el.append(thumbView.render().$el);        //TODO height row equalisation
-	       }, this);
-        } ,
-        
-        cleanUp: function() {
-            _.invoke(this.childViews, 'remove');
-            this.childViews = [];    
-        },
-        
-        remove: function() {
-            this.cleanUp();
-            Backbone.View.prototype.remove.call(this);
-        }
-    });
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+     
     
     //OrderLine View - a view to display a single order line
     app.OrderLineView = Backbone.View.extend({
@@ -871,9 +927,26 @@ var caApp = (function (Backbone, $) {
 
                         app[coll].fetch({reset: true}).then(
                             function() {
-                                var thumbsView = new ThumbsView({collection: app[coll], mode: mode, maxHeight: app[coll].maxHeight, labelHeight: app[coll].labelHeight });
+                            
+                            
+                                //get collection for page 1
+                                if ((app.userData.hasOwnProperty('thumbsPerPage')) &&  (!isNaN(parseInt(app.userData.thumbsPerPage))))  {
+                                    var thumbsPerPage = parseInt(app.userData.thumbsPerPage);    
+                                }  else {
+                                    var thumbsPerPage = parseInt(app.appData.thumbsPerPage) ;
+                                }
+                                
+                                var pageModelsJSON = app[coll].pagination(thumbsPerPage, 1);
+                                var pagedCollection = new  Backbone.Collection(pageModelsJSON);
+                                
+                            
+                                var thumbsView = new ThumbsView({collection: pagedCollection, mode: mode, maxHeight: app[coll].maxHeight, labelHeight: app[coll].labelHeight });
                                 app.layout.renderViewIntoRegion(thumbsView, 'main');
-                                var menuView = new MenuView();
+                                if (mode == 'prints') {
+                                    var menuView = new PrintsMenuView({totalThumbs: app[coll].length, thumbsPerPage: thumbsPerPage, active: 1});
+                                } else {
+                                    var menuView = new ProofsMenuView();
+                                }
                                 app.layout.renderViewIntoRegion(menuView, 'menu');
                             },
                            function() {

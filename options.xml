@@ -4,5 +4,6 @@
     <proofsOn>1</proofsOn>
     <printsOn>1</printsOn>
     <customProofsMessage></customProofsMessage>
+    <!-- leave blank to use the system level defaults -->
     <thumbsPerPage>45</thumbsPerPage>
 </options>

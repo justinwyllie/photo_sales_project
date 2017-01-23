@@ -1076,6 +1076,11 @@ EOF;
                 <span style="<%= labelStyle %>" ><%= label %></span>
             </div>
         </script>
+        <script type="text/html" id="ca_pagination_buttons"> 
+            <% for (i=1; i <= total_pages; i++) { %>         
+                <button data-index="<%=i %>" class="ca_page_number_event ca_thumbs_page  <% if (active == i) { %>ca_highlighted_pagination<% } %>  "><span><%=i %></span></button>
+            <% } %>    
+        </script>
  
 EOF;
         return $html;    
