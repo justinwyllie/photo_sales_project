@@ -509,6 +509,8 @@ var caApp = (function (Backbone, $) {
             this.options = options;
             var buttonsTemplate =  $('#ca_pagination_buttons').html(); 
             this.buttonsTmpl = _.template(buttonsTemplate);
+            var menuTemplate = $('#ca_prints_menu').html(); 
+            this.menuTmpl =  _.template(menuTemplate);
         },    
        
         render: function() {
@@ -516,7 +518,8 @@ var caApp = (function (Backbone, $) {
             data.total_pages = Math.ceil(this.options.totalThumbs / this.options.thumbsPerPage);
             data.active = this.options.active;
             var buttons = this.buttonsTmpl(data);
-            this.$el.html(buttons);
+            var menu = this.menuTmpl({content: buttons})
+            this.$el.html(menu);
         },
         
         events: {

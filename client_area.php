@@ -1081,6 +1081,11 @@ EOF;
                 <button data-index="<%=i %>" class="ca_page_number_event ca_thumbs_page  <% if (active == i) { %>ca_highlighted_pagination<% } %>  "><span><%=i %></span></button>
             <% } %>    
         </script>
+        <script type="text/html" id="ca_prints_menu"> 
+            <div class="ca_menu_bar">
+                <%= content %>
+            </div>    
+        </script>
  
 EOF;
         return $html;    
