@@ -23,7 +23,6 @@ var caApp = (function (Backbone, $) {
         app.printThumbsCollection = new PrintThumbsCollection();
         app.proofsThumbsCollection = new ProofsThumbsCollection();
         
-        app.userData = {};
         app.appData = {};
 
         app.langStrings = new app.LangStrings;
@@ -890,7 +889,6 @@ var caApp = (function (Backbone, $) {
             var that = this;
             p.then(function(result) {
                 if (result.status == "success") {
-                    app.userData = result.userData;
                     app.appData = result.appData;
                     that.renderModeChoice();
                 } else {
@@ -930,15 +928,8 @@ var caApp = (function (Backbone, $) {
 
                         app[coll].fetch({reset: true}).then(
                             function() {
-                            
-                            
-                                //get collection for page 1
-                                if ((app.userData.hasOwnProperty('thumbsPerPage')) &&  (!isNaN(parseInt(app.userData.thumbsPerPage))))  {
-                                    var thumbsPerPage = parseInt(app.userData.thumbsPerPage);    
-                                }  else {
-                                    var thumbsPerPage = parseInt(app.appData.thumbsPerPage) ;
-                                }
-                                
+                              
+                                var thumbsPerPage = parseInt(app.appData.thumbsPerPage) ;
                                 var pageModelsJSON = app[coll].pagination(thumbsPerPage, 1);
                                 var pagedCollection = new  Backbone.Collection(pageModelsJSON);
                                 
@@ -983,19 +974,20 @@ var caApp = (function (Backbone, $) {
         renderModeChoice: function() {
             data = {};
             data.langStrings = app.langStrings.toJSON(); //TODO do this in other places
-            data.userData = app.userData;
-            
-            if (!data.userData["proofs_on"]) {
+             
+            if (!app.appData["proofs_on"]) {
                 data.proofsOn = "disabled";  
             } else {
                 data.proofsOn = "";     
             }
             
-            if (!data.userData["prints_on"]) {
+            if (!app.appData["prints_on"]) {
                 data.printsOn = "disabled";  
             } else {
                 data.printsOn = "";     
             }
+            
+            data.human_name = app.appData["human_name"];
             
             var html = this.modeChoiceTmpl(data);
             this.$el.html(html); 

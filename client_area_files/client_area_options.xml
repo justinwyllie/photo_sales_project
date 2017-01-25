@@ -24,11 +24,15 @@
         </system>
 
         <display>
+            <!-- all of the fields in this section can be over-written in the user options file
+                    just repeat the tag in that file with the setting for the user  -->
             <thumbsPerPage>50</thumbsPerPage>
-            <!-- 0 for off and 1 for on -->
-            <proofsShowLabels>1</proofsShowLabels>
-            <!-- 0 for off and 1 for on -->
-            <showNannyingMessageAboutMoreThanOnePage>0</showNannyingMessageAboutMoreThanOnePage>
+            <!-- true / false -->
+            <proofsShowLabels>true</proofsShowLabels>
+            <!-- true / false -->
+            <showNannyingMessageAboutMoreThanOnePage>false</showNannyingMessageAboutMoreThanOnePage>
+            <!-- false or true -->
+            <enablePaypal>true</enablePaypal>
         </display>
 
 

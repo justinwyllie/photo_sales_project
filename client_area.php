@@ -1057,7 +1057,7 @@ EOF;
         </script>
         <script type="text/html" id="ca_mode_choice_tmpl">
             <div class="ca_print_login">
-                <%= langStrings.hello %> <span class="ca_human_name"><%= userData["human_name"] %></span>. <%= langStrings.chooseOption %>
+                <%= langStrings.hello %> <span class="ca_human_name"><%= human_name %></span>. <%= langStrings.chooseOption %>
                 <form action="" method="post" id="ca_action_form">
                     <input type="hidden" name="action" id="ca_action_field" value="">
                     <select id="ca_activity_choice" class="ca_select_box">

@@ -117,8 +117,9 @@ class ClientAreaAPI
         if (!empty($this->accounts[$user]) && !empty($password) && ($this->accounts[$user]["password"] === $password)) {
             session_unset();
             
-            $this->setUserOptions($user);
             $this->setOptions();
+            $this->setUserOptions($user);
+            
 
             $_SESSION["user"] = $user;
             $_SESSION["proofsPagesVisited"] = array();
@@ -164,7 +165,6 @@ class ClientAreaAPI
             $obj->status = "success";
             $obj->message = "";
             $obj->appData = $this->options;
-            $obj->userData = $this->accounts[$user];
         } else {
             $obj->status = "error";
             $obj->message = $this->lang('loginError');
@@ -270,7 +270,7 @@ class ClientAreaAPI
         $client_area_accounts = simplexml_load_file($this->accountsPath);
 
         if ($client_area_accounts === false) {
-            $this->criticalError("Error in accounts file or file does not exist");
+            $this->outputJson500("Error in accounts file or file does not exist");
         }
 
         $accounts = array();
@@ -290,24 +290,38 @@ class ClientAreaAPI
             DIRECTORY_SEPARATOR . "options.xml" );
 
         if ($options === false) {
-             $this->criticalError("Missing or broken user options file for " . $user);
-        } else {
+             $this->outputJson500("Missing or broken user options file for " . $user);
+        } 
+        
+        
+        if (!isset($this->options)) {
+            $this->outputJson500("Incorrect call to setUserOptions before call to setOptions " . $user);
+        }
 
-            $this->accounts[$user]["proofs_on"] = (bool) (int) $options->proofsOn;
-            $this->accounts[$user]["prints_on"] = (bool) (int) $options->printsOn;
-            if ($this->accounts[$user]["proofs_on"])
-            {
-                $this->accounts[$user]["customProofsMessage"] = $options->customProofsMessage . "";
-            }
-            if ($this->accounts[$user]["prints_on"])
-            {
-                $this->accounts[$user]["customPrintsMessage"] = $options->customPrintsessage . "";
-            }
+        $this->options["proofs_on"] = (bool) $options->proofsOn;
+        $this->options["prints_on"] = (bool) $options->printsOn;
+        //TODO are we using these?
+        $this->options["customProofsMessage"] = $options->customProofsMessage . "";;
+        $this->options["customPrintsMessage"] = $options->customPrintsMessage . "";;
+
+        //potentially overide global options
+        if (!empty($options->thumbsPerPage)) {
+           $this->options["thumbsPerPage"]   = (int) $options->thumbsPerPage;  
+        }
+           
+        if (!empty($options->enablePaypal)) {
+            $this->options["enablePaypal"]   = (bool) $options->enablePaypal;  
+        }
             
-            $this->accounts[$user]["customPrintsMessage"] = $options->customPrintsMessage . "";
-            $this->accounts[$user]["thumbsPerPage"] = (int) $options->thumbsPerPage ;
+        if (!empty($options->proofsShowLabels)) {
+            $this->options["proofsShowLabels"]   = (bool) $options->proofsShowLabels;  
+        }
+           
+        if (!empty($options->showNannyingMessageAboutMoreThanOnePage)) {
+            $this->options["showNannyingMessageAboutMoreThanOnePage"]   = (bool) $options->showNannyingMessageAboutMoreThanOnePage;  
+        }
             
-         }
+        $this->options["human_name"] =  $this->accounts[$user]["human_name"]   ;
     }
     
     private function setOptions()
@@ -315,30 +329,21 @@ class ClientAreaAPI
         $client_area_options = simplexml_load_file($this->clientAreaDirectory . DIRECTORY_SEPARATOR . 'client_area_options.xml');
 
         if ($client_area_options === false) {
-            $this->criticalError("Error in options file or file does not exist");
+            $this->outputJson500("Error in options file or file does not exist");
         }
 
         $displayOptions = $client_area_options->options->display;
 
         $options = array();
         $options["thumbsPerPage"] = (int) $displayOptions->thumbsPerPage;
-        $options["proofsShowLabels"] = (bool) (int) $displayOptions->proofsShowLabels;
+        $options["proofsShowLabels"] = (bool) $displayOptions->proofsShowLabels;
         $options["showNannyingMessageAboutMoreThanOnePage"] = (bool) (int)  $displayOptions->showNannyingMessageAboutMoreThanOnePage;
+        $options["enablePaypal"] = (bool) $displayOptions->enablePaypal;
 
         $this->options = $options;
     }
 
-    
-    private function criticalError($err)
-    {
-            $this->destroySession();
-            $obj = new stdClass();
-            $obj->status = "error";
-            $this->outputJson($obj);
-            
-            //TODO email the message to admin
-    }
-    
+                          
     private function destroySession()
     {
        session_unset();
@@ -393,7 +398,8 @@ class ClientAreaAPI
         exit();
     }
     
-    private function outputJson500() {
+    private function outputJson500($errMessage) {
+        //TODO email $errMessage to admin
         header("Content-type: application/json");
         header("HTTP/1.1 500 Internal Server Error");
         exit();
