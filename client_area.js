@@ -122,7 +122,7 @@
       })
   
   
-      $("body").on("click", ".ca_logout_event", function(evt) {
+      $("body").on("click", ".ca_logout_eventXXX", function(evt) {
           $(this).closest(".ca_message_pop_up").remove();
           $("#ca_action_field").val("logout");
           $("#ca_action_form").get(0).submit();

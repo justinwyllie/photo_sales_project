@@ -501,6 +501,39 @@ var caApp = (function (Backbone, $) {
     
     });
     
+    BasketView =   Backbone.View.extend({
+    
+        render: function() {
+            this.$el.html('basket');    
+        }
+    
+    });
+    
+   CheckoutView =   Backbone.View.extend({
+    
+        render: function() {
+            this.$el.html('checkout');    
+        }
+    
+    });
+    
+    OrderView =   Backbone.View.extend({
+    
+        render: function() {
+            this.$el.html('order');    
+        }
+    
+    });
+    
+    LogoutView =   Backbone.View.extend({
+    
+        render: function() {
+            this.$el.html('logout');    
+        }
+    
+    });
+    
+    
    
     PrintsMenuView =  Backbone.View.extend({
     
@@ -531,7 +564,30 @@ var caApp = (function (Backbone, $) {
         },
         
         events: {
-            'click .ca_page_number_event': 'changePage'
+            'click .ca_page_number_event': 'changePage',
+            'click .ca_basket_event': 'showBasket',
+            'click .ca_checkout_event': 'showCheckout',
+            'click .ca_logout_event': 'showLogout'
+        
+        },
+        
+        showBasket: function() {
+            var basketView =  new BasketView();
+            app.layout.renderViewIntoRegion(basketView, 'main'); 
+        } ,
+        
+       showLogout: function() {
+            var logoutView =  new LogoutView();
+            app.layout.renderViewIntoRegion(logoutView, 'main'); 
+        } ,
+            
+        showCheckout: function() {
+          if (app.appData.enablePaypal) {
+            var view = new CheckoutView();
+          }  else {
+            var view = new OrderView();        
+          }
+          app.layout.renderViewIntoRegion(view, 'main'); 
         
         },
         
