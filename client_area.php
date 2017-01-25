@@ -1077,13 +1077,21 @@ EOF;
             </div>
         </script>
         <script type="text/html" id="ca_pagination_buttons"> 
-            <% for (i=1; i <= total_pages; i++) { %>         
-                <button data-index="<%=i %>" class="ca_page_number_event ca_thumbs_page  <% if (active == i) { %>ca_highlighted_pagination<% } %>  "><span><%=i %></span></button>
-            <% } %>    
+            <div class="ca_page_buttons">
+                <% for (i=1; i <= total_pages; i++) { %>         
+                    <button data-index="<%=i %>" class="ca_page_number_event ca_thumbs_page  <% if (active == i) { %>ca_highlighted_pagination<% } %>  "><span><%=i %></span></button>
+                <% } %>    
+            </div>
         </script>
         <script type="text/html" id="ca_prints_menu"> 
             <div class="ca_menu_bar">
-                <%= content %>
+                <%= buttons %>
+                <div class="ca_menu_buttons">
+                    <button class="ca_basket_event">Basket</button>
+                    <button class="ca_checkout_event">Checkout</button>
+                    <button class="ca_logout_event">Logout</button>
+                    
+                </div>
             </div>    
         </script>
  

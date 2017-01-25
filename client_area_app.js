@@ -518,7 +518,7 @@ var caApp = (function (Backbone, $) {
             data.total_pages = Math.ceil(this.options.totalThumbs / this.options.thumbsPerPage);
             data.active = this.options.active;
             var buttons = this.buttonsTmpl(data);
-            var menu = this.menuTmpl({content: buttons})
+            var menu = this.menuTmpl({buttons: buttons})
             this.$el.html(menu);
         },
         

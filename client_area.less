@@ -97,10 +97,16 @@ Advanced users only beyond this point!
 .ca_menu_bar
 {
     background-color: #eeeeee;
-    padding: 10px 0px 10px 0px;
+    padding: 10px 10px 5px 10px;
     width: 100%;
-    border-bottom: 1px solid #A9A9A9;    
+    border-bottom: 1px solid #A9A9A9;  
 }
+.ca_menu_bar::after
+{
+    display: table;
+    content: '';
+    clear: both;
+}    
 
 
 .ca_counter_label
@@ -169,14 +175,14 @@ button.ca_menu_button
 
 .ca_menu_buttons
 {
-    
+    float: right;    
 }
 
-.ca_pagination_box
+.ca_page_buttons
 {
-    margin-left: 10px;
-
+    float: left;
 }
+
 
 .ca_pagination
 {
@@ -458,10 +464,11 @@ NB. For responsiveness to work as expected your container page should include so
     
 }
 
-.row:before
+.row::after
 {
     display: table;
-    content: ' ';
+    content: '';
+    clear: both;
 }
 
 .col-xs-1, col-xs-2, col-xs-3
