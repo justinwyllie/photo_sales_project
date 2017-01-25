@@ -513,11 +513,20 @@ var caApp = (function (Backbone, $) {
         },    
        
         render: function() {
+            var buttonData = {};
+            buttonData.total_pages = Math.ceil(this.options.totalThumbs / this.options.thumbsPerPage);
+            buttonData.active = this.options.active;
+            buttons = this.buttonsTmpl(buttonData);
             var data = {};
-            data.total_pages = Math.ceil(this.options.totalThumbs / this.options.thumbsPerPage);
-            data.active = this.options.active;
-            var buttons = this.buttonsTmpl(data);
-            var menu = this.menuTmpl({buttons: buttons})
+            data.basket_label = app.langStrings.get("basketButtonText");
+            if (app.appData.enablePaypal) {
+                data.checkout_label = app.langStrings.get("checkoutButtonText");     
+            } else {
+               data.checkout_label = app.langStrings.get("order"); 
+            }
+            
+            data.logout_label = app.langStrings.get("logout");
+            var menu = this.menuTmpl(data)
             this.$el.html(menu);
         },
         

@@ -1087,9 +1087,9 @@ EOF;
             <div class="ca_menu_bar">
                 <%= buttons %>
                 <div class="ca_menu_buttons">
-                    <button class="ca_basket_event">Basket</button>
-                    <button class="ca_checkout_event">Checkout</button>
-                    <button class="ca_logout_event">Logout</button>
+                    <button class="ca_basket_event"><%= basket_label %></button>
+                    <button class="ca_checkout_event"><%= checkout_label %></button>
+                    <button class="ca_logout_event"><%= logout_label %></button>
                     
                 </div>
             </div>    

@@ -27,6 +27,9 @@
     <field name="orderPrints">
         Order Prints
     </field>
+    <field name="order">
+        Order
+    </field>
     <field name="login">
         Login
     </field>

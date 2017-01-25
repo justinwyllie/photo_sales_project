@@ -286,39 +286,40 @@ class ClientAreaAPI
     
     private function setUserOptions($user)
     {
-        $options = simplexml_load_file($this->clientAreaDirectory . DIRECTORY_SEPARATOR . $user .
+        $userOptions = simplexml_load_file($this->clientAreaDirectory . DIRECTORY_SEPARATOR . $user .
             DIRECTORY_SEPARATOR . "options.xml" );
 
-        if ($options === false) {
+        if ($userOptions === false) {
              $this->outputJson500("Missing or broken user options file for " . $user);
         } 
         
-        
+        //TODO test this
         if (!isset($this->options)) {
             $this->outputJson500("Incorrect call to setUserOptions before call to setOptions " . $user);
         }
 
-        $this->options["proofs_on"] = (bool) $options->proofsOn;
-        $this->options["prints_on"] = (bool) $options->printsOn;
+        $this->options["proofs_on"] = $userOptions->proofsOn == 'true' ? true: false;
+        $this->options["prints_on"] = $userOptions->printsOn == 'true' ? true: false;
         //TODO are we using these?
-        $this->options["customProofsMessage"] = $options->customProofsMessage . "";;
-        $this->options["customPrintsMessage"] = $options->customPrintsMessage . "";;
+        $this->options["customProofsMessage"] = $userOptions->customProofsMessage . "";
+        $this->options["customPrintsMessage"] = $userOptions->customPrintsMessage . "";
 
         //potentially overide global options
-        if (!empty($options->thumbsPerPage)) {
-           $this->options["thumbsPerPage"]   = (int) $options->thumbsPerPage;  
+        if (!empty($userOptions->thumbsPerPage)) {
+           $this->options["thumbsPerPage"]   = (int) $userOptions->thumbsPerPage;  
         }
+        
            
-        if (!empty($options->enablePaypal)) {
-            $this->options["enablePaypal"]   = (bool) $options->enablePaypal;  
+        if (!empty($userOptions->enablePaypal)) {
+            $this->options["enablePaypal"]   = $userOptions->enablePaypal == 'true' ? true: false; 
         }
             
-        if (!empty($options->proofsShowLabels)) {
-            $this->options["proofsShowLabels"]   = (bool) $options->proofsShowLabels;  
+        if (!empty($userOptions->proofsShowLabels)) {
+            $this->options["proofsShowLabels"]   = $userOptions->proofsShowLabels == 'true' ? true: false;   
         }
            
-        if (!empty($options->showNannyingMessageAboutMoreThanOnePage)) {
-            $this->options["showNannyingMessageAboutMoreThanOnePage"]   = (bool) $options->showNannyingMessageAboutMoreThanOnePage;  
+        if (!empty($userOptions->showNannyingMessageAboutMoreThanOnePage)) {
+            $this->options["showNannyingMessageAboutMoreThanOnePage"]   = $userOptions->showNannyingMessageAboutMoreThanOnePage == 'true' ? true: false;
         }
             
         $this->options["human_name"] =  $this->accounts[$user]["human_name"]   ;

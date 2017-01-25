@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <options>
     <!-- true / false -->
-    <proofsOn>true</proofsOn>
+    <proofsOn>false</proofsOn>
     <!-- true / false -->
     <printsOn>true</printsOn>
     <customProofsMessage></customProofsMessage>
     <customPrintsMessage></customPrintsMessage>
     <!-- below this line one can add the tags from the <display> section in client_area_options.xml to override them for this user -->
     <thumbsPerPage>45</thumbsPerPage>
+    <enablePaypal>true</enablePaypal>
 </options>
