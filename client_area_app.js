@@ -494,7 +494,7 @@ var caApp = (function (Backbone, $) {
             
             if (view !== null) {
                 $(this.regions[region].el).append('<div class="viewContainer"></div>');
-                view.setElement($(this.regions[region].el).find('.viewContainer'));
+                view.setElement($(this.regions[region].el).children('.viewContainer'));
                 view.render();
                 this.regions[region].view = view;    
             }
@@ -652,8 +652,8 @@ var caApp = (function (Backbone, $) {
             var containerTemplate =  $('#ca_print_popup_tmpl').html(); 
             this.containerTmpl = _.template(containerTemplate);
             this.options = options;
+            //this will have references to app.basketCollection and must be explicity removed after use. hence remove() method in this class
             this.basketCollection = app.basketCollection.byImage(this.options.file);
-            console.log("bc",this.basketCollection );
             
         },
         
@@ -662,16 +662,11 @@ var caApp = (function (Backbone, $) {
         },
        
         close: function() {
-            app.layout.renderViewIntoRegion(null, 'popup');     
+            app.layout.renderViewIntoRegion(null, 'body');     
         },       
        
         render: function() {
             var data = {};
-            //get the collection from the basket for this file
-            //TODO this will have references to app.basketCollection and must be explicity removed after use   check it has been
-            
-            
-            //get the image html
             data.path =   this.options.path;
             
             //get the order lines html
@@ -713,7 +708,7 @@ var caApp = (function (Backbone, $) {
             var path = this.model.get("path");
             path = path.replace("thumbs", "main") ;
             var view = new PrintPopUpView({file: file, path: path});
-            app.layout.renderViewIntoRegion(view, 'popup');   
+            app.layout.renderViewIntoRegion(view, 'body');   
         
         },
         
