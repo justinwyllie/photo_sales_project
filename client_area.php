@@ -972,6 +972,19 @@ EOF;
     {
     
         $html=<<<EOF
+            <script type="text/html" id="ca_print_popup_tmpl">
+                <div class="ca_prints_popup">
+                    <div class="ca_popup_close_bar">
+                        <button class="ca_popup_close ca_lightbox_close_event">x</button>    
+                    </div>
+                    <div class="ca_lightbox_image">
+                        <img src="<%= path %>">
+                    </div>
+                    <div>
+                         order lines
+                    </div>
+                </div>
+            </script>
             <script type="text/html" id="ca_order_line_tmpl">
                 <div class="col-xs-2">
                     <div class="form-group ca_print_size_group ">
@@ -1071,7 +1084,7 @@ EOF;
             </div>
         </script>
         <script type="text/html" id="ca_print_thumb_tmpl">           
-            <div class="ca_thumb_pic ca_print_thumb_pic <%= in_basket_class %>" style="<%= thumbStyle %>">
+            <div class="ca_thumb_pic ca_print_thumb_pic_event <%= in_basket_class %>" style="<%= thumbStyle %>">
                 <img src="<%= path %>" alt="<%= alt_text %>" >
                 <span style="<%= labelStyle %>" ><%= label %></span>
             </div>
@@ -1180,8 +1193,6 @@ EOT;
                 </div>
                 <div id="ca_main">
                 </div>
-                <div id="ca_lightbox">
-                 </div>
                 <div id="ca_popup">
                 </div>
             </div>

@@ -18,8 +18,8 @@ var caApp = (function (Backbone, $) {
         app.pricingModel = new app.PricingModel();
         
         app.pricingModel.fetch();
-        app.basketCollection = new app.BasketCollection();
-        app.basketCollection.fetch();  
+        app.basketCollection = new BasketCollection();
+        app.basketCollection.fetch();       //TODO only if in prints mode
         app.printThumbsCollection = new PrintThumbsCollection();
         app.proofsThumbsCollection = new ProofsThumbsCollection();
         
@@ -49,7 +49,7 @@ var caApp = (function (Backbone, $) {
         //app.basketCollection.fetch({reset: true}).then(function() {
             app.basketCollectionView.cleanUp();
             app.basketCollectionView.remove();     
-            app.basketCollectionView = new app.BasketCollectionView({collection: app.basketCollection, ref: ref, ratio: ratio, pricingModel: app.pricingModel});    
+            app.basketCollectionView = new BasketCollectionView({collection: app.basketCollection, ref: ref, ratio: ratio, pricingModel: app.pricingModel});    
         //});
         
     }
@@ -74,7 +74,7 @@ var caApp = (function (Backbone, $) {
         //app.basketCollection.fetch({reset: true}).then(function() {
             app.basketCollectionView.cleanUp();
             app.basketCollectionView.remove();     
-            app.basketCollectionView = new app.BasketCollectionView({collection: app.basketCollection, ref: ref, ratio: ratio, pricingModel: app.pricingModel});    
+            app.basketCollectionView = new BasketCollectionView({collection: app.basketCollection, ref: ref, ratio: ratio, pricingModel: app.pricingModel});    
         //});
         
     }
@@ -381,7 +381,7 @@ var caApp = (function (Backbone, $) {
     
     //Basket - collection of OrderLine Models
     //calling fetch on a collection with an array of objects populates the collection with the models - one model with one element in the array
-    app.BasketCollection =  Backbone.Collection.extend({
+    BasketCollection =  Backbone.Collection.extend({
         model: app.OrderLineModel,
         url: "/api/v1/basket",
         
@@ -396,7 +396,7 @@ var caApp = (function (Backbone, $) {
           filtered = this.filter(function (orderLine) {
               return orderLine.get("image") === ref;
           });
-          return new app.BasketCollection(filtered);
+          return new Backbone.Collection(filtered);
         } 
     
     });
@@ -475,8 +475,8 @@ var caApp = (function (Backbone, $) {
         regions: {
             menu: {el: '#ca_menu', view: null},
             main: {el: '#ca_main', view: null},
-            lightbox: {el: '#ca_lightbox', view: null},
-            popup: {el: '#ca_popup', view: null}
+            popup: {el: '#ca_popup', view: null}, //TODO may not be used
+            body: {el: 'body', view: null}
         
         },
   
@@ -492,10 +492,12 @@ var caApp = (function (Backbone, $) {
                 this.regions[region].view.remove(); //TODO override remove in views which have to clean up child views    
             }
             
-            $(this.regions[region].el).append('<div class="viewContainer"></div>');
-            view.setElement($(this.regions[region].el).find('.viewContainer'));
-            view.render();
-            this.regions[region].view = view;
+            if (view !== null) {
+                $(this.regions[region].el).append('<div class="viewContainer"></div>');
+                view.setElement($(this.regions[region].el).find('.viewContainer'));
+                view.render();
+                this.regions[region].view = view;    
+            }
         
         }
     
@@ -643,24 +645,75 @@ var caApp = (function (Backbone, $) {
         }
     });     
     
+    PrintPopUpView = Backbone.View.extend({
+        tag: 'div', 
+        
+        initialize: function(options) {
+            var containerTemplate =  $('#ca_print_popup_tmpl').html(); 
+            this.containerTmpl = _.template(containerTemplate);
+            this.options = options;
+            this.basketCollection = app.basketCollection.byImage(this.options.file);
+            console.log("bc",this.basketCollection );
+            
+        },
+        
+        events: {
+            'click .ca_lightbox_close_event': 'close'
+        },
+       
+        close: function() {
+            app.layout.renderViewIntoRegion(null, 'popup');     
+        },       
+       
+        render: function() {
+            var data = {};
+            //get the collection from the basket for this file
+            //TODO this will have references to app.basketCollection and must be explicity removed after use   check it has been
+            
+            
+            //get the image html
+            data.path =   this.options.path;
+            
+            //get the order lines html
+            
+            
+            //deal with sizing.... 
+            
+            //render the whole thing       
+            var html = this.containerTmpl(data);
+            this.$el.html(html); 
+        },
+        
+        
+        remove: function() {
+            this.basketCollection = null;
+            Backbone.View.prototype.remove.call(this);
+        }
+    });
+    
     
     
     PrintThumbView =  Backbone.View.extend({
         tag: 'div',
    
         initialize: function(options) {
-                this.options = options;  
+                this.options = options;   
                 var template =  $('#ca_print_thumb_tmpl').html(); 
                 this.tmpl = _.template(template);
         },
         
         events: {
-            'click .ca_print_thumb_pic': 'showPopUp'
+            'click .ca_print_thumb_pic_event': 'showPopUp'
         
         },
-        
+
         showPopUp: function() {
-        
+            console.log(this.model);
+            var file = this.model.get("file");
+            var path = this.model.get("path");
+            path = path.replace("thumbs", "main") ;
+            var view = new PrintPopUpView({file: file, path: path});
+            app.layout.renderViewIntoRegion(view, 'popup');   
         
         },
         
@@ -853,9 +906,8 @@ var caApp = (function (Backbone, $) {
    
     //Basket View - gets linked to the Basket Collection which it iterates through to display indiviudal order lines. 
     //of course we really need a Marionette ItemViewCollection
-    app.BasketCollectionView  =  Backbone.View.extend({
-        el: "#ca_pricing_area", 
-        
+    BasketCollectionView  =  Backbone.View.extend({
+            
         initialize: function(options) {
                 this.listenTo(this.collection, "add", this.render);
                 this.childViews = new Array();

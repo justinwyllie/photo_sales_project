@@ -15,6 +15,16 @@ this is the overall content area. customise it for your site
 
 
 
+/* region for popups */
+#ca_popup
+{
+    position: static;
+}
+
+
+
+
+
 
 
 /*
@@ -36,6 +46,13 @@ Advanced users only beyond this point!
 @small-text: 10px;
 @medium-small-text: 15px;
 
+
+/* Global reset attempt */
+
+#ca_content_area *
+{
+    box-sizing: content-box;
+}
 
 
 .ca_message_area
@@ -415,12 +432,7 @@ NB. For responsiveness to work as expected your container page should include so
 
 
 
-#ca_pricing_area
-{
 
-    text-align: left;
-    width: 100%;
-}
 
 .ca_row_header
 {
@@ -479,6 +491,20 @@ NB. For responsiveness to work as expected your container page should include so
     padding-left: 15px;
     box-sizing: border-box;
 }
+
+.ca_prints_popup
+{
+    text-align: left;
+    left: 0px;
+    top: 0px; 
+    border: 1px solid #000000;  
+    background-color: #ffffff;
+    z-index: 1000;
+    position:absolute;
+     
+ 
+}
+
 
 
 @media (min-width: 768px) 

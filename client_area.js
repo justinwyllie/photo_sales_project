@@ -70,7 +70,7 @@
       })
   
   
-      $("#ca_content_area").on("click", ".ca_thumb_pic img", function() {  
+      $("#ca_content_areaXXX").on("click", ".ca_thumb_pic img", function() {  
           var mode =  $(".ca_menu_bar").data("mode");
           if (mode == "prints") {  //TODO temporary hack pending port of proofs to app
               var that = this;  
@@ -84,7 +84,7 @@
        });   
   
   
-      $("body").on("click", ".ca_lightbox_close_event", function() {
+      $("body").on("click", ".ca_lightbox_close_eventXXX", function() {
           //TODO this is all a bit hacky until we have a single app. (and everything is managed by views in regions by an app region manager)
           var mode =  $(".ca_menu_bar").data("mode");
           if ((mode == "prints") && (typeof(app.basketCollectionView) !== "undefined")) {
