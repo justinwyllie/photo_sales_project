@@ -15,16 +15,6 @@ this is the overall content area. customise it for your site
 
 
 
-/* region for popups */
-#ca_popup
-{
-    position: static;
-}
-
-
-
-
-
 
 
 /*
@@ -53,6 +43,7 @@ Advanced users only beyond this point!
 {
     box-sizing: content-box;
 }
+
 
 
 .ca_message_area
@@ -465,18 +456,62 @@ NB. For responsiveness to work as expected your container page should include so
     width: 15px;
 }
 
+.ca_prints_popup
+{
+    text-align: left;
+    left: 0px;
+    top: 0px; 
+    border: 1px solid #000000;  
+    background-color: #ffffff;
+    z-index: 1000;
+    position:absolute;
+    padding-bottom: 10px;
+    
+    
+     
+ 
+}
+
+.ca_form select, .ca_form input, .ca_form_label
+{
+    font-size: @medium-small-text;
+}
+
+.ca_input
+{
+    width: 100%;
+}
+
+.ca_action_button
+{
+    cursor: pointer;
+}
+
+.ca_container_fluid
+{
+    margin-right: auto;
+    margin-left: auto;
+    padding-right: 15px;
+    padding-left: 15px;
+    box-sizing: border-box;
+}
+
+.ca_container_fluid * 
+{
+    box-sizing: border-box;
+}
+
 //RESPONSIVE
 
 
 .row
 {
-    margin-left: -15px;
-    margin-right: -15px;
-    box-sizing: border-box;
+     margin-right: -15px;
+     margin-left: -15px;   
     
 }
 
-.row::after
+.row::before
 {
     display: table;
     content: '';
@@ -489,21 +524,9 @@ NB. For responsiveness to work as expected your container page should include so
     min-height: 1px;
     padding-right: 15px;
     padding-left: 15px;
-    box-sizing: border-box;
 }
 
-.ca_prints_popup
-{
-    text-align: left;
-    left: 0px;
-    top: 0px; 
-    border: 1px solid #000000;  
-    background-color: #ffffff;
-    z-index: 1000;
-    position:absolute;
-     
- 
-}
+
 
 
 
@@ -512,33 +535,30 @@ NB. For responsiveness to work as expected your container page should include so
 
     .row
     {
-        margin-left: -15px;
-        margin-right: -15px;
-        box-sizing: border-box;
+        
         
     }
     
-    .col-sm-1, col-sm-2, col-sm-3
+    .col-xs-1, .col-xs-2, .col-xs-3
     {
         position: relative;
         min-height: 1px;
         padding-right: 15px;
         padding-left: 15px;
-        box-sizing: border-box;
         float: left;
     }
     
-    .col-sm-1
+    .col-xs-1
     {
-        width:  8.33%;
+        width:  8.33333333%;
     }
 
-    .col-sm-2
+    .col-xs-2
     {
-        width:  16.66%;
+        width:   16.66666667%;
     }
     
-    .col-sm-3
+    .col-xs-3
     {
         width: 25%;
     }

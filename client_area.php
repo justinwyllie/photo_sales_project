@@ -980,15 +980,18 @@ EOF;
                     <div class="ca_lightbox_image">
                         <img src="<%= path %>">
                     </div>
-                    <div>
-                         order lines
-                    </div>
+                    <div class="ca_container_fluid">
+                        <%= row_headers %>
+                        <div id="ca_order_lines_container" class="ca_form" >
+                             
+                        </div>
+                    </div>    
                 </div>
             </script>
             <script type="text/html" id="ca_order_line_tmpl">
                 <div class="col-xs-2">
-                    <div class="form-group ca_print_size_group ">
-                        <select class="ca_form_control form-control ca_print_size_group ca_print_size_event">
+                    <div class="ca_print_size_group ">
+                        <select class="ca_form_control ca_print_size_group ca_print_size_event">
                             <option value="--"><%= langStrings.select %></option>
                             <% _.each(applicableSizesGroup, function(size){ %>
                                 <option value="<%= size.value %>" <% if (order.print_size == size.value) { %> selected <% } %>><%= size.display %> [<%= currency.symbol %><%= size.printPrice %>]</option>
@@ -998,7 +1001,7 @@ EOF;
                 </div>
                 <div class="col-xs-2">
                     <div class="form-group ca_mount_group">
-                        <select class="ca_form_control form-control ca_mount ca_mount_event" >
+                        <select class="ca_form_control ca_mount ca_mount_event" >
                             <option value="--"><%= langStrings.select %></option>
                             <% if (mountPrice !== null) { %>
                                 <% _.each(mounts.mount, function(mount){ %>
@@ -1011,7 +1014,7 @@ EOF;
                 </div>
                 <div class="col-xs-2">
                     <div class="form-group ca_frame_group">      
-                        <select class="ca_form_control form-control ca_frame ca_frame_event" >
+                        <select class="ca_form_control ca_frame ca_frame_event" >
                             <option value="--"><%= langStrings.select %></option>
                             <% if (framePrices !== null) { %>
                                 <% _.each(framePrices, function(framePrice, frameStyle){ %>
@@ -1023,18 +1026,18 @@ EOF;
                     </div>
                 </div>
                 <div class="col-xs-2">
-                    <div class="form-group ca_qty_group">
-                        <input type="text" id="ca_qty_field" class="ca_qty_input form-control ca_qty_event" value="<%= order.qty %>">
+                    <div class="ca_qty_group">
+                        <input type="text" id="ca_qty_field" class="ca_input ca_qty_event" value="<%= order.qty %>">
                     </div>  
                 </div>
                  <div class="col-xs-1">
-                    <div class="form-group ca_price_group">
+                    <div class="ca_price_group ca_form_label">
                         <span><%= currency.symbol %><%= order.total_price %></span>
                     </div>  
                 </div>
                 <div class="col-xs-3">
                       <% if (mode == 'new') { %>
-                          <button type="button" class="ca_add_event"><%= langStrings.add %></button>
+                          <button type="button" class="ca_action_button ca_add_event"><%= langStrings.add %></button>
                       <% } else { %>
                           <span class="ca_edit_icon fa <%= editStateIcon %>"></span>  
                           <button type="button" class="ca_update_event"><%= langStrings.update %></button>
@@ -1192,8 +1195,6 @@ EOT;
                 <div id="ca_menu">
                 </div>
                 <div id="ca_main">
-                </div>
-                <div id="ca_popup">
                 </div>
             </div>
             <br class="ca_clear">

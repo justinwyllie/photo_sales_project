@@ -17,7 +17,7 @@ var caApp = (function (Backbone, $) {
         //TODO this should be immutable
         app.pricingModel = new app.PricingModel();
         
-        app.pricingModel.fetch();
+        app.pricingModel.fetch();         
         app.basketCollection = new BasketCollection();
         app.basketCollection.fetch();       //TODO only if in prints mode
         app.printThumbsCollection = new PrintThumbsCollection();
@@ -259,7 +259,7 @@ var caApp = (function (Backbone, $) {
     }); 
     
     //OrderLine model
-    app.OrderLineModel = Backbone.Model.extend({
+    OrderLineModel = Backbone.Model.extend({
         defaults: {
             "id": null,
             "image_ref": null,
@@ -382,7 +382,7 @@ var caApp = (function (Backbone, $) {
     //Basket - collection of OrderLine Models
     //calling fetch on a collection with an array of objects populates the collection with the models - one model with one element in the array
     BasketCollection =  Backbone.Collection.extend({
-        model: app.OrderLineModel,
+        model: OrderLineModel,
         url: "/api/v1/basket",
         
         initialize: function(options) {
@@ -475,8 +475,8 @@ var caApp = (function (Backbone, $) {
         regions: {
             menu: {el: '#ca_menu', view: null},
             main: {el: '#ca_main', view: null},
-            popup: {el: '#ca_popup', view: null}, //TODO may not be used
-            body: {el: 'body', view: null}
+            body1: {el: 'body', view: null},
+            body2: {el: 'body', view: null},
         
         },
   
@@ -649,12 +649,13 @@ var caApp = (function (Backbone, $) {
         tag: 'div', 
         
         initialize: function(options) {
+            this.options = options;
+            this.listenTo(this.collection, "add", this.renderOrderLines);
+            this.childViews = new Array();
             var containerTemplate =  $('#ca_print_popup_tmpl').html(); 
             this.containerTmpl = _.template(containerTemplate);
-            this.options = options;
-            //this will have references to app.basketCollection and must be explicity removed after use. hence remove() method in this class
-            this.basketCollection = app.basketCollection.byImage(this.options.file);
-            
+            var tmplRoWHead =  $('#ca_order_line_row_head_tmpl').html(); 
+            this.tmplRoWHead = _.template(tmplRoWHead);
         },
         
         events: {
@@ -662,26 +663,63 @@ var caApp = (function (Backbone, $) {
         },
        
         close: function() {
-            app.layout.renderViewIntoRegion(null, 'body');     
-        },       
+            app.layout.renderViewIntoRegion(null, 'body1');     
+        },    
+        
+        renderOrderLines: function() {  
+            this.cleanUp();
+           //1. render existing order lines
+           this.collection.each(function(orderLine) {
+                if (orderLine.get('image_ref') == (this.options.file)) {
+                    var orderLineView = new OrderLineView({model: orderLine, mode: 'update', ref: this.options.file, ratio: this.options.ratio, pricingModel: this.options.pricingModel});
+                    this.childViews.push(orderLineView);
+                    
+                    this.$el.find("#ca_order_lines_container").append(orderLineView.render().$el);
+                }    
+                    
+	       }, this);
+           //2. render a fresh blank order line
+          var orderLine = new OrderLineModel();
+          orderLine.set("image_ref", this.options.file);
+          orderLine.set("image_ratio", this.options.ratio);
+          var orderLineView = new OrderLineView({collection: this.collection, model: orderLine, ref: this.options.file, 
+                    mode: 'new', ratio: this.options.ratio, pricingModel: this.options.pricingModel});
+          this.childViews.push(orderLineView);          
+          this.$el.find("#ca_order_lines_container").append(orderLineView.render().$el); 
+        
+        },  
+        
+        add: function(a, b) {
+            console.log(a, b);
+        
+        },  
        
         render: function() {
+            
             var data = {};
-            data.path =   this.options.path;
+            data.path = this.options.path;
+            data.langStrings = app.langStrings.toJSON();
+            data.row_headers = this.tmplRoWHead(data);
             
-            //get the order lines html
-            
+            var html = this.containerTmpl(data);
+            this.$el.html(html); 
+
+            this.renderOrderLines();
             
             //deal with sizing.... 
             
-            //render the whole thing       
-            var html = this.containerTmpl(data);
-            this.$el.html(html); 
+            //get the overlay element hmm... needs to be apenned to the body as well... body1 and body2????
+            
         },
         
         
-        remove: function() {
-            this.basketCollection = null;
+        cleanUp: function() {
+            _.invoke(this.childViews, 'remove');
+            this.childViews = [];    
+        },
+        
+         remove: function() {
+            this.cleanUp();
             Backbone.View.prototype.remove.call(this);
         }
     });
@@ -707,8 +745,12 @@ var caApp = (function (Backbone, $) {
             var file = this.model.get("file");
             var path = this.model.get("path");
             path = path.replace("thumbs", "main") ;
-            var view = new PrintPopUpView({file: file, path: path});
-            app.layout.renderViewIntoRegion(view, 'body');   
+            this.basketItemsForImage = app.basketCollection;// .byImage(this.options.file);
+            var width =  this.model.get("width");
+            var height =  this.model.get("height") ;
+            var ratio = ((Math.max(width, height)) / (Math.min(width, height))).toFixed(2);
+            var view = new PrintPopUpView({file: file, path: path, pricingModel: app.pricingModel, ratio: ratio, collection: this.basketItemsForImage});
+            app.layout.renderViewIntoRegion(view, 'body1');   
         
         },
         
@@ -722,32 +764,22 @@ var caApp = (function (Backbone, $) {
             var html = this.tmpl(data);
             this.$el.html(html);
             return this; 
+        },
+        
+        remove: function() {
+            this.basketItemsForImage = null;           //TDODO check this logic
+            Backbone.View.prototype.remove.call(this);    
         } 
     
     })   
     
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+ 
     
     
      
     
     //OrderLine View - a view to display a single order line
-    app.OrderLineView = Backbone.View.extend({
+    OrderLineView = Backbone.View.extend({
         tagName: 'div',
         className: 'row', 
         template: null,
@@ -759,8 +791,6 @@ var caApp = (function (Backbone, $) {
             var tmpl =  $('#ca_order_line_tmpl').html();
             this.template = _.template(tmpl);
             this.options = options;
-            this.model.set("image_ref", this.options.ref);
-            this.model.set("image_ratio", this.options.ratio);
             this.options.pricingModelJSON = this.options.pricingModel.toJSON();
 
         },
@@ -896,62 +926,6 @@ var caApp = (function (Backbone, $) {
             this.$el.html(html);
             return this;    
         }    
-    });
-    
-   
-    //Basket View - gets linked to the Basket Collection which it iterates through to display indiviudal order lines. 
-    //of course we really need a Marionette ItemViewCollection
-    BasketCollectionView  =  Backbone.View.extend({
-            
-        initialize: function(options) {
-                this.listenTo(this.collection, "add", this.render);
-                this.childViews = new Array();
-                this.options = options;  
-                var tmplRoWHead =  $('#ca_order_line_row_head_tmpl').html(); 
-                this.tmplRoWHead = _.template(tmplRoWHead);
-                this.render();
-        },
-        
-        render: function() {
-            this.childViews = [];
-            this.$el.html() ;
-            //0. render the headings
-            data = {};
-            data.langStrings = app.langStrings.toJSON();
-            this.$el.html(this.tmplRoWHead(data));
-            //1. render existing orders
-            this.collection.each(function(orderLine) {
-                if (orderLine.get('image_ref') == (this.options.ref)) {   //the being rendered image is in the basketColletion i.e. it already has an order line 
-                  //TODO - is each one deleted from memory by the assignment?
-                  //orderLine is an item in the order e.g. a print with its size, mount, frame etc.
-                  var orderLineView = new app.OrderLineView({model: orderLine, ref: this.options.ref, 
-                    mode: 'update', ratio: this.options.ratio, pricingModel: this.options.pricingModel});
-                  this.childViews.push(orderLineView);  
-                  this.$el.append(orderLineView.render().$el);
-   
-                }
-
-	       }, this);
-           //2. render a fresh blank order line
-          var orderLine = new app.OrderLineModel();
-          var orderLineView = new app.OrderLineView({model: orderLine, ref: this.options.ref, 
-                    mode: 'new', ratio: this.options.ratio, pricingModel: this.options.pricingModel});
-          this.childViews.push(orderLineView);          
-          this.$el.append(orderLineView.render().$el);
-           
-        
-        },
-        
-        cleanUp: function() {
-            _.invoke(this.childViews, 'remove');
-            this.childViews = [];    
-        },
-        
-         remove: function() {
-            this.cleanUp();
-            Backbone.View.prototype.remove.call(this);
-        }
-    
     });
     
     
