@@ -689,10 +689,6 @@ var caApp = (function (Backbone, $) {
         
         },  
         
-        add: function(a, b) {
-            console.log(a, b);
-        
-        },  
        
         render: function() {
             
