@@ -13,6 +13,8 @@ var caApp = (function (Backbone, $) {
     
         //A few variables
         app.labelHeight = 10; //this sets the height of the lables underneath the thunb images. units: pixels. 
+        app.maxPopupWidth = 1600; //the maximum width of the popup which displays the main images. (In general this should not be larger than the typical width of your landscape orientation images.  units: pixels)
+        app.lightBoxWidthFraction = 0.95; //effects prints mode only. the width of the image popup if not constrained by the above setting. units: percentage. you probably don't need to change this. 
     
         //TODO this should be immutable
         app.pricingModel = new app.PricingModel();
@@ -493,8 +495,9 @@ var caApp = (function (Backbone, $) {
             }
             
             if (view !== null) {
-                $(this.regions[region].el).append('<div class="viewContainer"></div>');
-                view.setElement($(this.regions[region].el).children('.viewContainer'));
+                var classNameHandle = "viewContainer zone_" + region;
+                $(this.regions[region].el).append('<div class="' + classNameHandle + '"></div>');
+                view.setElement($(this.regions[region].el).children('.viewContainer.zone_' + region));
                 view.render();
                 this.regions[region].view = view;    
             }
@@ -646,7 +649,7 @@ var caApp = (function (Backbone, $) {
     });     
     
     PrintPopUpView = Backbone.View.extend({
-        tag: 'div', 
+        tag: 'div',   //TODO think because of use of setElement this is redundant?
         
         initialize: function(options) {
             this.options = options;
@@ -663,7 +666,8 @@ var caApp = (function (Backbone, $) {
         },
        
         close: function() {
-            app.layout.renderViewIntoRegion(null, 'body1');     
+            app.layout.renderViewIntoRegion(null, 'body1');
+            app.layout.renderViewIntoRegion(null, 'body2');     
         },    
         
         renderOrderLines: function() {  
@@ -691,21 +695,40 @@ var caApp = (function (Backbone, $) {
         
        
         render: function() {
-            
             var data = {};
             data.path = this.options.path;
             data.langStrings = app.langStrings.toJSON();
             data.row_headers = this.tmplRoWHead(data);
             
+            //set the overlay element hmm... needs to be apenned to the body as well... body1 and body2????
+            var overlay = new OverlayView();
+            app.layout.renderViewIntoRegion(overlay, 'body2');  
+            
             var html = this.containerTmpl(data);
             this.$el.html(html); 
-
-            this.renderOrderLines();
             
             //deal with sizing.... 
+            var actualImageWidth = this.options.mainWidth;
+            var actualImageHeight  = this.options.mainHeight;
+            var maxPopupWidth = app.maxPopupWidth;
+            var lightBoxWidthFraction = app.lightBoxWidthFraction;
+            var lightBoxWidthPercent = (100*lightBoxWidthFraction)  + '%';
+            var lightBoxWidth = maxPopupWidth + 'px'; 
+            var safeImageHeight = $(window).height() - 100;
+            this.$el.css({'max-width': lightBoxWidth ,'width': lightBoxWidthPercent}); 
             
-            //get the overlay element hmm... needs to be apenned to the body as well... body1 and body2????
-            
+            if (actualImageHeight > (safeImageHeight)) //height is too big (portrait images on landscape orientation phones)
+            {
+                var heightExceedsRatio = actualImageHeight /  safeImageHeight;
+                var modifiedWidth = actualImageWidth /  heightExceedsRatio;
+                this.$el.find("img").css({"max-width": Math.floor(modifiedWidth) + "px", "width": "100%"});   
+            }
+            else
+            {
+                this.$el.find("img").css({"max-width": Math.floor(actualImageWidth) + "px", "width": "100%", "height": "auto"});
+            }
+            this.renderOrderLines();
+      
         },
         
         
@@ -719,6 +742,15 @@ var caApp = (function (Backbone, $) {
             Backbone.View.prototype.remove.call(this);
         }
     });
+    
+    OverlayView = Backbone.View.extend({
+        
+        render: function() {
+            this.$el.html('<div class="ca_lightbox_overlay"></div>');
+        }
+        
+    
+    })
     
     
     
@@ -744,8 +776,18 @@ var caApp = (function (Backbone, $) {
             this.basketItemsForImage = app.basketCollection;// .byImage(this.options.file);
             var width =  this.model.get("width");
             var height =  this.model.get("height") ;
+            var mainWidth = this.model.get("mainWidth"); 
+            var mainHeight = this.model.get("mainHeight"); 
             var ratio = ((Math.max(width, height)) / (Math.min(width, height))).toFixed(2);
-            var view = new PrintPopUpView({file: file, path: path, pricingModel: app.pricingModel, ratio: ratio, collection: this.basketItemsForImage});
+            var view = new PrintPopUpView({
+                file: file, 
+                path: path, 
+                pricingModel: app.pricingModel, 
+                ratio: ratio, 
+                collection: this.basketItemsForImage, 
+                mainWidth: mainWidth, 
+                mainHeight: mainHeight
+            });
             app.layout.renderViewIntoRegion(view, 'body1');   
         
         },

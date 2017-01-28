@@ -80,6 +80,9 @@ class ClientAreaAPI
         $thumbsDir = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
             DIRECTORY_SEPARATOR . 'prints' . DIRECTORY_SEPARATOR . "thumbs";
             
+        $mainDir = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
+            DIRECTORY_SEPARATOR . 'prints' . DIRECTORY_SEPARATOR . "main";     
+            
             
         $files = scandir($thumbsDir);
 
@@ -92,11 +95,35 @@ class ClientAreaAPI
             {
                 $fileObj->file = $file;
                 //TODO - in a loop? or at least we should cache the results
-                $imageDimensions = $this->getImageDimensions($thumbsDir . DIRECTORY_SEPARATOR . $file);
-                $fileObj->width =  $imageDimensions["width"];
-                $fileObj->height =  $imageDimensions["height"];
-                $fileObj->path =  $this->imageProvider . '?mode=prints&size=thumbs&file=' . $file;   //TODO put imageProvider onto some init and then mode and size can be set f/e
-                $thumbs[] = $fileObj;
+                $mainFile = $mainDir . DIRECTORY_SEPARATOR . $file;
+                if (file_exists($mainFile)) { 
+                    $imageDimensionsOfMainPic = $this->getImageDimensions($mainFile);
+                    if (empty($imageDimensionsOfMainPic)) 
+                    {
+                        continue;    
+                    }
+                    else
+                    {
+                        $fileObj->mainWidth =  $imageDimensionsOfMainPic["width"];
+                        $fileObj->mainHheight =  $imageDimensionsOfMainPic["height"]; 
+                    }
+                    $imageDimensions = $this->getImageDimensions($thumbsDir . DIRECTORY_SEPARATOR . $file);
+                    if (empty($imageDimensionsOfMainPic)) 
+                    {
+                        continue;    
+                    }
+                    else
+                    {
+                        $fileObj->width =  $imageDimensions["width"];
+                        $fileObj->height =  $imageDimensions["height"];    
+                    }
+                    $fileObj->path =  $this->imageProvider . '?mode=prints&size=thumbs&file=' . $file;   //TODO put imageProvider onto some init and then mode and size can be set f/e
+                    $thumbs[] = $fileObj;
+                }
+                else
+                {
+                    continue;
+                }
             }
         }
         $this->outputJson($thumbs);

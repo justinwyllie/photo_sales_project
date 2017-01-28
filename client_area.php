@@ -1000,7 +1000,7 @@ EOF;
                     </div>    
                 </div>
                 <div class="col-xs-2">
-                    <div class="form-group ca_mount_group">
+                    <div class="ca_mount_group">
                         <select class="ca_form_control ca_mount ca_mount_event" >
                             <option value="--"><%= langStrings.select %></option>
                             <% if (mountPrice !== null) { %>
@@ -1013,7 +1013,7 @@ EOF;
                     </div>
                 </div>
                 <div class="col-xs-2">
-                    <div class="form-group ca_frame_group">      
+                    <div class="ca_frame_group">      
                         <select class="ca_form_control ca_frame ca_frame_event" >
                             <option value="--"><%= langStrings.select %></option>
                             <% if (framePrices !== null) { %>

@@ -238,7 +238,7 @@ button.ca_menu_button
     display: inline-block;
 }
 
-#ca_lightbox_overlay {
+.ca_lightbox_overlay {
     position:fixed;
     top:0;
     left:0;
@@ -463,7 +463,7 @@ NB. For responsiveness to work as expected your container page should include so
     top: 0px; 
     border: 1px solid #000000;  
     background-color: #ffffff;
-    z-index: 1000;
+    z-index: 1001;
     position:absolute;
     padding-bottom: 10px;
     
@@ -477,9 +477,15 @@ NB. For responsiveness to work as expected your container page should include so
     font-size: @medium-small-text;
 }
 
+.ca_input, .ca_form_control
+{
+    max-width: 100%;
+    
+}
+
 .ca_input
 {
-    width: 100%;
+    width: 100px;
 }
 
 .ca_action_button
@@ -518,7 +524,7 @@ NB. For responsiveness to work as expected your container page should include so
     clear: both;
 }
 
-.col-xs-1, col-xs-2, col-xs-3
+.col-xs-1, .col-xs-2, .col-xs-3
 {
     position: relative;
     min-height: 1px;
@@ -530,7 +536,7 @@ NB. For responsiveness to work as expected your container page should include so
 
 
 
-@media (min-width: 768px) 
+@media (min-width: 576px) 
 { 
 
     .row
