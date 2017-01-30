@@ -388,7 +388,8 @@ var caApp = (function (Backbone, $) {
         url: "/api/v1/basket",
         
         initialize: function(options) {
-            this.on("add", function() {
+            this.on("add", function(newModel) {
+                newModel.set("edit_mode", "save");   
             });    
         },
         
@@ -899,7 +900,8 @@ var caApp = (function (Backbone, $) {
         onAdd: function() {
             if (this.model.isValid()) {
                 this.clearErrors();
-                app.basketCollection.create(this.model.toJSON(), {wait: true});
+                var newOrderLine =  this.model.toJSON();
+                app.basketCollection.create(newOrderLine, {wait: true});
            }
         },
         
@@ -936,14 +938,13 @@ var caApp = (function (Backbone, $) {
             data = app.pricingModel.toJSON();
             data.applicableSizesGroup = app.pricingModel.getSizesForRatio(this.options.ratio);
             data.order = this.model.toJSON();
-            
-            
-            if (this.model.hasChanged() === false) {
-                data.editStateIcon = "";
-            } else {
-                data.editStateIcon = "fa-" + this.model.get("edit_mode");
+
+            var editMode = this.model.get("edit_mode");
+            if (editMode == "") {
+                data.editStateIcon = "";    
+            }  else {
+                data.editStateIcon = "fa-" +    editMode; 
             }
-        
             
             data.mode = this.options.mode;
             
