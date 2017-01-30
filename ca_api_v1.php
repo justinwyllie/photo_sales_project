@@ -175,8 +175,8 @@ class ClientAreaAPI
             //If the user is logging in try to restore the prints chosen based on what was stored in html data if it is available
             if (!empty($restoredPrints)) {
                 $restoredPrintsArray = json_decode($restoredPrints);
-                if (is_array($restoredPrintssArray)) {
-                    $_SESSION["printsChosen"] = $restoredPrintsArray;
+                if (is_array($restoredPrintsArray)) {
+                    $_SESSION["basket"] = $restoredPrintsArray;
                 }
             }
             
@@ -232,12 +232,11 @@ class ClientAreaAPI
     {
         $result = new stdClass();
         $basket = $_SESSION["basket"];
-        $deIndexedBasket[] = array();
+        $deIndexedBasket = array();
         foreach ($basket as $id => $order) {
             $deIndexedBasket[] = $order;
         }
         return $deIndexedBasket;
-  
     }
     
     public function postBasket()
@@ -247,6 +246,7 @@ class ClientAreaAPI
         $order = json_decode($newOrderLine);
         $order->id = $newId;
         $_SESSION["basket"][$newId] = $order;
+        
         return $order;
 
     }
@@ -350,6 +350,7 @@ class ClientAreaAPI
         }
             
         $this->options["human_name"] =  $this->accounts[$user]["human_name"]   ;
+        $this->options["username"] =  $user;
     }
     
     private function setOptions()

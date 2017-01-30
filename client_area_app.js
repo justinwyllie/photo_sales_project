@@ -19,9 +19,8 @@ var caApp = (function (Backbone, $) {
         //TODO this should be immutable
         app.pricingModel = new app.PricingModel();
         
-        app.pricingModel.fetch();         
+        app.pricingModel.fetch();  //TODO if they are quick this isn't done                                                                                                                                           f
         app.basketCollection = new BasketCollection();
-        app.basketCollection.fetch();       //TODO only if in prints mode
         app.printThumbsCollection = new PrintThumbsCollection();
         app.proofsThumbsCollection = new ProofsThumbsCollection();
         
@@ -373,7 +372,7 @@ var caApp = (function (Backbone, $) {
     
     });
     
-    //OrderLine model
+    //OrderLine model                             TODO used?
     ThumbModel = Backbone.Model.extend({
     
     
@@ -389,7 +388,11 @@ var caApp = (function (Backbone, $) {
         
         initialize: function(options) {
             this.on("add", function(newModel) {
-                newModel.set("edit_mode", "save");   
+                newModel.set("edit_mode", "save"); 
+                var clientAreaStorage = new ClientAreaStorage(app.appData.username, _);  
+                if (clientAreaStorage.supported) {
+                    var storedPrintBasketItems = clientAreaStorage.updateStorage("ca_prints", newModel.toJSON());        
+                }
             });    
         },
         
@@ -911,6 +914,10 @@ var caApp = (function (Backbone, $) {
         
         updateSuccess: function(model) {
             model.set("edit_mode", "save");
+            var clientAreaStorage = new ClientAreaStorage(app.appData.username, _);  
+            if (clientAreaStorage.supported) {
+                var storedPrintBasketItems = clientAreaStorage.updateStorage("ca_prints", model.toJSON());        
+            }
         },
         
        updateError: function(model) {
@@ -1050,32 +1057,44 @@ var caApp = (function (Backbone, $) {
                         } else {
                             coll =  'proofsThumbsCollection' ;
                         }
-
-                        app[coll].fetch({reset: true}).then(
+                        
+                       //reset true in case there are 2 mode choices in session. TODO is this right? 
+                       app.basketCollection.fetch({reset: true}).then(  
                             function() {
-                              
-                                var thumbsPerPage = parseInt(app.appData.thumbsPerPage) ;
-                                var pageModelsJSON = app[coll].pagination(thumbsPerPage, 1);
-                                var pagedCollection = new  Backbone.Collection(pageModelsJSON);
-                                
-                            
-                                var thumbsView = new ThumbsView({collection: pagedCollection, mode: mode, maxHeight: app[coll].maxHeight, labelHeight: app[coll].labelHeight });
-                                app.layout.renderViewIntoRegion(thumbsView, 'main');
-                                if (mode == 'prints') {
-                                    var menuView = new PrintsMenuView({totalThumbs: app[coll].length, thumbsPerPage: thumbsPerPage, active: 1});
-                                } else {
-                                    var menuView = new ProofsMenuView();
+                                var clientAreaStorage = new ClientAreaStorage(app.appData.username, _);  
+                                if (clientAreaStorage.supported) {
+                                    clientAreaStorage.resetStorage("ca_prints", app.basketCollection.toJSON());        
                                 }
-                                app.layout.renderViewIntoRegion(menuView, 'menu');
+                                
+                                //reset true in case there are 2 mode choices in session. TODO is this right?
+                                app[coll].fetch({reset: true}).then(
+                                function() {
+                              
+                                    var thumbsPerPage = parseInt(app.appData.thumbsPerPage) ;
+                                    var pageModelsJSON = app[coll].pagination(thumbsPerPage, 1);
+                                    var pagedCollection = new  Backbone.Collection(pageModelsJSON);
+                                    
+                                
+                                    var thumbsView = new ThumbsView({collection: pagedCollection, mode: mode, maxHeight: app[coll].maxHeight, labelHeight: app[coll].labelHeight });
+                                    app.layout.renderViewIntoRegion(thumbsView, 'main');
+                                    if (mode == 'prints') {
+                                        var menuView = new PrintsMenuView({totalThumbs: app[coll].length, thumbsPerPage: thumbsPerPage, active: 1});
+                                    } else {
+                                        var menuView = new ProofsMenuView();
+                                    }
+                                    app.layout.renderViewIntoRegion(menuView, 'menu');
                             },
-                           function() {
-                                console.log("TODO - error unknownError - 500");
+                               function() {
+                                    console.log("TODO - error unknownError - 500");
+                                }
+                            )
+                                  
                             }
-                        )
-            
+                        );  
+                        
                         
                      } else {
-                        that.options.message = result.message;
+                        that.options.message = result.message;       //this appears to render the login screen with a message. TODO - don't we have an error page to send them to?
                         that.render();
                     }
                 },
@@ -1123,9 +1142,10 @@ var caApp = (function (Backbone, $) {
     
     //UTILITIES
     
-    ClientAreaStorage = function(username) {
+    ClientAreaStorage = function(username, _) {
       
          this.username = username;
+         this._ = _;
   
          if ( (JSON && typeof JSON.parse === 'function') && (typeof(Storage) !== "undefined") &&
              (typeof(Array.prototype.indexOf) === "function")) {
@@ -1136,6 +1156,8 @@ var caApp = (function (Backbone, $) {
   
       }
   
+      //TODO make the private methods private?
+      //http://www.crockford.com/javascript/private.html
       ClientAreaStorage.prototype.getUserKey = function(key)
       {
           return this.username  + "_" + key;
@@ -1159,23 +1181,50 @@ var caApp = (function (Backbone, $) {
           var dataAsString = JSON.stringify(data);
           localStorage.setItem(this.getUserKey(key), dataAsString);
       }
-  
-      ClientAreaStorage.prototype.addToStorage = function(key, value) {
+      
+      
+      /**
+       * add or update an element in the values array for the given key 
+       * @value the new or updated object/value
+       * @key the name of the key in storage which is being updated
+       */
+      ClientAreaStorage.prototype.updateStorage = function(key, value) {
   
           if (!this.supported) {
               return;
           }
-  
+
           var storedData = this.getValueAsArray(key);
-          if (storedData.indexOf(value) >= 0) {
-              return;
+            
+          //it is empty. first one. just pop it in
+          if (storedData.length == 0) {
+            storedData.push(value);        
           } else {
-              storedData.push(value);
-          }
-          this.setValueFromArray(key, storedData);
-  
+            
+                //is the first one a scalar or object. we assume we haven't messed up and got mixed values
+                if (this._.isObject(storedData[0])) {
+                    //object add/update
+                    storedData = this._.without(storedData, this._.findWhere(storedData, {id: value.id})); 
+                    storedData.push(value);          
+                } else {
+                    //scalar add/update - simple
+                    if (!storedData.indexOf(value) >= 0) {
+                        storedData.push(value);
+                    } 
+                }
+         } 
+         this.setValueFromArray(key, storedData);
       }
-  
+      
+      /**
+       * reset the entire storage array for given key
+       * @key the name of the storage item being replaced
+       * @values an array to put into it
+       */
+      ClientAreaStorage.prototype.resetStorage = function(key, values) {
+            this.setValueFromArray(key, values);  
+      }
+
       ClientAreaStorage.prototype.removeFromStorage = function(key, value) {
   
           if (!this.supported) {
@@ -1200,12 +1249,7 @@ var caApp = (function (Backbone, $) {
           };
       }
   
-      //ca_proofs, ca_proofs_pages_visited
-      var ClientAreaStorageProofs = function(username) {
-          this.username = username;
-          ClientAreaStorage.call(this);
-      }
-      
+  
     
 	return app;
 }(Backbone, jQuery));  
