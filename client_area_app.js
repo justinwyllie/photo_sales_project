@@ -1,3 +1,11 @@
+/**
+ * lp
+ * i. had to handle tracking and removing child views so as to unbind/unlisten to
+ * ii. needed a region contoller
+ *  iii. looking for memory leaks with : chrome task mamager; profiles; and the timeline        https://developers.google.com/web/tools/chrome-devtools/memory-problems/
+ *  iv. watch out for collections built using models from other collections: the models maintain a reference to the first collection
+ */
+
 var caApp = (function (Backbone, $) {
 	var app = {};
     //TODO - don't need to attach things to app. unless they are being exported.... 
@@ -372,9 +380,15 @@ var caApp = (function (Backbone, $) {
     
     });
     
-    //OrderLine model                             TODO used?
+
     ThumbModel = Backbone.Model.extend({
-    
+     
+        initialize: function() {
+                var width = this.get("width");
+                var height = this.get("height");
+                var ratio = ((Math.max(width, height)) / (Math.min(width, height))).toFixed(2);
+                this.set("ratio", ratio);
+        } 
     
     });
     
@@ -511,11 +525,30 @@ var caApp = (function (Backbone, $) {
     });
     
     BasketView =   Backbone.View.extend({
-    
+        initialize: function(options) {
+            this.childViews = new Array();
+            this.options = options;
+            var template = $('#ca_basket').html(); 
+            this.tmpl =  _.template(template);
+        },    
         render: function() {
-            this.$el.html('basket');    
+            this.$el.html(this.tmpl());
+            this.collection.each(function(orderLine) {
+                   var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: app.pricingModel});
+                   this.childViews.push(orderLineView);
+                   this.$el.find("#ca_basket_order_lines_container").append(orderLineView.render().$el);
+                    
+	       }, this); 
+        },
+        //TDOO instead of copying this code around can we make an ItemView and extend that?  and the childViews from the constructor
+        cleanUp: function() {
+            _.invoke(this.childViews, 'remove');
+            this.childViews = [];    
+        },
+         remove: function() {
+            this.cleanUp();
+            Backbone.View.prototype.remove.call(this);
         }
-    
     });
     
    CheckoutView =   Backbone.View.extend({
@@ -581,7 +614,7 @@ var caApp = (function (Backbone, $) {
         },
         
         showBasket: function() {
-            var basketView =  new BasketView();
+            var basketView =  new BasketView({collection: app.basketCollection});
             app.layout.renderViewIntoRegion(basketView, 'main'); 
         } ,
         
@@ -653,8 +686,7 @@ var caApp = (function (Backbone, $) {
     });     
     
     PrintPopUpView = Backbone.View.extend({
-        tag: 'div',   //TODO think because of use of setElement this is redundant?
-        
+       
         initialize: function(options) {
             this.options = options;
             this.listenTo(this.collection, "add", this.renderOrderLines);
@@ -679,7 +711,7 @@ var caApp = (function (Backbone, $) {
            //1. render existing order lines
            this.collection.each(function(orderLine) {
                 if (orderLine.get('image_ref') == (this.options.file)) {
-                    var orderLineView = new OrderLineView({model: orderLine, mode: 'update', ref: this.options.file, ratio: this.options.ratio, pricingModel: this.options.pricingModel});
+                    var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: this.options.pricingModel});
                     this.childViews.push(orderLineView);
                     
                     this.$el.find("#ca_order_lines_container").append(orderLineView.render().$el);
@@ -691,7 +723,7 @@ var caApp = (function (Backbone, $) {
           orderLine.set("image_ref", this.options.file);
           orderLine.set("image_ratio", this.options.ratio);
           var orderLineView = new OrderLineView({collection: this.collection, model: orderLine, ref: this.options.file, 
-                    mode: 'new', ratio: this.options.ratio, pricingModel: this.options.pricingModel});
+                    mode: 'new', pricingModel: this.options.pricingModel});
           this.childViews.push(orderLineView);          
           this.$el.find("#ca_order_lines_container").append(orderLineView.render().$el); 
         
@@ -756,7 +788,7 @@ var caApp = (function (Backbone, $) {
     
     })
     
-    
+
     
     PrintThumbView =  Backbone.View.extend({
         tag: 'div',
@@ -773,21 +805,20 @@ var caApp = (function (Backbone, $) {
         },
 
         showPopUp: function() {
-            console.log(this.model);
             var file = this.model.get("file");
             var path = this.model.get("path");
+            var ratio = this.model.get("ratio");
             path = path.replace("thumbs", "main") ;
             this.basketItemsForImage = app.basketCollection;// .byImage(this.options.file);
             var width =  this.model.get("width");
             var height =  this.model.get("height") ;
             var mainWidth = this.model.get("mainWidth"); 
             var mainHeight = this.model.get("mainHeight"); 
-            var ratio = ((Math.max(width, height)) / (Math.min(width, height))).toFixed(2);
             var view = new PrintPopUpView({
                 file: file, 
                 path: path, 
+                ratio: ratio,
                 pricingModel: app.pricingModel, 
-                ratio: ratio, 
                 collection: this.basketItemsForImage, 
                 mainWidth: mainWidth, 
                 mainHeight: mainHeight
@@ -814,11 +845,7 @@ var caApp = (function (Backbone, $) {
         } 
     
     })   
-    
- 
-    
-    
-     
+
     
     //OrderLine View - a view to display a single order line
     OrderLineView = Backbone.View.extend({
@@ -938,12 +965,13 @@ var caApp = (function (Backbone, $) {
         removeMe: function() {
               this.remove();
         },
-
+                    
         render: function() {
+            var ratio = this.model.get("image_ratio"); 
             var data = {};
             var pricingModel = this.options.pricingModelJSON;
             data = app.pricingModel.toJSON();
-            data.applicableSizesGroup = app.pricingModel.getSizesForRatio(this.options.ratio);
+            data.applicableSizesGroup = app.pricingModel.getSizesForRatio(ratio);
             data.order = this.model.toJSON();
 
             var editMode = this.model.get("edit_mode");
@@ -963,8 +991,8 @@ var caApp = (function (Backbone, $) {
             data.framePrices = null;
             
             if (printSize !== null) {
-                data.mountPrice = app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(this.options.ratio, printSize).mountPrice;
-                data.framePrices =  app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(this.options.ratio, printSize);
+                data.mountPrice = app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(ratio, printSize).mountPrice;
+                data.framePrices =  app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(ratio, printSize);
                 data.frameStylesToDisplay = app.pricingModel.getFrameDisplayNamesCodesLookup();
             }
             

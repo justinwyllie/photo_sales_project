@@ -1110,6 +1110,12 @@ EOF;
                 </div>
             </div>    
         </script>
+        <script type="text/html" id="ca_basket">
+            <div>
+                <div id="ca_basket_order_lines_container">
+                </div>
+            </div>
+        </script>
  
 EOF;
         return $html;    
