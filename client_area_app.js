@@ -530,11 +530,17 @@ var caApp = (function (Backbone, $) {
             this.options = options;
             var template = $('#ca_basket').html(); 
             this.tmpl =  _.template(template);
+            var headersTemplate = $('#ca_order_line_row_head_tmpl').html();
+            this.headersTmpl = _.template(headersTemplate);
         },    
         render: function() {
-            this.$el.html(this.tmpl());
+            var data = {};
+            data.langStrings = app.langStrings.toJSON();
+            data.show_thumb = true;
+            data.row_headers = this.headersTmpl(data);
+            this.$el.html(this.tmpl(data));
             this.collection.each(function(orderLine) {
-                   var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: app.pricingModel});
+                   var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: app.pricingModel, showThumb: true});
                    this.childViews.push(orderLineView);
                    this.$el.find("#ca_basket_order_lines_container").append(orderLineView.render().$el);
                     
@@ -593,6 +599,7 @@ var caApp = (function (Backbone, $) {
             buttonData.active = this.options.active;
             buttons = this.buttonsTmpl(buttonData);
             var data = {};
+            data.active =  this.options.active;
             data.basket_label = app.langStrings.get("basketButtonText");
             if (app.appData.enablePaypal) {
                 data.checkout_label = app.langStrings.get("checkoutButtonText");     
@@ -614,8 +621,10 @@ var caApp = (function (Backbone, $) {
         },
         
         showBasket: function() {
+            this.options.active = 'basket';
             var basketView =  new BasketView({collection: app.basketCollection});
             app.layout.renderViewIntoRegion(basketView, 'main'); 
+            this.render();
         } ,
         
        showLogout: function() {
@@ -711,7 +720,7 @@ var caApp = (function (Backbone, $) {
            //1. render existing order lines
            this.collection.each(function(orderLine) {
                 if (orderLine.get('image_ref') == (this.options.file)) {
-                    var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: this.options.pricingModel});
+                    var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: this.options.pricingModel, showThumb: false});
                     this.childViews.push(orderLineView);
                     
                     this.$el.find("#ca_order_lines_container").append(orderLineView.render().$el);
@@ -733,6 +742,7 @@ var caApp = (function (Backbone, $) {
         render: function() {
             var data = {};
             data.path = this.options.path;
+            data.show_thumb = false;
             data.langStrings = app.langStrings.toJSON();
             data.row_headers = this.tmplRoWHead(data);
             
@@ -995,7 +1005,7 @@ var caApp = (function (Backbone, $) {
                 data.framePrices =  app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(ratio, printSize);
                 data.frameStylesToDisplay = app.pricingModel.getFrameDisplayNamesCodesLookup();
             }
-            
+            data.show_thumb = this.options.showThumb;
             var html = this.template(data);
             this.$el.html(html);
             return this;    

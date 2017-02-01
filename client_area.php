@@ -989,6 +989,9 @@ EOF;
                 </div>
             </script>
             <script type="text/html" id="ca_order_line_tmpl">
+                <% if (show_thumb) { %>
+                    <div class="col-xs-1">thumb</div>
+                <% } %>
                 <div class="col-xs-2">
                     <div class="ca_print_size_group ">
                         <select class="ca_form_control ca_print_size_group ca_print_size_event">
@@ -1035,28 +1038,41 @@ EOF;
                         <span><%= currency.symbol %><%= order.total_price %></span>
                     </div>  
                 </div>
-                <div class="col-xs-3">
-                      <% if (mode == 'new') { %>
-                          <button type="button" class="ca_action_button ca_add_event"><%= langStrings.add %></button>
-                      <% } else { %>
-                          <span class="ca_edit_icon fa <%= editStateIcon %>"></span>  
-                          <button type="button" class="ca_update_event"><%= langStrings.update %></button>
-                          <button type="button" class="ca_remove_event"><%= langStrings.remove %></button>
-                      <% } %>
-                      <div class="ca_order_info"></div>
-                </div>
+                <% if (show_thumb) { %>
+                    <div class="col-xs-2">
+                <% } else { %>
+                    <div class="col-xs-3">
+                <% } %>    
+                          <% if (mode == 'new') { %>
+                              <button type="button" class="ca_action_button ca_add_event"><%= langStrings.add %></button>
+                          <% } else { %>
+                              <span class="ca_edit_icon fa <%= editStateIcon %>"></span>  
+                              <button type="button" class="ca_update_event"><%= langStrings.update %></button>
+                              <button type="button" class="ca_remove_event"><%= langStrings.remove %></button>
+                          <% } %>
+                          <div class="ca_order_info"></div>
+                          
+                    </div>
                 
         </script>
         <script type="text/html" id="ca_order_line_row_head_tmpl">
                 <div class="row ca_row_header">
+                      <% if (show_thumb) { %>
+                        <div class="col-xs-1"></div>
+                      <% }  %>
                       <div class="col-xs-2"><%= langStrings.print_size %></div>
                       <div class="col-xs-2"><%= langStrings.mount %></div>
                       <div class="col-xs-2"><%= langStrings.frame %></div>
                       <div class="col-xs-2"><%= langStrings.quantity %></div>
                       <div class="col-xs-1"><%= langStrings.price %></div>
-                      <div class="col-xs-3"></div>
-                </div>
+                      <% if (show_thumb) { %>
+                            <div class="col-xs-2"></div>
+                      <% } else { %>
+                            <div class="col-xs-3"></div>
+                      <% } %>
+               </div>   
         </script>
+
         <script type="text/html" id="ca_login_tmpl">
             <div class="ca_print_login">
                 <form action="" method="post" id="ca_action_form">
@@ -1103,7 +1119,7 @@ EOF;
             <div class="ca_menu_bar">
                 <%= buttons %>
                 <div class="ca_menu_buttons">
-                    <button class="ca_basket_event"><%= basket_label %></button>
+                    <button class="ca_basket_event <% if (active == 'basket') { %>ca_highlighted_pagination<% } %>"><%= basket_label %></button>
                     <button class="ca_checkout_event"><%= checkout_label %></button>
                     <button class="ca_logout_event"><%= logout_label %></button>
                     
@@ -1111,8 +1127,9 @@ EOF;
             </div>    
         </script>
         <script type="text/html" id="ca_basket">
-            <div>
-                <div id="ca_basket_order_lines_container">
+            <div class="ca_container_fluid">
+                <%= row_headers %>
+                <div id="ca_basket_order_lines_container" class="ca_form">
                 </div>
             </div>
         </script>
@@ -1197,7 +1214,7 @@ EOF;
 EOT;
 
         $wrappedContent = <<<EOT
-            <div id="ca_content_area">
+            <div id="ca_content_area" class="ca_content_area">
                 <div id="ca_menu">
                 </div>
                 <div id="ca_main">
