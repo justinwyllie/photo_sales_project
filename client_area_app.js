@@ -15,6 +15,14 @@ var caApp = (function (Backbone, $) {
         return parseInt(n) == n;
     }
     
+    app.isArray = function(obj) {
+        if (! Array.isArray) {
+            return Object.prototype.toString.call(obj) === "[object Array]";
+        } else {
+            return Array.isArray(obj);
+        }
+    }
+    
          
     
     app.init = function() {
@@ -126,9 +134,10 @@ var caApp = (function (Backbone, $) {
     app.PricingModel = Backbone.Model.extend({
         url: "/api/v1/pricing",
         defaults: {
-          cache: {}
+          cache: {}   
        },
        
+
        initialize: function() {
             var cacheStructure = {
             
@@ -139,9 +148,9 @@ var caApp = (function (Backbone, $) {
             cacheStructure.framePriceMatrixForGivenRatioAndSize = {};
             cacheStructure.frameDisplayNamesCodesLookups  = {};
             this.set("cache", cacheStructure);
-       
        },
        
+      
        /*
        *  returns array of size blocks
         */
@@ -152,12 +161,37 @@ var caApp = (function (Backbone, $) {
             }  else {
                 var printSizes = this.get("printSizes");
                 var sizeGroupForRatio = null;
+                
+                //TODO. This is painful.
+                
+               var availableRatios = new Array();
                 _.each(printSizes.sizeGroup, function(sizeGroup) {
-                        if (sizeGroup.ratio == imageRatio) {
+                    availableRatios.push(sizeGroup.ratio);
+                });
+                    
+                //work out nearest match ratio
+                var lastDiff = null;
+                var bestMatchRatio;
+                _.each(availableRatios, function(availableRatio) {
+                    var newDiff = Math.abs(imageRatio - availableRatio);
+                     if ((lastDiff) === null || (newDiff < lastDiff))  {
+                        bestMatchRatio = availableRatio;
+                        lastDiff = newDiff;
+                    } 
+                });
+                
+                //get the size group using the bestMatchRatio
+                _.each(printSizes.sizeGroup, function(sizeGroup) {
+                        if (sizeGroup.ratio == bestMatchRatio) {
                             sizeGroupForRatio = sizeGroup.sizes.size;    
                         }
                 });
                 
+                //TODO we have to do this because of how simplexml_load_file / json_encode   handles the pricing xml. if there is one <size> we get it as an object. if there are > one we get an array of objects with the name 'size'.
+                //SO - is this going to break anywhere else in this class?
+                if (!app.isArray(sizeGroupForRatio)) {
+                    sizeGroupForRatio = [sizeGroupForRatio];    
+                }
                 cache.sizesForRatio[imageRatio] = sizeGroupForRatio;
                 this.set("cache", cache);
                 return sizeGroupForRatio;    
