@@ -282,7 +282,8 @@ var caApp = (function (Backbone, $) {
             "frame_price":0,
             "qty":1,
             "total_price": "0.00",
-            "edit_mode": ""
+            "edit_mode": "",
+            "path": null
         },
         
         initialize: function() {
@@ -731,6 +732,7 @@ var caApp = (function (Backbone, $) {
           var orderLine = new OrderLineModel();
           orderLine.set("image_ref", this.options.file);
           orderLine.set("image_ratio", this.options.ratio);
+          orderLine.set("path", this.options.path);    
           var orderLineView = new OrderLineView({collection: this.collection, model: orderLine, ref: this.options.file, 
                     mode: 'new', pricingModel: this.options.pricingModel});
           this.childViews.push(orderLineView);          
@@ -741,7 +743,7 @@ var caApp = (function (Backbone, $) {
        
         render: function() {
             var data = {};
-            data.path = this.options.path;
+            data.path = this.options.path.replace("thumbs", "main");
             data.show_thumb = false;
             data.langStrings = app.langStrings.toJSON();
             data.row_headers = this.tmplRoWHead(data);
@@ -818,7 +820,6 @@ var caApp = (function (Backbone, $) {
             var file = this.model.get("file");
             var path = this.model.get("path");
             var ratio = this.model.get("ratio");
-            path = path.replace("thumbs", "main") ;
             this.basketItemsForImage = app.basketCollection;// .byImage(this.options.file);
             var width =  this.model.get("width");
             var height =  this.model.get("height") ;
@@ -860,7 +861,7 @@ var caApp = (function (Backbone, $) {
     //OrderLine View - a view to display a single order line
     OrderLineView = Backbone.View.extend({
         tagName: 'div',
-        className: 'row', 
+        className: 'ca_row', 
         template: null,
         initialize: function(options) {
             this.listenTo(this.model, "invalid", this.displayModelErrors);
@@ -1006,6 +1007,11 @@ var caApp = (function (Backbone, $) {
                 data.frameStylesToDisplay = app.pricingModel.getFrameDisplayNamesCodesLookup();
             }
             data.show_thumb = this.options.showThumb;
+            if (data.show_thumb) {
+                data.path =   this.model.get("path");
+                data.alt_text = this.model.get("image_ref");
+                data.thumb_mode = "ca_image_row_mode";
+            } 
             var html = this.template(data);
             this.$el.html(html);
             return this;    

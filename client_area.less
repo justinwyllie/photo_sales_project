@@ -497,6 +497,24 @@ NB. For responsiveness to work as expected your container page should include so
     cursor: pointer;
 }
 
+
+
+
+
+.ca_basket_thumb
+{
+    overflow: hidden;
+}
+
+.ca_basket_thumb img
+{
+    height: 50px;
+    width: auto;
+}
+
+
+//RESPONSIVE
+
 .ca_container_fluid
 {
     margin-right: auto;
@@ -511,20 +529,28 @@ NB. For responsiveness to work as expected your container page should include so
     box-sizing: border-box;
 }
 
-//RESPONSIVE
 
 
-.row
+
+.ca_row
 {
      margin-right: -15px;
      margin-left: -15px;   
+     margin-bottom: 5px;
     
 }
 
-.row::before
+.ca_row::before
 {
     display: table;
-    content: '';
+    content: ' ';
+    
+}
+
+.ca_row::after
+{
+    display: table;
+    content: ' ';
     clear: both;
 }
 
@@ -540,7 +566,7 @@ NB. For responsiveness to work as expected your container page should include so
 
 
 
-@media (min-width: 576px) 
+@media (min-width: 768px) 
 { 
 
     .row

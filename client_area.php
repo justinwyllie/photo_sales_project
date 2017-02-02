@@ -990,7 +990,7 @@ EOF;
             </script>
             <script type="text/html" id="ca_order_line_tmpl">
                 <% if (show_thumb) { %>
-                    <div class="col-xs-1">thumb</div>
+                    <div class="col-xs-2 ca_basket_thumb"><img src="<%= path %>" alt="<%= alt_text %>" class=""></div>
                 <% } %>
                 <div class="col-xs-2">
                     <div class="ca_print_size_group ">
@@ -1028,7 +1028,7 @@ EOF;
                         </select>
                     </div>
                 </div>
-                <div class="col-xs-2">
+                <div class="col-xs-1">
                     <div class="ca_qty_group">
                         <input type="text" id="ca_qty_field" class="ca_input ca_qty_event" value="<%= order.qty %>">
                     </div>  
@@ -1041,14 +1041,14 @@ EOF;
                 <% if (show_thumb) { %>
                     <div class="col-xs-2">
                 <% } else { %>
-                    <div class="col-xs-3">
+                    <div class="col-xs-4">
                 <% } %>    
                           <% if (mode == 'new') { %>
                               <button type="button" class="ca_action_button ca_add_event"><%= langStrings.add %></button>
                           <% } else { %>
                               <span class="ca_edit_icon fa <%= editStateIcon %>"></span>  
                               <button type="button" class="ca_update_event"><%= langStrings.update %></button>
-                              <button type="button" class="ca_remove_event"><%= langStrings.remove %></button>
+                              <button type="button" class="ca_remove_event"><%= langStrings.removeSymbol %></button>
                           <% } %>
                           <div class="ca_order_info"></div>
                           
@@ -1056,19 +1056,19 @@ EOF;
                 
         </script>
         <script type="text/html" id="ca_order_line_row_head_tmpl">
-                <div class="row ca_row_header">
+                <div class="ca_row ca_row_header">
                       <% if (show_thumb) { %>
-                        <div class="col-xs-1"></div>
+                        <div class="col-xs-2"></div>
                       <% }  %>
                       <div class="col-xs-2"><%= langStrings.print_size %></div>
                       <div class="col-xs-2"><%= langStrings.mount %></div>
                       <div class="col-xs-2"><%= langStrings.frame %></div>
-                      <div class="col-xs-2"><%= langStrings.quantity %></div>
+                      <div class="col-xs-1"><%= langStrings.quantity %></div>
                       <div class="col-xs-1"><%= langStrings.price %></div>
                       <% if (show_thumb) { %>
                             <div class="col-xs-2"></div>
                       <% } else { %>
-                            <div class="col-xs-3"></div>
+                            <div class="col-xs-4"></div>
                       <% } %>
                </div>   
         </script>

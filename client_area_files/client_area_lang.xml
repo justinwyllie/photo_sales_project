@@ -157,6 +157,9 @@
     <field name="remove">
         Remove
     </field>  
+    <field name="removeSymbol">
+        X
+    </field>
     <field name="configError">
         Sorry. A configuration error has occured. Please contact the site owner.
     </field>  
