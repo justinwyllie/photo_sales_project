@@ -972,6 +972,9 @@ EOF;
     {
     
         $html=<<<EOF
+            <script type="text/html" id="ca_thumb_title">
+                <div class="ca_title"><%= image_ref %></div>
+            </script>
             <script type="text/html" id="ca_print_popup_tmpl">
                 <div class="ca_prints_popup">
                     <div class="ca_popup_close_bar">
@@ -990,7 +993,7 @@ EOF;
             </script>
             <script type="text/html" id="ca_order_line_tmpl">
                 <% if (show_thumb) { %>
-                    <div class="col-xs-2 ca_basket_thumb"><img src="<%= path %>" alt="<%= alt_text %>" class=""></div>
+                    <div class="col-xs-2 ca_basket_thumb "><div class="ca_clipper"><img src="<%= path %>" alt="<%= alt_text %>" class="ca_basket_thumb_hover_event"></div></div>
                 <% } %>
                 <div class="col-xs-2">
                     <div class="ca_print_size_group ">

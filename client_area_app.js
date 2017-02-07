@@ -890,6 +890,27 @@ var caApp = (function (Backbone, $) {
         } 
     
     })   
+    
+    
+    TitleView = Backbone.View.extend({
+    
+        tagName: 'div',
+        
+        initialize: function(options) {
+            this.options = options;
+            var tmpl =  $('#ca_thumb_title').html();
+            this.tmplFunc = _.template(tmpl);
+        },
+        
+        render: function() {
+            var data = {};
+            data.image_ref = this.options.image_ref;
+            var html = this.tmplFunc(data);
+            this.$el.append(html);
+            return this;
+        }
+        
+    })
 
     
     //OrderLine View - a view to display a single order line
@@ -916,11 +937,27 @@ var caApp = (function (Backbone, $) {
            'change .ca_print_size_event': 'onChangePrintSize' ,
            'change .ca_mount_event': 'onChangeMount',
            'change .ca_frame_event': 'onChangeFrame',
+           'mouseover .ca_basket_thumb_hover_event': 'showFileName',
+           'mouseout .ca_basket_thumb_hover_event': 'hideFileName',
+           'touchstart .ca_basket_thumb_hover_event': 'showFileName',
+           'touchend .ca_basket_thumb_hover_event': 'hideFileName',
            'input .ca_qty_event': 'onChangeQty',     /* input is better but IE9 does not support backspace or delete. keyup doesn't capture backspace. keydown is too soon - fires before change. keypress is deprecated in favour of input */
            'change .ca_qty_event': 'onChangeQty' /* fully support IE9 at the cost of an unnessary update */
         }, 
         
+        showFileName: function(evt) {
+            evt.preventDefault();
+            this.titleView = new TitleView({image_ref: this.model.get("image_ref")});
+            this.$el.find(".ca_basket_thumb").append($('<div>').addClass("ca_title_holder"));
+            this.titleView.setElement(this.$el.find('.ca_title_holder'));
+            this.titleView.render();
+        },
         
+        hideFileName: function(evt) {
+           evt.preventDefault();
+           this.titleView.remove();
+        },
+
         displayModelErrors: function() {
             that = this;
             _.each(this.model.validationError.fields, function(field) {
@@ -948,7 +985,6 @@ var caApp = (function (Backbone, $) {
         
         },
         
-        
         onChangePrintSize: function(evt) {
             var sizeSelected = evt.currentTarget.value;
             this.model.set('print_size', this.processSelects(sizeSelected));
@@ -958,7 +994,6 @@ var caApp = (function (Backbone, $) {
             var mount = evt.currentTarget.value;
             this.model.set('mount_style', this.processSelects(mount));
         },
-        
         
         onChangeFrame: function(evt) {
             var frame = evt.currentTarget.value;
@@ -970,8 +1005,7 @@ var caApp = (function (Backbone, $) {
             var qty = evt.currentTarget.value;
             this.model.set({'qty': qty});
         },
- 
-        
+
         onAdd: function() {
             if (this.model.isValid()) {
                 this.clearErrors();

@@ -38,6 +38,8 @@ Advanced users only beyond this point!
   
 @small-text: 10px;
 @medium-small-text: 15px;
+@thumb-title-background: #000000;
+@thumb-title-text: #ffffff;
 
 
 /* Global reset attempt */
@@ -501,15 +503,31 @@ NB. For responsiveness to work as expected your container page should include so
 
 
 
-.ca_basket_thumb
+.ca_clipper
 {
     overflow: hidden;
 }
+
+
 
 .ca_basket_thumb img
 {
     height: 50px;
     width: auto;
+    cursor: pointer;
+    
+}
+
+
+.ca_title
+{
+    background-color: @thumb-title-background;
+    color: @thumb-title-text;
+    font-size: @small-text;
+    padding: 4px;
+    position: absolute;
+    bottom: 0px;
+   
 }
 
 
