@@ -941,6 +941,7 @@ var caApp = (function (Backbone, $) {
            'mouseout .ca_basket_thumb_hover_event': 'hideFileName',
            'touchstart .ca_basket_thumb_hover_event': 'showFileName',
            'touchend .ca_basket_thumb_hover_event': 'hideFileName',
+           'touchcancel .ca_basket_thumb_hover_event': 'hideFileName',
            'input .ca_qty_event': 'onChangeQty',     /* input is better but IE9 does not support backspace or delete. keyup doesn't capture backspace. keydown is too soon - fires before change. keypress is deprecated in favour of input */
            'change .ca_qty_event': 'onChangeQty' /* fully support IE9 at the cost of an unnessary update */
         }, 
