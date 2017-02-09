@@ -8,4 +8,4 @@ There *may* be an optional admin panel for those who don't feel comfortable edit
 
 Nb. 
 
-If you are a photographer and would like to use this licensed software in which the legal copyright is owned by Justin Wyllie on your site please contact me. info - AT - justinwylliephotography.com. In most cases I will be happy to grant a license at no charge.
+If you are a photographer and would like to use this licensed software in which the legal copyright is owned by Justin Wyllie on your site please contact me. info - AT - justinwylliephotography.com. 
