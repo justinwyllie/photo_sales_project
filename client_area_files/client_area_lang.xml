@@ -174,6 +174,39 @@
     </field>  
    <field name="price">
         Price
+    </field>
+    <field name="useThisAddress">
+        Use this address
+    </field> 
+    <field name="enterAddress">
+        Enter address
+    </field>
+   <field name="name">
+        Your name
     </field>  
+   <field name="address1">
+        Address1
+    </field>   
+   <field name="address2">
+        Address2
+   </field>
+  <field name="city">
+        City
+   </field>
+  <field name="zip">
+        Postcode
+   </field>
+   <field name="country">
+        Country
+   </field>  
+   <field name="next">
+        Next
+   </field>  
+   <field name="enterAddress">
+        Enter Address
+   </field> 
+   <field name="confirmOrder">
+        Confirm Order
+   </field>           
 
 </strings>

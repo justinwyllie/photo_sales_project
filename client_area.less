@@ -530,6 +530,11 @@ NB. For responsiveness to work as expected your container page should include so
    
 }
 
+.ca_align_left
+{
+    float: left;
+}
+
 
 //RESPONSIVE
 
@@ -572,7 +577,7 @@ NB. For responsiveness to work as expected your container page should include so
     clear: both;
 }
 
-.col-xs-1, .col-xs-2, .col-xs-3
+.col-xs-1, .col-xs-2, .col-xs-3, .col-xs-6
 {
     position: relative;
     min-height: 1px;
@@ -587,13 +592,8 @@ NB. For responsiveness to work as expected your container page should include so
 @media (min-width: 768px) 
 { 
 
-    .row
-    {
-        
-        
-    }
     
-    .col-xs-1, .col-xs-2, .col-xs-3
+    .col-xs-1, .col-xs-2, .col-xs-3, .col-xs-6 
     {
         position: relative;
         min-height: 1px;
@@ -615,6 +615,11 @@ NB. For responsiveness to work as expected your container page should include so
     .col-xs-3
     {
         width: 25%;
+    }
+    
+    .col-xs-6
+    {
+        width: 50%;
     }
 
 }

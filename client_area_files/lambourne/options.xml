@@ -7,11 +7,11 @@
     <!-- only needs to be populated if prints mode is being used. when ordering this will be offered as the default dispatch address. -->
     <clientAddress>
        <clientName>Mr Justin Wyllie</clientName>
-       <address1></address1>
-       <address2></address2>
-       <city></city>
-       <zip></zip>
-       <country></country>
+       <address1>2 Thorneycroft Cottages</address1>
+       <address2>Blueberry Avenue</address2>
+       <city>The fields</city>
+       <zip>BB1</zip>
+       <country>UK</country>
     </clientAddress>
     <!-- below this line one can add the tags from the <display> section in client_area_options.xml to override them for this user -->
     <thumbsPerPage>45</thumbsPerPage>

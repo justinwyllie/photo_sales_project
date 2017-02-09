@@ -592,13 +592,37 @@ var caApp = (function (Backbone, $) {
         }
     });
     
+    
+    
+    
    CheckoutView =   Backbone.View.extend({
+   
+        initialize: function(options) {
+            var screen1Template = $("#ca_checkout_screen1").html();
+            this.screen1Tmpl = _.template(screen1Template);
+            var breadcrumbsTemplate =  $("#ca_breadcrumbs").html();
+            this.breadcrumbsTmpl = _.template(breadcrumbsTemplate);
+        },
     
         render: function() {
-            this.$el.html('checkout');    
+            var data = {};
+            var breadcrumbs = {};
+            breadcrumbs.nodes = [app.langStrings.get("enterAddress"), app.langStrings.get("confirmOrder")];
+            data.breadcrumbs = this.breadcrumbsTmpl(breadcrumbs);
+            if (app.appData.enablePaypal) {
+                data.message = app.appData.printsModeMessagePayPalEnabled;    
+            } else {
+                data.message = app.appData.printsModeMessagePayPalNotEnabled;     
+            }
+            data.clientAddress = $.parseJSON(app.appData.client_address);
+            data.langStrings = app.langStrings.toJSON();
+            this.$el.html(this.screen1Tmpl(data));    
         }
     
     });
+    
+    
+    
     
     OrderView =   Backbone.View.extend({
     

@@ -142,8 +142,6 @@ class ClientArea
         $this->backboneUrl = $systemOptions->backboneUrl . "";
         $this->fontAwesomeCSSJSUrl = $systemOptions->fontAwesomeCSSJSUrl . "";
         $this->cssUrl = $systemOptions->cssUrl . "";
-        $this->adminEmail = $systemOptions->adminEmail . "";
-        $this->appName = $systemOptions->appName . "";
 
     }
 
@@ -243,6 +241,7 @@ class ClientArea
 
     }
 
+    //remove TODO
     private function caMail($subject, $content)
     {
         return mail($this->adminEmail, $this->appName . ' ' . $subject, $content);
@@ -959,12 +958,82 @@ EOF;
 
         return $pages;
     }
+           
+    
+
+    
     
     //TODO - put these into a file except the login one? in fact this is about all that will be in this file + app html
     private function appTemplates() 
     {
     
         $html=<<<EOF
+            <script type="text/html" id="ca_breadcrumbs">
+               <% _.each(nodes, function(node, idx) { %>
+                <% if (idx > 0) { %>><% } %> 
+                <%=  node %>
+               <% }) %>
+            </script>
+            <script type="text/html" id="ca_checkout_screen1">
+                     <div><%= breadcrumbs %></div>
+                     <div><%= message %></div>
+                     
+                     <div>
+                        <div class="ca_align_left">
+                            <label for="ca_address_selector_1"><%= langStrings.useThisAddress %></label>
+                            <input type="radio" name="ca_address_selector" id="ca_address_selector_1" value="address_on_file">
+                        </div>    
+                        <div>
+                            <p><%= clientAddress.clientName %></p>
+                            <p><%= clientAddress.address1 %></p>
+                            <% if ( clientAddress.address2 != '' ) { %><p><%= clientAddress.address2 %></p><% } %>
+                            <p><%= clientAddress.city %></p>
+                            <p><%= clientAddress.zip %></p>
+                            <p><%= clientAddress.country %></p>
+                        </div>
+                     </div>
+                     
+                     <div class="ca_container_fluid">
+                        <div>
+                            <label for="ca_address_selector_2"><%= langStrings.enterAddress %></label>
+                            <input type="radio" name="ca_address_selector" id="ca_address_selector_2" value="address_entered">
+                        </div> 
+                        <div class="ca_row">
+                            <div class="col-xs-6"><label for="ca_address_name"><%= langStrings.name %></label></div>
+                            <div class="col-xs-6"><input id="ca_address_name" type="text" class="ca_input"></div>
+                        </div>
+                        <div class="ca_row">
+                            <div class="col-xs-6"><label for="ca_address1"><%= langStrings.address1 %></label></div>
+                            <div class="col-xs-6"><input id="ca_address1" type="text" class="ca_input"></div>
+                        </div>
+                        <div class="ca_row">
+                            <div class="col-xs-6"><label for="ca_address2"><%= langStrings.address2 %></label></div>
+                            <div class="col-xs-6"><input id="ca_address2" type="text" class="ca_input"></div>
+                        </div>
+                        <div class="ca_row">
+                            <div class="col-xs-6"><label for="ca_city"><%= langStrings.city %></label></div>
+                            <div class="col-xs-6"><input id="ca_city" type="text" class="ca_input"></div>
+                        </div>
+                        <div class="ca_row">
+                            <div class="col-xs-6"><label for="ca_zip"><%= langStrings.zip %></label></div>
+                            <div class="col-xs-6"><input id="ca_zip" type="text" class="ca_input"></div>
+                        </div>
+                        <div class="ca_row">
+                            <div class="col-xs-6"><label for="ca_country"><%= langStrings.country %></label></div>
+                            <div class="col-xs-6"><input id="ca_country" type="text" class="ca_input"></div>
+                        </div>
+                    
+                     </div>
+                     
+                     <div>
+                        <button id="ca_checkout_next1"><%= langStrings.next %></button>
+                     </div>
+                    
+            
+            
+            </script>
+        
+        
             <script type="text/html" id="ca_thumb_title">
                 <div class="ca_title"><%= image_ref %></div>
             </script>

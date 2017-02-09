@@ -327,6 +327,8 @@ class ClientAreaAPI
 
         $this->options["proofs_on"] = $userOptions->proofsOn == 'true' ? true: false;
         $this->options["prints_on"] = $userOptions->printsOn == 'true' ? true: false;
+        
+        $this->options["client_address"] = json_encode($userOptions->clientAddress);
 
 
         //potentially overide global options
@@ -372,11 +374,13 @@ class ClientAreaAPI
     }
     
     private function setOptions()
-    {
+    {                                                                                                                                                    
         $client_area_options = simplexml_load_file($this->clientAreaDirectory . DIRECTORY_SEPARATOR . 'client_area_options.xml');
 
         if ($client_area_options === false) {
-            $this->outputJson500("Error in options file or file does not exist");
+             //TODO make sure all requests from the f/e have an error handler which goes
+             // to an error page which has a link to login again and also in  outputJson500 notify site owner if we have an email 
+            $this->outputJson500("Error in options file or file does not exist");  
         }
 
         $userOptions = $client_area_options->options->userOverrideable;
@@ -391,6 +395,10 @@ class ClientAreaAPI
         $options["proofsModeMessage"] = $userOptions->proofsModeMessage . "";
         $options["printsModeMessagePayPalEnabled"] = $userOptions->printsModeMessagePayPalEnabled . "";
         $options["printsModeMessagePayPalNotEnabled"] = $userOptions->printsModeMessagePayPalNotEnabled . "";
+        $options["paypalAccountEmail"]  =  $client_area_options->options->system->paypalAccountEmail . "";
+        $options["adminEmail"]  =  $client_area_options->options->system->adminEmail . "";
+        $options["mode"]  =  $client_area_options->options->system->mode . "";
+        
 
         $this->options = $options;
     }
