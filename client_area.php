@@ -134,7 +134,6 @@ class ClientArea
         }
 
         $systemOptions = $client_area_options->options->system;
-        $displayOptions = $client_area_options->options->display;
 
         $this->jsUrl = $systemOptions->jsUrl . "";
         $this->appUrl = $systemOptions->appUrl . "";
@@ -146,12 +145,6 @@ class ClientArea
         $this->adminEmail = $systemOptions->adminEmail . "";
         $this->appName = $systemOptions->appName . "";
 
-        $options = array();
-        $options["thumbsPerPage"] = (int) $displayOptions->thumbsPerPage;
-        $options["proofsShowLabels"] = (bool) (int) $displayOptions->proofsShowLabels;
-        $options["showNannyingMessageAboutMoreThanOnePage"] = (bool) (int)  $displayOptions->showNannyingMessageAboutMoreThanOnePage;
-
-        $this->options = $options;
     }
 
 

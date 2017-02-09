@@ -11,8 +11,18 @@
     </units>
 
     <currency>
-        <symbol>&#163;</symbol>
+        <!-- html entity code for your chosen currency e.g. &#8364; for EURO; &#163; for British pound; &#36; for USD -->
+        <symbol>&#163;</symbol> 
+        <!-- https://developer.paypal.com/docs/classic/api/currency_codes/ -->   
+        <payPayCode>GBP</payPayCode>  
     </currency>
+    
+    <!-- to 2 decimal places -->
+    <deliveryCharges>
+        <perPrintItem>0.50</perPrintItem>
+        <perMountItem>1.00</perMountItem>
+        <perFrameItem>1.50</perFrameItem>
+    </deliveryCharges>
 
 <!-- one <mount> entry per mount style you offer. or none if you do not offer mounted prints -->
     <mounts>

@@ -4,9 +4,17 @@
     <proofsOn>false</proofsOn>
     <!-- true / false -->
     <printsOn>true</printsOn>
-    <customProofsMessage></customProofsMessage>
-    <customPrintsMessage></customPrintsMessage>
+    <!-- only needs to be populated if prints mode is being used. when ordering this will be offered as the default dispatch address. -->
+    <clientAddress>
+       <clientName>Mr Justin Wyllie</clientName>
+       <address1></address1>
+       <address2></address2>
+       <city></city>
+       <zip></zip>
+       <country></country>
+    </clientAddress>
     <!-- below this line one can add the tags from the <display> section in client_area_options.xml to override them for this user -->
     <thumbsPerPage>45</thumbsPerPage>
     <enablePaypal>true</enablePaypal>
+    <addDeliveryChargesPayPalNotEnabled>false</addDeliveryChargesPayPalNotEnabled>
 </options>

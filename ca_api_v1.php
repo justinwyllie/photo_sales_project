@@ -327,9 +327,7 @@ class ClientAreaAPI
 
         $this->options["proofs_on"] = $userOptions->proofsOn == 'true' ? true: false;
         $this->options["prints_on"] = $userOptions->printsOn == 'true' ? true: false;
-        //TODO are we using these?
-        $this->options["customProofsMessage"] = $userOptions->customProofsMessage . "";
-        $this->options["customPrintsMessage"] = $userOptions->customPrintsMessage . "";
+
 
         //potentially overide global options
         if (!empty($userOptions->thumbsPerPage)) {
@@ -348,6 +346,26 @@ class ClientAreaAPI
         if (!empty($userOptions->showNannyingMessageAboutMoreThanOnePage)) {
             $this->options["showNannyingMessageAboutMoreThanOnePage"]   = $userOptions->showNannyingMessageAboutMoreThanOnePage == 'true' ? true: false;
         }
+
+        if (!empty($userOptions->addDeliveryChargesPayPalEnabled)) {
+            $this->options["addDeliveryChargesPayPalEnabled"]   = $userOptions->addDeliveryChargesPayPalEnabled == 'true' ? true: false;
+        }
+        
+        if (!empty($userOptions->addDeliveryChargesPayPalNotEnabled)) {
+            $this->options["addDeliveryChargesPayPalNotEnabled"]   = $userOptions->addDeliveryChargesPayPalNotEnabled == 'true' ? true: false;
+        }
+        
+        if (!empty($userOptions->proofsModeMessage)) {
+            $this->options["proofsModeMessage"]   = $userOptions->proofsModeMessage . "";
+        }
+        
+        if (!empty($userOptions->printsModeMessagePayPalEnabled)) {
+            $this->options["printsModeMessagePayPalEnabled"]   = $userOptions->printsModeMessagePayPalEnabled . "";
+        }
+        
+        if (!empty($userOptions->printsModeMessagePayPalNotEnabled)) {
+            $this->options["printsModeMessagePayPalNotEnabled"]   = $userOptions->printsModeMessagePayPalNotEnabled . "";
+        }
             
         $this->options["human_name"] =  $this->accounts[$user]["human_name"]   ;
         $this->options["username"] =  $user;
@@ -361,13 +379,18 @@ class ClientAreaAPI
             $this->outputJson500("Error in options file or file does not exist");
         }
 
-        $displayOptions = $client_area_options->options->display;
+        $userOptions = $client_area_options->options->userOverrideable;
 
         $options = array();
-        $options["thumbsPerPage"] = (int) $displayOptions->thumbsPerPage;
-        $options["proofsShowLabels"] = (bool) $displayOptions->proofsShowLabels;
-        $options["showNannyingMessageAboutMoreThanOnePage"] = (bool) (int)  $displayOptions->showNannyingMessageAboutMoreThanOnePage;
-        $options["enablePaypal"] = (bool) $displayOptions->enablePaypal;
+        $options["thumbsPerPage"] = (int) $userOptions->thumbsPerPage;
+        $options["proofsShowLabels"] = $userOptions->proofsShowLabels == 'true' ? true: false;
+        $options["showNannyingMessageAboutMoreThanOnePage"] =  $userOptions->showNannyingMessageAboutMoreThanOnePage == 'true' ? true: false;
+        $options["enablePaypal"] = $userOptions->enablePaypal == 'true' ? true: false;
+        $options["addDeliveryChargesPayPalEnabled"] = $userOptions->addDeliveryChargesPayPalEnabled == 'true' ? true: false;
+        $options["addDeliveryChargesPayPalNotEnabled"] = $userOptions->addDeliveryChargesPayPalNotEnabled == 'true' ? true: false;
+        $options["proofsModeMessage"] = $userOptions->proofsModeMessage . "";
+        $options["printsModeMessagePayPalEnabled"] = $userOptions->printsModeMessagePayPalEnabled . "";
+        $options["printsModeMessagePayPalNotEnabled"] = $userOptions->printsModeMessagePayPalNotEnabled . "";
 
         $this->options = $options;
     }

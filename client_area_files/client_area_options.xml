@@ -18,14 +18,17 @@
             <fontAwesomeCSSJSUrl>https://use.fontawesome.com/1ade56cfa5.js</fontAwesomeCSSJSUrl>
             <!-- use https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js for legacy IE support back to IE6 - untested. may well not work. -->
             <jQueryUrl>https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js</jQueryUrl>
- 
-             <adminEmail>info@justinwylliephotography.com</adminEmail>
+            <adminEmail>info@justinwylliephotography.com</adminEmail>
+             <!-- PyaPal Email - the email for your PayPal account. if you never enablePayPal you can leave this blank -->
+            <paypalAccountEmail>info@mms-oxford.com</paypalAccountEmail>
             <appName>Photo ordering system.</appName>
+            <!-- enter either dev or prod. in dev mode if PayPal is enabled it will use the Sandbox -->
+            <mode>dev</mode>
         </system>
-
-        <display>
-            <!-- all of the fields in this section can be over-written in the user options file
+        
+        <!-- all of the fields in this section can be over-written in the user options file
                     just repeat the tag in that file with the setting for the user  -->
+        <userOverrideable>
             <thumbsPerPage>50</thumbsPerPage>
             <!-- true / false -->
             <proofsShowLabels>true</proofsShowLabels>
@@ -33,8 +36,14 @@
             <showNannyingMessageAboutMoreThanOnePage>false</showNannyingMessageAboutMoreThanOnePage>
             <!-- false or true -->
             <enablePaypal>true</enablePaypal>
-        </display>
-
+            <!-- charge for delivery when prints ordered and paid for via PayPal. true or false. -->
+            <addDeliveryChargesPayPalEnabled>true</addDeliveryChargesPayPalEnabled>
+            <!-- charge for delivery when prints ordered but no PayPal. true or false. -->
+            <addDeliveryChargesPayPalNotEnabled>true</addDeliveryChargesPayPalNotEnabled>
+            <proofsModeMessage>TODO</proofsModeMessage>
+            <printsModeMessagePayPalEnabled>TODO</printsModeMessagePayPalEnabled>
+            <printsModeMessagePayPalNotEnabled>TODO</printsModeMessagePayPalNotEnabled>
+        </userOverrideable>
 
     </options>
 </client_area>
