@@ -1,5 +1,5 @@
 # photo_sales_project
-Backbone.js based add-on to enable photographers to display and sell prints on their web site
+Backbone.js based add-on to enable photographers to display and sell prints on their web site. The s/w contains a proofing gallery and a print sales section. The print sales section supports prints, mounts and frames. Payment can be taken by PayPal. 
 
 The idea is to keep this very simple. Just a few files. No installation routine. No database - the pricing details
 are entered into an XML file. 
@@ -8,4 +8,4 @@ There *may* be an optional admin panel for those who don't feel comfortable edit
 
 Nb. 
 
-Currently the Proof selection section is done as a jQuery 'app' and the Print ordering section as a Backone app - which creates a bit of confusion. Currently porting the whole thing to SPA.
+If you are a photographer and would like to use this licensed software in which the legal copyright is owned by Justin Wyllie on your site please contact me. info - AT - justinwylliephotography.com. In most cases I will be happy to grant a license at no charge.
