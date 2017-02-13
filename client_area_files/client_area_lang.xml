@@ -207,6 +207,22 @@
    </field> 
    <field name="confirmOrder">
         Confirm Order
-   </field>           
+   </field>   
+   <field name="selectOrEnterAddress">
+        Please select or enter address. 
+   </field> 
+   
+   <field name="itemsTotal">
+        Items Total 
+   </field> 
+   <field name="deliveryCharges">
+        Delivery Charges 
+   </field> 
+   <field name="total">
+        Total
+   </field> 
+   <field name="paySecurelyWithPayPal">
+        Pay Securely with PayPal
+   </field>         
 
 </strings>

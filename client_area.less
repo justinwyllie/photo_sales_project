@@ -40,6 +40,7 @@ Advanced users only beyond this point!
 @medium-small-text: 15px;
 @thumb-title-background: #000000;
 @thumb-title-text: #ffffff;
+@menu-background: #eeeeee;
 
 
 /* Global reset attempt */
@@ -109,7 +110,7 @@ Advanced users only beyond this point!
 
 .ca_menu_bar
 {
-    background-color: #eeeeee;
+    background-color: @menu-background;
     padding: 10px 10px 5px 10px;
     border-bottom: 1px solid #A9A9A9;  
 }
@@ -266,7 +267,7 @@ button.ca_menu_button
 
 .ca_popup_close_bar
 {
-    background-color: #eeeeee;
+    background-color: @menu-background;
     width: 100%;
     height: 30px;
     
@@ -478,15 +479,70 @@ NB. For responsiveness to work as expected your container page should include so
  
 }
 
-.ca_form select, .ca_form input, .ca_form_label
+.ca_form select, .ca_form input, .ca_form_label, .ca_breadcrumbs
 {
     font-size: @medium-small-text;
+}
+
+.ca_form_group
+{
+    margin-bottom: 5px;
+}
+
+.ca_breadcrumbs, .ca_message_bar
+{
+    margin-top: 5px;
+    background-color: @menu-background;
+    width: 100%;
+    padding: 2px;
+}
+
+.ca_breadcrumbs
+{
+     margin-bottom: 5px;
+}
+
+.ca_message_bar
+{
+    margin-bottom: 10px;
+}
+
+.ca_error_message
+{
+    color: #ff0000;    
+}
+
+.ca_bold_label
+{
+    font-weight: bold;
+}
+
+.ca_spacer
+{
+    height: 25px;
+}
+
+
+
+.ca_breadcrumb_in_chain
+{
+    text-decoration: underline;
+}
+
+.ca_breadcrumb_active
+{
+    cursor: pointer;
 }
 
 .ca_input, .ca_form_control
 {
     max-width: 100%;
     
+}
+
+.ca_input_expanded
+{
+    width: 100%;
 }
 
 .ca_input
@@ -577,7 +633,7 @@ NB. For responsiveness to work as expected your container page should include so
     clear: both;
 }
 
-.col-xs-1, .col-xs-2, .col-xs-3, .col-xs-6
+.col-xs-1, .col-xs-2, .col-xs-3, .col-xs-6, .col-xs-9, .col-xs-12  
 {
     position: relative;
     min-height: 1px;
@@ -593,7 +649,7 @@ NB. For responsiveness to work as expected your container page should include so
 { 
 
     
-    .col-xs-1, .col-xs-2, .col-xs-3, .col-xs-6 
+    .col-xs-1, .col-xs-2, .col-xs-3, .col-xs-6, .col-xs-9, .col-xs-12  
     {
         position: relative;
         min-height: 1px;
@@ -620,6 +676,16 @@ NB. For responsiveness to work as expected your container page should include so
     .col-xs-6
     {
         width: 50%;
+    }
+    
+    .col-xs-9
+    {
+        width: 75%;
+    }
+    
+     .col-xs-12
+    {
+        width: 100%;
     }
 
 }

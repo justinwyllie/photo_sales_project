@@ -16,5 +16,6 @@
     <!-- below this line one can add the tags from the <display> section in client_area_options.xml to override them for this user -->
     <thumbsPerPage>45</thumbsPerPage>
     <enablePaypal>true</enablePaypal>
-    <addDeliveryChargesPayPalNotEnabled>false</addDeliveryChargesPayPalNotEnabled>
+ 
+
 </options>

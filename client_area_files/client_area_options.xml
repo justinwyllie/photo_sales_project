@@ -36,12 +36,11 @@
             <showNannyingMessageAboutMoreThanOnePage>false</showNannyingMessageAboutMoreThanOnePage>
             <!-- false or true -->
             <enablePaypal>true</enablePaypal>
-            <!-- charge for delivery when prints ordered and paid for via PayPal. true or false. -->
-            <addDeliveryChargesPayPalEnabled>true</addDeliveryChargesPayPalEnabled>
-            <!-- charge for delivery when prints ordered but no PayPal. true or false. -->
-            <addDeliveryChargesPayPalNotEnabled>true</addDeliveryChargesPayPalNotEnabled>
+            <!-- charge for delivery. true or false. -->
+            <deliveryChargesEnabled>true</deliveryChargesEnabled>
+       
             <proofsModeMessage>TODO</proofsModeMessage>
-            <printsModeMessagePayPalEnabled>TODO</printsModeMessagePayPalEnabled>
+            <printsModeMessagePayPalEnabled>Enter address details. Confirm charges. Then pay on PayPal.</printsModeMessagePayPalEnabled>
             <printsModeMessagePayPalNotEnabled>TODO</printsModeMessagePayPalNotEnabled>
         </userOverrideable>
 

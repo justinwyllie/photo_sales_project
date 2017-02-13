@@ -122,15 +122,74 @@ var caApp = (function (Backbone, $) {
         var loginView = new LoginView({message: msg});
         app.layout.renderViewIntoRegion(loginView , 'main');
     }
-    
+                
     
     
     //MODELS
+    //used for the delivery: the actual basket is in the session (and local storage)
+    OrderModel =  Backbone.Model.extend({
+        url: "/api/v1/order",
+        defaults: {
+                clientName: '',
+                address1: '',
+                address2: '',
+                city: '',
+                zip: '',
+                country: '',
+                deliveryCharges: 0,
+                totalItems: 0,
+                grandTotal: 0,
+                address_type: null
+        },
+        
+        resetAddressToOnFile: function() {
+            this.set({
+                clientName: this.defaults.clientName,
+                address1: this.defaults.address1,
+                address2: this.defaults.address2,
+                city: this.defaults.city,
+                zip: this.defaults.zip,
+                country: this.defaults.country ,
+                address_type: 'address_on_file' 
+            });        
+
+        },
+        
+        validate: function(attrs, options) {
+            var valid = true;
+            
+            if (attrs.clientName == '')  {
+                valid = false;
+            }
+            
+            if (attrs.address1 == '')  {
+                valid = false;
+            }
+            
+            if (attrs.city == '')  {
+                valid = false;
+            }
+            
+            if (attrs.zip == '')  {
+                valid = false;
+            }
+            
+            if (attrs.country == '')  {
+                valid = false;
+            }
+            
+            if (!valid) {
+                return app.langStrings.get("selectOrEnterAddress");
+            }
+        
+        }
+    })
     
     //PricingModel Model   
     //TODO make immutable
     //TODO use xpath instead of loops where possible      
-    //TODO there is some duplication here                                                                                                                                                                                               
+    //TODO there is some duplication here       
+    //TODO lose app                                                                                                                                                                                         
     app.PricingModel = Backbone.Model.extend({
         url: "/api/v1/pricing",
         defaults: {
@@ -452,9 +511,37 @@ var caApp = (function (Backbone, $) {
               return orderLine.get("image") === ref;
           });
           return new Backbone.Collection(filtered);
-        } 
-    
+        },
+        
+        getTotalCost: function() {
+            var totalCost = 0;
+            _.each(this.models, function(model) {
+                var lineCost  = model.get("total_price");
+                totalCost = totalCost + lineCost*1;    
+            });
+            return totalCost*1;
+        },
+        
+       getDeliveryCost: function(chargeStructure) {
+            var delCost = 0;
+            _.each(this.models, function(model) {
+                var lineCost = 0;
+                var qty = model.get("qty");
+                lineCost = qty * chargeStructure.perPrintItem;
+                if (model.get("mount_style") !== null) {
+                    lineCost = lineCost + (qty * chargeStructure.perMountItem);    
+                } 
+                if (model.get("frame_style") !== null) {
+                    lineCost = lineCost + (qty * chargeStructure.perFrameItem);    
+                }  
+                
+                delCost = delCost + lineCost;   
+            });
+            return delCost*1;
+       }  
     });
+    
+    
     
     PrintThumbsCollection =  Backbone.Collection.extend({
         model: ThumbModel,    
@@ -594,6 +681,9 @@ var caApp = (function (Backbone, $) {
     
     
     
+
+    
+    
     
    CheckoutView =   Backbone.View.extend({
    
@@ -602,19 +692,159 @@ var caApp = (function (Backbone, $) {
             this.screen1Tmpl = _.template(screen1Template);
             var breadcrumbsTemplate =  $("#ca_breadcrumbs").html();
             this.breadcrumbsTmpl = _.template(breadcrumbsTemplate);
+            var screen2Template = $("#ca_checkout_screen2").html();
+            this.screen2Tmpl =  _.template(screen2Template);
+            this.errorState = false;
+            this.errorMessage = '';
+
         },
-    
-        render: function() {
-            var data = {};
+        
+        events: {
+            'click #ca_checkout_next1': 'validateAddressScreen',   
+            'click #ca_complete_order': 'completeOrder',
+            'click span.ca_breadcrumb_active': 'breadCrumbNav',
+            'click #ca_address_selector_1': 'resetAddressToOnFile'
+        
+        },
+        
+        breadCrumbNav: function() {
+            this.render();    
+        },
+        
+        resetAddressToOnFile: function() {
+            this.model.resetAddressToOnFile();
+            this.render();
+        },
+        
+        validateAddressScreen: function() {
+            //check that one address is selected - if custom check fields are populated
+            //if error display in error_message area. end.
+            
+            //if proceed  add to OderModel and - showChargesScreen
+            
+            var addressType = this.$el.find('input[name="ca_address_selector"]:checked').val();
+            if  (typeof(addressType) == "undefined") {
+                this.errorState = true;
+                this.errorMessage = app.langStrings.get("selectOrEnterAddress");
+                this.render();
+            } else {
+                if (addressType == 'address_on_file') {
+                    
+                    /*
+                    var clientAddress =  $.parseJSON(app.appData.client_address);
+                    clientName: clientAddress.clientName,
+                        address1: clientAddress.address1,
+                        address2: clientAddress.address2,
+                        city: clientAddress.city,
+                        zip: clientAddress.zip,
+                        country: clientAddress.country,
+                    */    
+                    this.model.set({
+                        address_type: 'address_on_file'        
+                     }); 
+                     //the address has come from site owner config: can't tell user it is invalid.
+                     this.model.save(null, {validate: false, wait: true}); 
+                     this.showChargesScreen();  
+                }  else {
+                    this.model.set({
+                        clientName: this.$el.find('#ca_address_name').val(),
+                        address1: this.$el.find('#ca_address1').val(),
+                        address2: this.$el.find('#ca_address2').val(),
+                        city: this.$el.find('#ca_city').val(),
+                        zip: this.$el.find('#ca_zip').val(),
+                        country: this.$el.find('#ca_country').val(),
+                        address_type: 'address_entered'
+                     }); 
+                    this.model.save(null, {wait: true});
+                    if (!this.model.isValid()) {
+                        this.errorState = true;
+                        this.errorMessage = this.model.validationError;   
+                        this.render();   
+                    } else {
+                        this.showChargesScreen();        
+                    }
+                }
+                
+                
+            }
+
+        },
+        
+        completeOrder: function() {
+            console.log("complete order");
+            //paypal case
+        },
+        
+        
+        showChargesScreen: function() {
+            var data = {}; 
+            
             var breadcrumbs = {};
-            breadcrumbs.nodes = [app.langStrings.get("enterAddress"), app.langStrings.get("confirmOrder")];
+            breadcrumbs.nodes = [{txt: app.langStrings.get("enterAddress"), class: 'ca_breadcrumb_in_chain ca_breadcrumb_active'}, {txt: app.langStrings.get("confirmOrder"), class: 'ca_breadcrumb_in_chain', method: ''}];
             data.breadcrumbs = this.breadcrumbsTmpl(breadcrumbs);
             if (app.appData.enablePaypal) {
                 data.message = app.appData.printsModeMessagePayPalEnabled;    
             } else {
                 data.message = app.appData.printsModeMessagePayPalNotEnabled;     
             }
-            data.clientAddress = $.parseJSON(app.appData.client_address);
+            
+            data.errorState = this.errorState;
+            data.errorMessage = this.errorMessage;
+            
+            data.enablePaypal = app.appData.enablePaypal;
+            data.deliveryChargesEnabled = app.appData.deliveryChargesEnabled;  
+            data.langStrings = app.langStrings.toJSON();
+            data.currSymbol = app.pricingModel.get("currency").symbol;
+
+            var totalItems = app.basketCollection.getTotalCost().toFixed(2);
+            if  (data.deliveryChargesEnabled) {
+                var deliveryCharges = app.basketCollection.getDeliveryCost(app.pricingModel.get("deliveryCharges")).toFixed(2);
+            } else {
+               var deliveryCharges = 0; 
+            }
+            var grandTotal =  (totalItems*1 + deliveryCharges*1).toFixed(2);
+            this.model.set({
+                "deliveryCharges":deliveryCharges,
+                "totalItems": totalItems,
+                "grandTotal": grandTotal
+                });
+                
+            data.grandTotal = grandTotal;
+            data.totalItems = totalItems;
+            data.deliveryCharges = deliveryCharges;
+            
+            this.$el.html(this.screen2Tmpl(data));      
+        },
+    
+        render: function() {
+            var data = {};
+            var breadcrumbs = {};
+            breadcrumbs.nodes = [{txt: app.langStrings.get("enterAddress"), class: 'ca_breadcrumb_in_chain', method: ''}, {txt: app.langStrings.get("confirmOrder"), class: '', method: ''}];
+            data.breadcrumbs = this.breadcrumbsTmpl(breadcrumbs);
+            if (app.appData.enablePaypal) {
+                data.message = app.appData.printsModeMessagePayPalEnabled;    
+            } else {
+                data.message = app.appData.printsModeMessagePayPalNotEnabled;     
+            }
+            
+            data.errorState = this.errorState;
+            data.errorMessage = this.errorMessage;
+            data.fileClientAddress = $.parseJSON(app.appData.client_address);
+            var address_type = this.model.get("address_type");
+            data.address_entered_checked = '';
+            data.address_on_file_checked = '';
+            if (address_type === 'address_entered') {
+                data.address_entered_checked = 'checked';    
+            }
+            if (address_type === 'address_on_file') {
+                data.address_on_file_checked = 'checked';    
+            }
+            data.clientName = this.model.get("clientName");
+            data.address1 = this.model.get("address1");
+            data.address2 = this.model.get("address2");
+            data.city = this.model.get("city");
+            data.zip = this.model.get("zip");
+            data.country = this.model.get("country");
             data.langStrings = app.langStrings.toJSON();
             this.$el.html(this.screen1Tmpl(data));    
         }
@@ -624,13 +854,7 @@ var caApp = (function (Backbone, $) {
     
     
     
-    OrderView =   Backbone.View.extend({
-    
-        render: function() {
-            this.$el.html('order');    
-        }
-    
-    });
+
     
     LogoutView =   Backbone.View.extend({
     
@@ -692,13 +916,8 @@ var caApp = (function (Backbone, $) {
         } ,
             
         showCheckout: function() {
-          if (app.appData.enablePaypal) {
-            var view = new CheckoutView();
-          }  else {
-            var view = new OrderView();        
-          }
-          app.layout.renderViewIntoRegion(view, 'main'); 
-        
+            var view = new CheckoutView({model: new OrderModel()});
+            app.layout.renderViewIntoRegion(view, 'main'); 
         },
         
         changePage: function(evt) {

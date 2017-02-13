@@ -154,6 +154,7 @@ class ClientAreaAPI
             $_SESSION["printsPagesVisited"] = array();
             $_SESSION["printsChosen"] = array();
             $_SESSION["basket"] = array();
+            $_SESSION["order"] = array();
 
             //If the user is logging in try to restore the proofs chosen based on what was stored in html data if it is available
             if (!empty($restoredProofs)) {
@@ -270,6 +271,23 @@ class ClientAreaAPI
         return  ""; 
     
     }
+    
+    public function postOrder()
+    {
+        $order = file_get_contents('php://input');
+        $order = json_decode($order);
+        $_SESSION["order"] = $order;
+        $order->id = 1; 
+        return $order;    
+    }
+    
+    public function putOrder()
+    {
+        $order = file_get_contents('php://input');
+        $order = json_decode($order);
+        $_SESSION["order"] = $order;
+        return $order;    
+    }
   
     //HELPERS
     private function generateUniqueOrderId()
@@ -349,8 +367,8 @@ class ClientAreaAPI
             $this->options["showNannyingMessageAboutMoreThanOnePage"]   = $userOptions->showNannyingMessageAboutMoreThanOnePage == 'true' ? true: false;
         }
 
-        if (!empty($userOptions->addDeliveryChargesPayPalEnabled)) {
-            $this->options["addDeliveryChargesPayPalEnabled"]   = $userOptions->addDeliveryChargesPayPalEnabled == 'true' ? true: false;
+        if (!empty($userOptions->deliveryChargesEnabled)) {
+            $this->options["deliveryChargesEnabled"]   = $userOptions->deliveryChargesEnabled == 'true' ? true: false;
         }
         
         if (!empty($userOptions->addDeliveryChargesPayPalNotEnabled)) {
@@ -390,8 +408,7 @@ class ClientAreaAPI
         $options["proofsShowLabels"] = $userOptions->proofsShowLabels == 'true' ? true: false;
         $options["showNannyingMessageAboutMoreThanOnePage"] =  $userOptions->showNannyingMessageAboutMoreThanOnePage == 'true' ? true: false;
         $options["enablePaypal"] = $userOptions->enablePaypal == 'true' ? true: false;
-        $options["addDeliveryChargesPayPalEnabled"] = $userOptions->addDeliveryChargesPayPalEnabled == 'true' ? true: false;
-        $options["addDeliveryChargesPayPalNotEnabled"] = $userOptions->addDeliveryChargesPayPalNotEnabled == 'true' ? true: false;
+        $options["deliveryChargesEnabled"] = $userOptions->deliveryChargesEnabled == 'true' ? true: false;
         $options["proofsModeMessage"] = $userOptions->proofsModeMessage . "";
         $options["printsModeMessagePayPalEnabled"] = $userOptions->printsModeMessagePayPalEnabled . "";
         $options["printsModeMessagePayPalNotEnabled"] = $userOptions->printsModeMessagePayPalNotEnabled . "";

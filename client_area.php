@@ -971,59 +971,116 @@ EOF;
             <script type="text/html" id="ca_breadcrumbs">
                <% _.each(nodes, function(node, idx) { %>
                 <% if (idx > 0) { %>><% } %> 
-                <%=  node %>
+                <span class="<%= node.class %>" ><%=  node.txt %></span>
                <% }) %>
             </script>
+            <script type="text/html" id="ca_checkout_screen2">
+                <div class="ca_breadcrumbs"><%= breadcrumbs %></div>
+                <div class="ca_message ca_message_bar"><%= message %></div>
+                <% if (errorState) { %>
+                   <div class="ca_error_message ca_message_bar"><%= errorMessage %></div>
+                <% } %> 
+                
+                <div class="ca_spacer"></div>
+                
+                <div>
+                    <div class="ca_container_fluid">
+                            <div class="ca_row">
+                                <div class="col-xs-3"></div>
+                                <div class="col-xs-9"><span class="ca_bold_label"><%= currSymbol %></span></div>
+                            </div>
+                            <div class="ca_row">
+                                <div class="col-xs-3"><%= langStrings.itemsTotal %>:</div>
+                                <div class="col-xs-9"><%= totalItems %></div>
+                            </div>
+                            <% if (deliveryChargesEnabled) { %>
+                                <div class="ca_row">
+                                    <div class="col-xs-3"><%= langStrings.deliveryCharges %>:</div>
+                                    <div class="col-xs-9"><%= deliveryCharges %></div>
+                                </div>
+                            <% } %>  
+                            <div class="ca_row">
+                                <div class="col-xs-3"><%= langStrings.total %>:</div>
+                                <div class="col-xs-9"><%= grandTotal %></div>
+                            </div>  
+                            <div class="ca_row">
+                                <div class="col-xs-12">
+                                    <button id="ca_complete_order">
+                                        <% if (enablePaypal) {%>
+                                            <%= langStrings.paySecurelyWithPayPal %>
+                                        <% } else { %>
+                                            <%= langStrings.order %>
+                                        <% } %>
+                                    </button>
+                                </div>
+                  
+                            </div>  
+                                
+                     </div>      
+                </div>
+            
+            </script>
+            
             <script type="text/html" id="ca_checkout_screen1">
-                     <div><%= breadcrumbs %></div>
-                     <div><%= message %></div>
+                     <div class="ca_breadcrumbs"><%= breadcrumbs %></div>
+                     <div class="ca_message ca_message_bar"><%= message %></div>
+                     <% if (errorState) { %>
+                        <div class="ca_error_message ca_message_bar"><%= errorMessage %></div>
+                     <% } %>   
+                     
                      
                      <div>
-                        <div class="ca_align_left">
-                            <label for="ca_address_selector_1"><%= langStrings.useThisAddress %></label>
-                            <input type="radio" name="ca_address_selector" id="ca_address_selector_1" value="address_on_file">
+                        <div class="ca_form_group">
+                            <input type="radio" name="ca_address_selector" <%= address_on_file_checked %> id="ca_address_selector_1" value="address_on_file">
+                            <label for="ca_address_selector_1" class="ca_bold_label"><%= langStrings.useThisAddress %>:</label>
                         </div>    
                         <div>
-                            <p><%= clientAddress.clientName %></p>
-                            <p><%= clientAddress.address1 %></p>
-                            <% if ( clientAddress.address2 != '' ) { %><p><%= clientAddress.address2 %></p><% } %>
-                            <p><%= clientAddress.city %></p>
-                            <p><%= clientAddress.zip %></p>
-                            <p><%= clientAddress.country %></p>
+                            <%= fileClientAddress.clientName %><br>
+                            <%= fileClientAddress.address1 %><br>
+                            <% if ( fileClientAddress.address2 != '' ) { %><%= fileClientAddress.address2 %><br><% } %>
+                            <%= fileClientAddress.city %> <br>
+                            <%= fileClientAddress.zip %><br>
+                            <%= fileClientAddress.country %>
                         </div>
                      </div>
                      
-                     <div class="ca_container_fluid">
-                        <div>
-                            <label for="ca_address_selector_2"><%= langStrings.enterAddress %></label>
-                            <input type="radio" name="ca_address_selector" id="ca_address_selector_2" value="address_entered">
+                     <div class="ca_spacer"></div>
+                     
+                     
+                        <div class="ca_form_group">
+                            <input type="radio" name="ca_address_selector" <%= address_entered_checked %> id="ca_address_selector_2" value="address_entered">
+                            <label for="ca_address_selector_2" class="ca_bold_label"><%= langStrings.enterAddress %>:</label>
                         </div> 
-                        <div class="ca_row">
-                            <div class="col-xs-6"><label for="ca_address_name"><%= langStrings.name %></label></div>
-                            <div class="col-xs-6"><input id="ca_address_name" type="text" class="ca_input"></div>
-                        </div>
-                        <div class="ca_row">
-                            <div class="col-xs-6"><label for="ca_address1"><%= langStrings.address1 %></label></div>
-                            <div class="col-xs-6"><input id="ca_address1" type="text" class="ca_input"></div>
-                        </div>
-                        <div class="ca_row">
-                            <div class="col-xs-6"><label for="ca_address2"><%= langStrings.address2 %></label></div>
-                            <div class="col-xs-6"><input id="ca_address2" type="text" class="ca_input"></div>
-                        </div>
-                        <div class="ca_row">
-                            <div class="col-xs-6"><label for="ca_city"><%= langStrings.city %></label></div>
-                            <div class="col-xs-6"><input id="ca_city" type="text" class="ca_input"></div>
-                        </div>
-                        <div class="ca_row">
-                            <div class="col-xs-6"><label for="ca_zip"><%= langStrings.zip %></label></div>
-                            <div class="col-xs-6"><input id="ca_zip" type="text" class="ca_input"></div>
-                        </div>
-                        <div class="ca_row">
-                            <div class="col-xs-6"><label for="ca_country"><%= langStrings.country %></label></div>
-                            <div class="col-xs-6"><input id="ca_country" type="text" class="ca_input"></div>
-                        </div>
+                        
+                        <div class="ca_container_fluid">
+                            <div class="ca_row">
+                                <div class="col-xs-3"><label for="ca_address_name"><%= langStrings.name %>:</label></div>
+                                <div class="col-xs-9"><input id="ca_address_name" type="text" value="<%= clientName %>" ></div>
+                            </div>
+                            <div class="ca_row">
+                                <div class="col-xs-3"><label for="ca_address1"><%= langStrings.address1 %>:</label></div>
+                                <div class="col-xs-9"><input id="ca_address1" type="text" value="<%= address1 %>"></div>
+                            </div>
+                            <div class="ca_row">
+                                <div class="col-xs-3"><label for="ca_address2"><%= langStrings.address2 %>:</label></div>
+                                <div class="col-xs-9"><input id="ca_address2" type="text" value="<%= address2 %>"></div>
+                            </div>
+                            <div class="ca_row">
+                                <div class="col-xs-3"><label for="ca_city"><%= langStrings.city %>:</label></div>
+                                <div class="col-xs-9"><input id="ca_city" type="text" value="<%= city %>"></div>
+                            </div>
+                            <div class="ca_row">
+                                <div class="col-xs-3"><label for="ca_zip"><%= langStrings.zip %>:</label></div>
+                                <div class="col-xs-9"><input id="ca_zip" type="text" value="<%= zip %>"></div>
+                            </div>
+                            <div class="ca_row">
+                                <div class="col-xs-3"><label for="ca_country"><%= langStrings.country %>:</label></div>
+                                <div class="col-xs-9"><input id="ca_country" type="text" value="<%= country %>"></div>
+                            </div>
                     
                      </div>
+                     
+                     <div class="ca_spacer"></div>
                      
                      <div>
                         <button id="ca_checkout_next1"><%= langStrings.next %></button>
