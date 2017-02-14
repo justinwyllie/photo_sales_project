@@ -50,6 +50,152 @@ class ClientArea
         $this->setAccounts();
         $this->setLang();
     }
+    
+    
+       private function outputHtmlPage($content) {
+        //TODO dont need content
+        if (!empty($this->jQueryUrl)) 
+        {
+            $jQueryLine = "<script src='$this->jQueryUrl'></script>";
+        }
+        else
+        {
+            $jQueryLine = "";
+        }
+
+        //build header
+        $headerContent = <<<EOT
+        $jQueryLine
+        <script src="$this->underscoreUrl"></script>
+        <script src="$this->backboneUrl"></script>
+        <script src="$this->appUrl"></script>
+        <script src="$this->jsUrl"></script>
+        <script src="$this->fontAwesomeCSSJSUrl"></script>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+        <link rel="stylesheet" href="$this->cssUrl" type="text/css">
+EOT;
+
+        $wrappedContent = <<<EOT
+            <div id="ca_content_area" class="ca_content_area">
+                <div id="ca_menu">
+                </div>
+                <div id="ca_main">
+                </div>
+            </div>
+            <br class="ca_clear">
+EOT;
+        $wrappedContent.= $this->appTemplates();
+
+        $template = new TemplateEngine($this->template);
+        $template->setText();
+        $template->setVars(
+            array(
+                "CLIENTAREAHEAD" => $headerContent,
+                "CLIENTAREABODY" => $wrappedContent,
+
+            )
+        );
+
+        echo $template->getText();
+        exit;
+
+
+    }
+    
+    
+    public function run()
+    {
+
+        if (isset($_SESSION["user"])) {
+            $this->setUserOptions($_SESSION["user"]);
+        }
+
+        //all that is called is showLoginScreen - just call this and lose controller    
+        $content = call_user_func_array(array($this, $this->action), array());
+
+        if (is_object($content) ) {
+            $this->outputJson($content);
+        } else {
+            $this->outputHtmlPage($content);
+        }
+
+
+    }
+
+    /**
+     * Check that there is a session and an action
+     * Set the action which will be run (see method 'run')
+     *
+     */
+    public function controller()
+    {
+        $reqAddress = $_SERVER["PHP_SELF"];
+        
+        //var_dump(isset($_SESSION["user"]), $_SERVER["REQUEST_METHOD"]);exit;
+
+        if ((isset($_SESSION["user"])) && (!empty($_POST["action"])) && ($_POST["action"] !== "login")) {
+            $this->action = $_POST["action"];
+        } elseif ((isset($_SESSION["user"])) && (!empty($_POST["action"])) && ($_POST["action"] === "login")) {
+            $this->setLogin();
+        } elseif (isset($_SESSION["user"]) && ($_SERVER["REQUEST_METHOD"] === "GET") ) {
+            $this->action = "confirmLogoutScreen";
+        } elseif (!isset($_SESSION["user"])  && ($_SERVER["REQUEST_METHOD"] === "GET")  ) {
+            //var_dump('here');exit;
+            $this->action = "showLoginScreen";
+        } elseif (!isset($_SESSION["user"])  && ($_SERVER["REQUEST_METHOD"] === "POST")
+                && (!empty($_POST["action"])) && ($_POST["action"] === "login") ) {
+            $this->setLogin();
+        } elseif (!isset($_SESSION["user"]) && (!empty($_POST["action"])) && (strpos($_POST["action"], "ajax") !== false)) {
+            $this->redirectToLoginScreen();
+        } elseif  (!isset($_SESSION["user"])  && ($_SERVER["REQUEST_METHOD"] === "POST")
+            && (!empty($_POST["action"])) && ($_POST["action"] !== "login") ) {
+            $this->loginMessage = $this->lang("sessionExpired");
+            $this->action = "showLoginScreen";
+        } else {
+            $this->action = "terminateScript";
+        }
+        
+        
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    //BELOW THIS LINE NOT USED...     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     private function setUserOptions($user)
     {
@@ -158,59 +304,7 @@ class ClientArea
         exit;
     }
 
-    public function run()
-    {
 
-        if (isset($_SESSION["user"])) {
-            $this->setUserOptions($_SESSION["user"]);
-        }
-
-        $content = call_user_func_array(array($this, $this->action), array());
-
-        if (is_object($content) ) {
-            $this->outputJson($content);
-        } else {
-            $this->outputHtmlPage($content);
-        }
-
-
-    }
-
-    /**
-     * Check that there is a session and an action
-     * Set the action which will be run (see method 'run')
-     *
-     */
-    public function controller()
-    {
-        $reqAddress = $_SERVER["PHP_SELF"];
-        
-        //var_dump(isset($_SESSION["user"]), $_SERVER["REQUEST_METHOD"]);exit;
-
-        if ((isset($_SESSION["user"])) && (!empty($_POST["action"])) && ($_POST["action"] !== "login")) {
-            $this->action = $_POST["action"];
-        } elseif ((isset($_SESSION["user"])) && (!empty($_POST["action"])) && ($_POST["action"] === "login")) {
-            $this->setLogin();
-        } elseif (isset($_SESSION["user"]) && ($_SERVER["REQUEST_METHOD"] === "GET") ) {
-            $this->action = "confirmLogoutScreen";
-        } elseif (!isset($_SESSION["user"])  && ($_SERVER["REQUEST_METHOD"] === "GET")  ) {
-            //var_dump('here');exit;
-            $this->action = "showLoginScreen";
-        } elseif (!isset($_SESSION["user"])  && ($_SERVER["REQUEST_METHOD"] === "POST")
-                && (!empty($_POST["action"])) && ($_POST["action"] === "login") ) {
-            $this->setLogin();
-        } elseif (!isset($_SESSION["user"]) && (!empty($_POST["action"])) && (strpos($_POST["action"], "ajax") !== false)) {
-            $this->redirectToLoginScreen();
-        } elseif  (!isset($_SESSION["user"])  && ($_SERVER["REQUEST_METHOD"] === "POST")
-            && (!empty($_POST["action"])) && ($_POST["action"] !== "login") ) {
-            $this->loginMessage = $this->lang("sessionExpired");
-            $this->action = "showLoginScreen";
-        } else {
-            $this->action = "terminateScript";
-        }
-        
-        
-    }
 
 
 
@@ -968,6 +1062,24 @@ EOF;
     {
     
         $html=<<<EOF
+        
+            <script type="text/html" id="ca_paypal_standard">
+                <form id="ca_paypal_form" action="<%= action %>" 
+                    <input type="hidden" name="item_number" value="<%= payment_title %>">
+                    <input type="hidden" name="cmd" value="_xclick">
+                    <input type="hidden" name="no_note" value="0">
+                    <input type="hidden" name="amount" id="amount" value="<%= amount %>">
+                    <input type="hidden" name="business" value="<%= paypal_email %>">
+                    <input type="hidden" id="currency_code" name="currency_code" value="<%= paypal_code %>">
+                    <input type="hidden" name="return" value="<%= thanks_url %>">
+                    <input type="hidden" name="cancel_return" value="<% cancel_url %>">
+                    <input type="hidden" name="notify_url" value="<% notify_url %>" >
+                    <input id="item_name" type="hidden" name="item_name" value="<% item_name %>">
+                    <input id="item_number" type="hidden" name="item_number" value="<% item_number %>">
+                </form>
+            
+            </script>
+        
             <script type="text/html" id="ca_breadcrumbs">
                <% _.each(nodes, function(node, idx) { %>
                 <% if (idx > 0) { %>><% } %> 
@@ -976,11 +1088,8 @@ EOF;
             </script>
             <script type="text/html" id="ca_checkout_screen2">
                 <div class="ca_breadcrumbs"><%= breadcrumbs %></div>
-                <div class="ca_message ca_message_bar"><%= message %></div>
-                <% if (errorState) { %>
-                   <div class="ca_error_message ca_message_bar"><%= errorMessage %></div>
-                <% } %> 
-                
+                <div><%= message %></div>
+            
                 <div class="ca_spacer"></div>
                 
                 <div>
@@ -1021,12 +1130,17 @@ EOF;
             
             </script>
             
+            <script type="text/html" id="ca_message_bar">
+                <div class="ca_message ca_message_bar"><%= message %><br>
+                         <% if (errorState) { %>
+                            <span class="ca_error_message"><%= errorMessage %></span>
+                         <% } %>     
+                 </div>
+            </script>
+            
             <script type="text/html" id="ca_checkout_screen1">
                      <div class="ca_breadcrumbs"><%= breadcrumbs %></div>
-                     <div class="ca_message ca_message_bar"><%= message %></div>
-                     <% if (errorState) { %>
-                        <div class="ca_error_message ca_message_bar"><%= errorMessage %></div>
-                     <% } %>   
+                     <div><%= message %></div>   
                      
                      
                      <div>
@@ -1312,55 +1426,7 @@ EOF;
         exit();
     }
 
-    private function outputHtmlPage($content) {
-        //TODO dont need content
-        if (!empty($this->jQueryUrl)) 
-        {
-            $jQueryLine = "<script src='$this->jQueryUrl'></script>";
-        }
-        else
-        {
-            $jQueryLine = "";
-        }
-
-        //build header
-        $headerContent = <<<EOT
-        $jQueryLine
-        <script src="$this->underscoreUrl"></script>
-        <script src="$this->backboneUrl"></script>
-        <script src="$this->appUrl"></script>
-        <script src="$this->jsUrl"></script>
-        <script src="$this->fontAwesomeCSSJSUrl"></script>
-        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-        <link rel="stylesheet" href="$this->cssUrl" type="text/css">
-EOT;
-
-        $wrappedContent = <<<EOT
-            <div id="ca_content_area" class="ca_content_area">
-                <div id="ca_menu">
-                </div>
-                <div id="ca_main">
-                </div>
-            </div>
-            <br class="ca_clear">
-EOT;
-        $wrappedContent.= $this->appTemplates();
-
-        $template = new TemplateEngine($this->template);
-        $template->setText();
-        $template->setVars(
-            array(
-                "CLIENTAREAHEAD" => $headerContent,
-                "CLIENTAREABODY" => $wrappedContent,
-
-            )
-        );
-
-        echo $template->getText();
-        exit;
-
-
-    }
+ 
 
     private function microtime_float()
     {

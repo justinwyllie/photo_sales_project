@@ -23,6 +23,7 @@ var caApp = (function (Backbone, $) {
         }
     }
     
+
          
     
     app.init = function() {
@@ -46,8 +47,45 @@ var caApp = (function (Backbone, $) {
         app.langStrings.fetch().then(
             function() {
                 app.layout = new Layout();
+                var loc = window.location.search;
+                //TODO if they are not logged in show login screen. if they are logged in show the prints menu and a thanks/cancel view. make these urls configurable
+                if (search == '?thanks') {
+                    console.log("thanks");
+                }
+                if (search == '?cancel') {
+                    console.log("cancel");
+                }
+  
+                
             }
         );
+        
+
+        
+        
+        /*
+        //TODO WIP
+        //don't forget we need to support the urls on the backend.
+        var AppRouter = Backbone.Router.extend({
+            routes: {
+                "thanks": "paypalThanks",
+                "cancel": "paypalCancel"
+            },
+            
+            paypalThanks: function() {
+                console.log("thanks");
+            }, 
+            
+            paypalCancel: function() {
+                console.log("canx");
+            }   
+        });
+        
+        app.router = new AppRouter();
+        Backbone.history.start();
+        */
+
+        
     };
     
    
@@ -129,6 +167,9 @@ var caApp = (function (Backbone, $) {
     //used for the delivery: the actual basket is in the session (and local storage)
     OrderModel =  Backbone.Model.extend({
         url: "/api/v1/order",
+        initialize: function() {
+    
+        },
         defaults: {
                 clientName: '',
                 address1: '',
@@ -158,30 +199,36 @@ var caApp = (function (Backbone, $) {
         validate: function(attrs, options) {
             var valid = true;
             
-            if (attrs.clientName == '')  {
-                valid = false;
-            }
+            if (attrs.address_type == "address_entered") {
+                if (attrs.clientName == '')  {
+                    valid = false;
+                }
+                
+                if (attrs.address1 == '')  {
+                    valid = false;
+                }
+                
+                if (attrs.city == '')  {
+                    valid = false;
+                }
+                
+                if (attrs.zip == '')  {
+                    valid = false;
+                }
+                
+                if (attrs.country == '')  {
+                    valid = false;
+                }
             
-            if (attrs.address1 == '')  {
-                valid = false;
-            }
-            
-            if (attrs.city == '')  {
-                valid = false;
-            }
-            
-            if (attrs.zip == '')  {
-                valid = false;
-            }
-            
-            if (attrs.country == '')  {
+            } else if (attrs.address_type == "address_on_file") {
+                valid = true;
+            } else {
                 valid = false;
             }
             
             if (!valid) {
                 return app.langStrings.get("selectOrEnterAddress");
             }
-        
         }
     })
     
@@ -694,6 +741,10 @@ var caApp = (function (Backbone, $) {
             this.breadcrumbsTmpl = _.template(breadcrumbsTemplate);
             var screen2Template = $("#ca_checkout_screen2").html();
             this.screen2Tmpl =  _.template(screen2Template);
+            var messageBarTemple = $("#ca_message_bar").html();
+            this.messageBarTmpl = _.template(messageBarTemple);
+            var paypalTemplate = $("#ca_paypal_standard").html();
+            this.paypalTmpl = _.template(screen1Template);
             this.errorState = false;
             this.errorMessage = '';
 
@@ -713,6 +764,8 @@ var caApp = (function (Backbone, $) {
         
         resetAddressToOnFile: function() {
             this.model.resetAddressToOnFile();
+            this.errorState = false;
+            this.errorMessage = ''; 
             this.render();
         },
         
@@ -743,8 +796,17 @@ var caApp = (function (Backbone, $) {
                         address_type: 'address_on_file'        
                      }); 
                      //the address has come from site owner config: can't tell user it is invalid.
-                     this.model.save(null, {validate: false, wait: true}); 
-                     this.showChargesScreen();  
+                     var xhr = this.model.save(null, {validate: false});
+                     var that = this;
+                     xhr.then(
+                            function() {
+                                that.showChargesScreen();
+                            },
+                            function() {
+                                var errorView = new ErrorView();
+                                that.renderViewIntoRegion(errorView, 'main');    
+                            }
+                        );
                 }  else {
                     this.model.set({
                         clientName: this.$el.find('#ca_address_name').val(),
@@ -755,26 +817,88 @@ var caApp = (function (Backbone, $) {
                         country: this.$el.find('#ca_country').val(),
                         address_type: 'address_entered'
                      }); 
-                    this.model.save(null, {wait: true});
-                    if (!this.model.isValid()) {
-                        this.errorState = true;
-                        this.errorMessage = this.model.validationError;   
-                        this.render();   
-                    } else {
-                        this.showChargesScreen();        
-                    }
-                }
-                
-                
+                    
+                    
+                        var xhr = this.model.save();
+                        if (xhr === false) {
+                            this.errorState = true;
+                            this.errorMessage = this.model.validationError;   
+                            this.render(); 
+                        } else {
+                            var that = this;
+                            xhr.then(function() {
+                                that.errorState = true;
+                                that.errorMessage = '';  
+                                that.showChargesScreen();
+                            });
+                        }
+                 }
             }
-
         },
         
         completeOrder: function() {
             console.log("complete order");
             //paypal case
+ 
+            //call the trigger to send the first email to admin
+            //in the callback from that send them to paypal
+            //we need a thanks, cancel and notify handler
+            
+            if (app.appData.printsModeMessagePayPalEnabled) {
+                var mode = "paypal";
+            }  else {
+                var mode = "manual_payments";
+            }
+            
+            var xhr = $.ajax(
+                {
+                    url: '/api/v1/orderStep1',
+                    method: 'POST',
+                    data: {mode: mode},
+                    dataType: 'json'
+                }
+            );
+            
+            var that = this;
+            
+            xhr.then(
+                function() {
+                    if (app.appData.printsModeMessagePayPalEnabled) {
+                        console.log("proceedd to paypal form");
+                        var data = {};
+                        if (app.appData.mode == "prod") {
+                            data.action = 'https://www.paypal.com/cgi-bin/webscr';    
+                        } else {
+                            data.action = 'https://www.sandbox.paypal.com/cgi-bin/webscr';
+                        }
+                        
+                        var loc = document.location.href;
+                        
+                        data.payment_title = app.appData.paypalPaymentDescription;
+                        data.amount = that.model.get("grandTotal");
+                        data.paypal_email = app.appData.paypalAccountEmail;
+                        data.paypal_code = app.pricingModel.get("currency").payPayCode;
+                        data.thanks_url =   loc + '?thanks';
+                        data.cancel_url =   loc + '?cancel';
+                        data.notify_url =    app.appData.paypalIPNHandler;
+                        data.item_number = app.appData.sessId;
+                        data.item_name = app.appData.eventName;
+                        console.log(data);
+                        var html = that.this.paypalTmpl(data);
+                        that.$el.find('#ca_paypal_form').remove();
+                        console.log(html);
+                        that.$el.append(html);
+                        that.$el.find('#ca_paypal_form').submit();
+
+                    }
+                
+                },
+                function() {
+                    var errorView = new ErrorView();
+                    app.layout.renderViewIntoRegion(errorView, 'main'); 
+                }
+            );
         },
-        
         
         showChargesScreen: function() {
             var data = {}; 
@@ -782,14 +906,19 @@ var caApp = (function (Backbone, $) {
             var breadcrumbs = {};
             breadcrumbs.nodes = [{txt: app.langStrings.get("enterAddress"), class: 'ca_breadcrumb_in_chain ca_breadcrumb_active'}, {txt: app.langStrings.get("confirmOrder"), class: 'ca_breadcrumb_in_chain', method: ''}];
             data.breadcrumbs = this.breadcrumbsTmpl(breadcrumbs);
+            
+            var messageBar = {};
+            
             if (app.appData.enablePaypal) {
-                data.message = app.appData.printsModeMessagePayPalEnabled;    
+                messageBar.message = app.appData.printsModeMessagePayPalEnabled;    
             } else {
-                data.message = app.appData.printsModeMessagePayPalNotEnabled;     
+                messageBar.message = app.appData.printsModeMessagePayPalNotEnabled;     
             }
             
-            data.errorState = this.errorState;
-            data.errorMessage = this.errorMessage;
+            messageBar.errorState = this.errorState;
+            messageBar.errorMessage = this.errorMessage;
+            data.message = this.messageBarTmpl(messageBar);
+            
             
             data.enablePaypal = app.appData.enablePaypal;
             data.deliveryChargesEnabled = app.appData.deliveryChargesEnabled;  
@@ -812,8 +941,16 @@ var caApp = (function (Backbone, $) {
             data.grandTotal = grandTotal;
             data.totalItems = totalItems;
             data.deliveryCharges = deliveryCharges;
-            
-            this.$el.html(this.screen2Tmpl(data));      
+            var xhr = this.model.save();
+            var that = this;
+            xhr.then(function() {
+                that.$el.html(that.screen2Tmpl(data)); 
+            },
+            function() {
+                var errorView = new ErrorView();
+                app.layout.renderViewIntoRegion(errorView, 'main'); 
+            });
+
         },
     
         render: function() {
@@ -821,14 +958,17 @@ var caApp = (function (Backbone, $) {
             var breadcrumbs = {};
             breadcrumbs.nodes = [{txt: app.langStrings.get("enterAddress"), class: 'ca_breadcrumb_in_chain', method: ''}, {txt: app.langStrings.get("confirmOrder"), class: '', method: ''}];
             data.breadcrumbs = this.breadcrumbsTmpl(breadcrumbs);
+            var messageBar = {};
+            
             if (app.appData.enablePaypal) {
-                data.message = app.appData.printsModeMessagePayPalEnabled;    
+                messageBar.message = app.appData.printsModeMessagePayPalEnabled;    
             } else {
-                data.message = app.appData.printsModeMessagePayPalNotEnabled;     
+                messageBar.message = app.appData.printsModeMessagePayPalNotEnabled;     
             }
             
-            data.errorState = this.errorState;
-            data.errorMessage = this.errorMessage;
+            messageBar.errorState = this.errorState;
+            messageBar.errorMessage = this.errorMessage;
+            data.message = this.messageBarTmpl(messageBar);
             data.fileClientAddress = $.parseJSON(app.appData.client_address);
             var address_type = this.model.get("address_type");
             data.address_entered_checked = '';
@@ -854,8 +994,31 @@ var caApp = (function (Backbone, $) {
     
     
     
-
+    ErrorView =   Backbone.View.extend({
+        //either called with message on the options in which case display that or with nothing (from a 500) in which case we need a standard message)
+        render: function() {
+            this.$el.html('error TODO');    
+        }
     
+    });  
+    
+    ThanksView =   Backbone.View.extend({
+        //either called with message on the options in which case display that or with nothing (from a 500) in which case we need a standard message)
+        render: function() {
+            this.$el.html('Thanks for your paymwent TODO');    
+        }
+    
+    });  
+   
+   
+    CancelView =   Backbone.View.extend({
+        //either called with message on the options in which case display that or with nothing (from a 500) in which case we need a standard message)
+        render: function() {
+            this.$el.html('transaction cancelled to do');    
+        }
+    
+    });  
+     
     LogoutView =   Backbone.View.extend({
     
         render: function() {
@@ -863,7 +1026,6 @@ var caApp = (function (Backbone, $) {
         }
     
     });
-    
     
    
     PrintsMenuView =  Backbone.View.extend({

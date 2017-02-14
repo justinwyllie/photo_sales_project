@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <options>
+    <eventName>Wedding 2016</eventName>
     <!-- true / false -->
     <proofsOn>false</proofsOn>
     <!-- true / false -->

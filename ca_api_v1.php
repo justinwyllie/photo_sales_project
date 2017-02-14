@@ -73,6 +73,22 @@ class ClientAreaAPI
 
     }
     
+    
+    /**
+     * called at the start of the order process
+     * send the current state of the Basket and The Order to the site owner *before the payment transaction
+     * we do this in case there is an error e.g the SESSION is lost - and we no longer have the Basket and Order when the PayPal notify is handled
+     */
+    public function postOrderStep1() {
+        $mode = $_POST['mode'];
+        $data = $this->packageOrder($mode);
+        $this->mailAdmin($data, "Provisional Order on Website");
+        $obj = new stdClass();
+        $obj->status = "success";
+        $obj->message = "";
+        $this->outputJson($obj);  
+    }
+    
     public function getPrintThumbs()
     {
         $obj = new stdClass();
@@ -155,6 +171,7 @@ class ClientAreaAPI
             $_SESSION["printsChosen"] = array();
             $_SESSION["basket"] = array();
             $_SESSION["order"] = array();
+            $_SESSION["options"] = $this->options;
 
             //If the user is logging in try to restore the proofs chosen based on what was stored in html data if it is available
             if (!empty($restoredProofs)) {
@@ -226,6 +243,23 @@ class ClientAreaAPI
     {                                          
         return  $this->langStrings();
     }
+    
+    public function postOrder()
+    {
+        $order = file_get_contents('php://input');
+        $order = json_decode($order);
+        $_SESSION["order"] = $order;
+        $order->id = 1; 
+        return $order;    
+    }
+    
+    public function putOrder()
+    {    
+        $order = file_get_contents('php://input');
+        $order = json_decode($order);
+        $_SESSION["order"] = $order;
+        return $order;    
+    }
   
   
     //COLLECTION METHODS
@@ -272,24 +306,56 @@ class ClientAreaAPI
     
     }
     
-    public function postOrder()
-    {
-        $order = file_get_contents('php://input');
-        $order = json_decode($order);
-        $_SESSION["order"] = $order;
-        $order->id = 1; 
-        return $order;    
-    }
-    
-    public function putOrder()
-    {
-        $order = file_get_contents('php://input');
-        $order = json_decode($order);
-        $_SESSION["order"] = $order;
-        return $order;    
-    }
+
   
     //HELPERS
+    /**
+     *   TODO - text in lang file
+     *   make this look nicer
+     *
+     */
+    private function packageOrder($mode) {
+    
+    
+        $package = "Hi\n\n";    
+    
+        if ($mode == 'paypal') {
+            $package.= "This is NOT the actual order. It indicates the user MAY be attempting a purchase. Wait for the 'Order Confirmed' email and/or check your PayPal account";
+        }   else {
+            $package.= 'An order has been placed on the web site. You need to take payment manually.';    
+        }
+
+        if (isset($_SESSION["basket"])) {
+            $package = "\n\n" . $package . "\n\nBasket:\n\n";
+            $basket = $_SESSION["basket"];
+            foreach ($basket as $orderLine) {
+                $package = $package . json_encode($orderLine) . "\n\n";
+            }
+        } 
+        
+        $package.= "\n\n";
+        
+        if (!empty($_SESSION["order"] )) {
+            $package = $package .  "Order Info:\n\n";
+            $package = $package . json_encode($_SESSION["order"]);
+        } 
+        
+        $package = $package . "\n\n" . "Remember to check the pricing is correct!" . "\n\n" . "The Web Team";
+        return $package;   
+    }
+    
+    private function mailAdmin($body, $subject = 'Message from POS') {
+        if (!isset($_SESSION['options'])) {
+            //TODO - we've been called before the SESSION options has been set in postLogin - we have to manually open the options file to get the admin email
+        } else {
+            $adminEmail = $_SESSION['options']['adminEmail'];
+            mail($adminEmail, $subject, $body);
+        }
+        
+        
+    }
+    
+    
     private function generateUniqueOrderId()
     {
         $id = 0;
@@ -347,14 +413,14 @@ class ClientAreaAPI
         $this->options["prints_on"] = $userOptions->printsOn == 'true' ? true: false;
         
         $this->options["client_address"] = json_encode($userOptions->clientAddress);
+        $this->options["eventName"]   = $userOptions->eventName . "";
 
 
         //potentially overide global options
         if (!empty($userOptions->thumbsPerPage)) {
            $this->options["thumbsPerPage"]   = (int) $userOptions->thumbsPerPage;  
         }
-        
-           
+
         if (!empty($userOptions->enablePaypal)) {
             $this->options["enablePaypal"]   = $userOptions->enablePaypal == 'true' ? true: false; 
         }
@@ -378,7 +444,7 @@ class ClientAreaAPI
         if (!empty($userOptions->proofsModeMessage)) {
             $this->options["proofsModeMessage"]   = $userOptions->proofsModeMessage . "";
         }
-        
+       
         if (!empty($userOptions->printsModeMessagePayPalEnabled)) {
             $this->options["printsModeMessagePayPalEnabled"]   = $userOptions->printsModeMessagePayPalEnabled . "";
         }
@@ -415,7 +481,9 @@ class ClientAreaAPI
         $options["paypalAccountEmail"]  =  $client_area_options->options->system->paypalAccountEmail . "";
         $options["adminEmail"]  =  $client_area_options->options->system->adminEmail . "";
         $options["mode"]  =  $client_area_options->options->system->mode . "";
-        
+        $options["domain"]  =  $client_area_options->options->system->domain . "";
+        $options["paypalPaymentDescription"]  =  $client_area_options->options->system->paypalPaymentDescription . "";
+        $options["sessId"]  =  session_id();
 
         $this->options = $options;
     }

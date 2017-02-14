@@ -3,6 +3,11 @@
     <options>
 
         <system>
+            <appName>Photo ordering system.</appName>
+            <!-- full domain with http: o https:// where this app is hosted. no need for a trailing / -->
+            <domain>http://jwp.mms-oxford.com</domain>
+            <!-- enter either dev or prod. in dev mode if PayPal is enabled it will use the Sandbox -->
+            <mode>dev</mode>
             <!-- system path to where the client images are stored. -->
             <clientAreaDirectory>/var/www/vhosts/justinwylliephotography.com/httpdocs/client_area_files</clientAreaDirectory>
             <!-- web path to where the client images are stored -->
@@ -18,12 +23,13 @@
             <fontAwesomeCSSJSUrl>https://use.fontawesome.com/1ade56cfa5.js</fontAwesomeCSSJSUrl>
             <!-- use https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js for legacy IE support back to IE6 - untested. may well not work. -->
             <jQueryUrl>https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js</jQueryUrl>
-            <adminEmail>info@justinwylliephotography.com</adminEmail>
-             <!-- PyaPal Email - the email for your PayPal account. if you never enablePayPal you can leave this blank -->
+            <adminEmail>justinwyllie@hotmail.co.uk</adminEmail>
+             <!-- PyaPal Email - the email for your PayPal account. if you never enablePayPal you can leave these blank -->
             <paypalAccountEmail>info@mms-oxford.com</paypalAccountEmail>
-            <appName>Photo ordering system.</appName>
-            <!-- enter either dev or prod. in dev mode if PayPal is enabled it will use the Sandbox -->
-            <mode>dev</mode>
+            <paypalPaymentDescription>Payment for Photographic Prints</paypalPaymentDescription>
+            <!-- this is the url which wwill handle callbacks from PayPal. See the POS documentation about this. You can still use PayPal without handling the IPNs. Just leave this field blank -->
+            <paypalIPNHandler>https://jwp.mms-oxford.com/ca_notify.php</paypalIPNHandler>
+            
         </system>
         
         <!-- all of the fields in this section can be over-written in the user options file
@@ -42,7 +48,7 @@
             <proofsModeMessage>TODO</proofsModeMessage>
             <printsModeMessagePayPalEnabled>Enter address details. Confirm charges. Then pay on PayPal.</printsModeMessagePayPalEnabled>
             <printsModeMessagePayPalNotEnabled>TODO</printsModeMessagePayPalNotEnabled>
-        </userOverrideable>
+         </userOverrideable>
 
     </options>
 </client_area>
