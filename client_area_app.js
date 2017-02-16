@@ -8,7 +8,7 @@
 
 var caApp = (function (Backbone, $) {
 	var app = {};
-    //TODO - don't need to attach things to app. unless they are being exported.... 
+    //TODO - don't need to attach things to app. unless they are being exported.... and nothing is
     
     //shims
     app.isInt = function(n) {
@@ -46,128 +46,114 @@ var caApp = (function (Backbone, $) {
         //TODO this should be immutable
         app.pricingModel = new app.PricingModel();
         
-        app.pricingModel.fetch();  //TODO if they are quick this isn't done                                                                                                                                           f
+                                                                                                                                      
         app.basketCollection = new BasketCollection();
-        app.printThumbsCollection = new PrintThumbsCollection();
+        app.printsThumbsCollection = new PrintsThumbsCollection();
         app.proofsThumbsCollection = new ProofsThumbsCollection();
         app.langStrings = new LangStrings();
         app.layout = new Layout();
         app.appData = {};
         
         
-        runRoutes = function() {
+        runRoutes = function(data) {
             var AppRouter = Backbone.Router.extend({
             routes: {    "": "home",
                         "thanks": "paypalThanks",
+                        "cancel": "paypalCancel",
                        '*notFound': 'notFound'
                     },
                     
                     home: function() {
-                        console.log("home");
-                        var loginView = new LoginView({message: ''});
-                        app.layout.renderViewIntoRegion(loginView, 'main');
-                        //what to do if they are already logged in?   show the what do you want to do screen. TODO
+                        if (data.loggedIn) {
+                            var modeChoiceView = new ModeChoiceView();
+                            app.layout.renderViewIntoRegion(modeChoiceView, 'main');
+                        } else {
+                            var loginView = new LoginView({message: ''});
+                            app.layout.renderViewIntoRegion(loginView, 'main');
+                        }
                     }, 
                     paypalThanks: function() {
-                         console.log("thanks");
-                         //how we handle this depends on is logged in or not. TODO
+                    
+                        this.paypalHandler('thanks');       
+                         
                     },
+                    paypalCancel: function() {
+                        this.paypalHandler('cancel');     
+                    },
+                    
+                    paypalHandler: function(mode) {
+                    
+                        if (data.loggedIn) {
+                        
+                            app['printsThumbsCollection'].fetch().then(
+                                function() {
+                              
+                                    var thumbsPerPage = parseInt(app.appData.thumbsPerPage) ;
+                                    var menuView = new PrintsMenuView({totalThumbs: app['printsThumbsCollection'].length, thumbsPerPage: thumbsPerPage, active: 1});
+                                    app.layout.renderViewIntoRegion(menuView, 'menu');
+                                    if (mode == 'thanks') {
+                                        var paypalReturnView = new PaypalThanksView();    
+                                    }  else {
+                                        var paypalReturnView = new PaypalCancelView();  
+                                    }
+                                    app.layout.renderViewIntoRegion(paypalReturnView, 'main');
+                            },
+                            function() {
+                                var errorView = new ErrorView();   //TODO test this
+                                app.layout.renderViewIntoRegion(errorView, 'main');  
+                            }
+                            );
+                            
+                        } else {
+                            var loginView = new LoginView({message: ''});
+                            app.layout.renderViewIntoRegion(loginView, 'main');
+                        }
+                    
+                    },
+                    
                     notFound:function() {
-                        console.log("not_found");
+                        console.log("not_found TODO");
                     }        
              });
              
-                app.router = new AppRouter();
-                Backbone.history.start({pushState:true, root: "/client_area"});
-         }    
+            app.router = new AppRouter();
+            Backbone.history.start({pushState:true, root: "/client_area"});
+        } 
+         
+            
+         
 
+        //https://api.jquery.com/jquery.when/
+        var xhrLangStrings = app.langStrings.fetch();    
+        var xhrSessionStatus = $.ajax(
+                    {
+                        url: '/api/v1/sessionStatus',
+                        method: 'GET',
+                        dataType: 'json'   
+                    }
+                );
         
-        var xhr = app.langStrings.fetch();
-        xhr.then(
-            function() {
-                runRoutes();
+        
+        $.when(xhrLangStrings, xhrSessionStatus).then(
+            function(result1, result2) {
+                if (result2[0].status == 'success') {
+                    app.appData = result2[0].appData;
+                    runRoutes({loggedIn: true});
+                } else {
+                    runRoutes({loggedIn: false});           
+                }
             },
             function() {
                 var errorView = new ErrorView();   //TODO test this
-                that.renderViewIntoRegion(errorView, 'main'); 
+                app.layout.renderViewIntoRegion(errorView, 'main');    
             }
         )
+        
+
+
     };
     
    
-    
-    //APP methods          - these will be moving to view for displaying thumbs... 
-    
-    //TODO if the user deletes the dom element for this view and all its order views
-    //dthis means that the listenTo bound events are left hanging around? attached to the target - even though the listener - the view - no longer exists/cares
-    //this would be solved if the view was removed by backbones remove view method which removes the listenTo's as well
-    //currently the lightbox popup is closed by jquery in the jquery app. which is bad as it is outside the app. 
-    //but here we expose the basketCollectionView so we could remove it properly in jQuery. TODO
-    //hmm. does thie cascade remove the listenTo's set up in the order line views?       TODO
-    app.showPrintPopUp = function(ref, ratio) {
-        //reset the basket to what the server believes in case we have got out of sync
-        //TOOO - are we getting out of sync? we should know. 
-        //app.basketCollection.fetch({reset: true}).then(function() {
-            app.basketCollectionView.cleanUp();
-            app.basketCollectionView.remove();     
-            app.basketCollectionView = new BasketCollectionView({collection: app.basketCollection, ref: ref, ratio: ratio, pricingModel: app.pricingModel});    
-        //});
-        
-    }
-    
-    //when you call remove() on a view backbone calls stopListening on that view
-    //this removes any callbacks registered on a target with listenTo - typically a view listenTo's a model (as we do)
-    //however - if we remove a 'parent' view there is no automatic removal of its 'child views' - ones which it created in its render method
-    //and .remove is not called on those child views. each time we render the basketCollectionView we create a new orderLineView per row
-    //but it is the same model each time. each new view (created on each render) binds callbacks to the model.
-    //thus without this management of child views the models just acculumate bound callbacks - for views which no longer exist.
-    //the point is Backbone does not itself have a concept of views and child views and having parent views manage child views
-    //i *think* that this is something that Marionette does with its ItemViewCollection.
-    app.closePrintPopUp = function() {
-        app.basketCollectionView.cleanUp();
-        app.basketCollectionView.remove();
-    }
-    
-        
-    app.showPrintPopUp = function(ref, ratio) {
-        //reset the basket to what the server believes in case we have got out of sync
-        //TOOO - are we getting out of sync? we should know. 
-        //app.basketCollection.fetch({reset: true}).then(function() {
-            app.basketCollectionView.cleanUp();
-            app.basketCollectionView.remove();     
-            app.basketCollectionView = new BasketCollectionView({collection: app.basketCollection, ref: ref, ratio: ratio, pricingModel: app.pricingModel});    
-        //});
-        
-    }
-    
-    
-    app.checkSessionAndRun = function(fnc)
-    {
-        var p = $.ajax({
-            url: '/api/v1/sessionStatus',
-            dataType: 'json',
-        });
-        
-        p.then(function(result) {
-            if (result.status == "success") {
-                fnc();
-            } else {
-                app.renderLoginScreen({message: result.message});
-            }
-        });
-
-    }
-    
-    //TODO - this is used as a bailout at the moment.
-    //if something goes wrong we show the login screen with an error message
-    //prob. need to display an error page and also are we notifying the site admin? this could be done in the server app.
-    app.renderLoginScreen = function(msg)
-    {
-        var loginView = new LoginView({message: msg});
-        app.layout.renderViewIntoRegion(loginView , 'main');
-    }
-                
-    
     
     //MODELS
     //used for the delivery: the actual basket is in the session (and local storage)
@@ -596,7 +582,7 @@ var caApp = (function (Backbone, $) {
     
     
     
-    PrintThumbsCollection =  Backbone.Collection.extend({
+    PrintsThumbsCollection =  Backbone.Collection.extend({
         model: ThumbModel,    
         url: "/api/v1/printThumbs",
         
@@ -649,7 +635,7 @@ var caApp = (function (Backbone, $) {
         model: ThumbModel,    
         url: "/api/v1/proofsThumbs", 
         
-       //TODO same as  PrintThumbsCollection
+       //TODO same as  PrintsThumbsCollection
        initialize: function() {
             this.on("reset", function() {
                this.setMaxHeight();    
@@ -880,16 +866,25 @@ var caApp = (function (Backbone, $) {
                             data.paypal_email = app.appData.paypalSandboxAccountEmail;
                         }
                         
-                        var loc = document.location.href;
+                        var loc = document.location;
                         
                         data.payment_title = app.appData.paypalPaymentDescription;
                         data.amount = that.model.get("grandTotal");
                         data.paypal_code = app.pricingModel.get("currency").payPayCode;
-                        data.thanks_url =   loc + '?thanks';
-                        data.cancel_url =   loc + '?cancel';
-                        data.notify_url =    app.appData.paypalIPNHandler;
-                        data.custom = result.orderRef;
-                        data.item_name = app.appData.eventName;
+                        data.thanks_url =   loc.href + '/thanks';
+                        data.cancel_url =   loc.href + '/cancel';
+                        if (app.appData.paypalIPNSSL) {
+                            var protocol = 'https://';    
+                        }  else {
+                            var protocol = 'http://';  
+                        }
+                        if (app.appData.paypalIPNHandler != '') {//TODO test
+                            data.notify_url = protocol + loc.host +  app.appData.paypalIPNHandler;  //TODO handle case of no leading slash on  app.appData.paypalIPNHandler
+                        } else {
+                            data.notify_url = '';    
+                        }
+                        data.custom = result.orderRef + '1';
+                        data.item_name = app.appData.eventName + '1';
                         console.log(data);
                         var html = that.paypalTmpl(data);
                         that.$el.find('#ca_paypal_form').remove();
@@ -1009,19 +1004,34 @@ var caApp = (function (Backbone, $) {
     
     });  
     
-    ThanksView =   Backbone.View.extend({
-        //either called with message on the options in which case display that or with nothing (from a 500) in which case we need a standard message)
+    PaypalThanksView =   Backbone.View.extend({
+        initialize: function() {
+            var template =  $('#ca_paypal_thanks').html(); 
+            this.tmpl = _.template(template);
+        
+        },
         render: function() {
-            this.$el.html('Thanks for your paymwent TODO');    
+            data = {};
+            data.langStrings = app.langStrings.toJSON();
+            var html = this.tmpl(data);
+            this.$el.html(html);     
         }
     
     });  
    
    
-    CancelView =   Backbone.View.extend({
-        //either called with message on the options in which case display that or with nothing (from a 500) in which case we need a standard message)
+    PaypalCancelView =   Backbone.View.extend({
+        
+        initialize: function() {
+            var template =  $('#ca_paypal_cancel').html(); 
+            this.tmpl = _.template(template);
+        
+        },
         render: function() {
-            this.$el.html('transaction cancelled to do');    
+            data = {};
+            data.langStrings = app.langStrings.toJSON();
+            var html = this.tmpl(data);
+            this.$el.html(html);     
         }
     
     });  
@@ -1074,10 +1084,19 @@ var caApp = (function (Backbone, $) {
         
         showBasket: function() {
             this.options.active = 'basket';
-            var basketView =  new BasketView({collection: app.basketCollection});
-            app.layout.renderViewIntoRegion(basketView, 'main'); 
-            this.render();
-        } ,
+            //getting it again in case its been cleared by the PayPal IPN
+            app.basketCollection.fetch({reset: true}).then( 
+                function() {
+                    var basketView =  new BasketView({collection: app.basketCollection});
+                    app.layout.renderViewIntoRegion(basketView, 'main'); 
+                    this.render();
+                },
+                function() {
+                    var errorView = new ErrorView();   //TODO test this
+                    app.layout.renderViewIntoRegion(errorView, 'main');
+                }
+            );
+        },
         
        showLogout: function() {
             var logoutView =  new LogoutView();
@@ -1499,23 +1518,111 @@ var caApp = (function (Backbone, $) {
         }    
     });
     
+    ModeChoiceView =  Backbone.View.extend({
+    
+        initialize: function(options) {
+            var modeChoiceTmpl =  $('#ca_mode_choice_tmpl').html();
+            this.modeChoiceTmpl = _.template(modeChoiceTmpl);
+        }, 
+        
+        events: {
+            'click .ca_choose_activity_event': 'doModeChoice'
+        },  
+        //TODO a spinner
+        doModeChoice: function() {
+            var mode = this.$el.find("#ca_activity_choice").val();
+            if (mode != "--") {
+                var thumbsPerPage = parseInt(app.appData.thumbsPerPage);
+                if (mode == 'prints') {
+                    //reset true in case there are 2 mode choices in session. 
+                    var xhrPricingModel = app.pricingModel.fetch({reset: true});
+                    var xhrBasketCollection = app.basketCollection.fetch({reset: true})  ;
+                    var xhrPrintsThumbsCollection = app.printsThumbsCollection.fetch({reset: true}) ;
+               
+                    $.when(xhrPricingModel, xhrBasketCollection, xhrPrintsThumbsCollection).then(
+                        function(result1, result2, result3) {
+                            var clientAreaStorage = new ClientAreaStorage(app.appData.username, _);  
+                            if (clientAreaStorage.supported) {
+                                clientAreaStorage.resetStorage("ca_prints", app.basketCollection.toJSON());          //TODO do we actually want to do this?
+                            }
+                            
+                            var pageModelsJSON = app.printsThumbsCollection.pagination(thumbsPerPage, 1);
+                            var pagedCollection = new  Backbone.Collection(pageModelsJSON);
+        
+                            var thumbsView = new ThumbsView({collection: pagedCollection, mode: mode, maxHeight: app.printsThumbsCollection.maxHeight, labelHeight: app.printsThumbsCollection.labelHeight });
+                            app.layout.renderViewIntoRegion(thumbsView, 'main');
+                            var menuView = new PrintsMenuView({totalThumbs: app.printsThumbsCollection.length, thumbsPerPage: thumbsPerPage, active: 1});
+                            app.layout.renderViewIntoRegion(menuView, 'menu');
+                        
+                        },
+                        function() {
+                            var errorView = new ErrorView();   //TODO test this
+                            app.layout.renderViewIntoRegion(errorView, 'main');  
+                        }    
+                    );
+                    
+                } else {
+                    var xhrProofsThumbsCollection = app.proofsThumbsCollection.fetch({reset: true}) ; 
+                    xhrProofsThumbsCollection.then(
+                        function() {
+                            //we aren't re-setting proofs here as we are prints. be consistent. TODO
+                            
+                            var pageModelsJSON = app.proofsThumbsCollection.pagination(thumbsPerPage, 1);
+                            var pagedCollection = new  Backbone.Collection(pageModelsJSON);
+        
+                            var thumbsView = new ThumbsView({collection: pagedCollection, mode: mode, maxHeight: app.proofsThumbsCollection.maxHeight, labelHeight: app.proofsThumbsCollection.labelHeight });
+                            app.layout.renderViewIntoRegion(thumbsView, 'main');
+                            var menuView = new ProofssMenuView({totalThumbs: app.proofsThumbsCollection.length, thumbsPerPage: thumbsPerPage, active: 1});
+                            app.layout.renderViewIntoRegion(menuView, 'menu');
+                        },
+                        function() {
+                            var errorView = new ErrorView();   //TODO test this
+                            app.layout.renderViewIntoRegion(errorView, 'main');
+                        }
+                    );     
+                      
+                }
+  
+            }
+        }, 
+        
+        render: function() {
+            data = {};
+            data.langStrings = app.langStrings.toJSON(); //TODO do this in other places
+             
+            if (!app.appData["proofs_on"]) {
+                data.proofsOn = "disabled";  
+            } else {
+                data.proofsOn = "";     
+            }
+            
+            if (!app.appData["prints_on"]) {
+                data.printsOn = "disabled";  
+            } else {
+                data.printsOn = "";     
+            }
+            
+            data.human_name = app.appData["human_name"];
+            
+            var html = this.modeChoiceTmpl(data);
+            this.$el.html(html); 
+        }
+    
+    });
+    
     
     
     LoginView = Backbone.View.extend({
-        el: "#ca_content_area #ca_content",
-        
+          
         initialize: function(options) {
             var loginTmpl =  $('#ca_login_tmpl').html();
             this.loginTemplate = _.template(loginTmpl);
-            var modeChoiceTmpl =  $('#ca_mode_choice_tmpl').html();
-            this.modeChoiceTmpl = _.template(modeChoiceTmpl);
             this.options = options;
         
         },
         
         events: {
             'click .ca_login_button': 'doLogin',
-            'click .ca_choose_activity_event': 'doModeChoice'
         
         },
         
@@ -1547,7 +1654,8 @@ var caApp = (function (Backbone, $) {
             p.then(function(result) {
                 if (result.status == "success") {
                     app.appData = result.appData;
-                    that.renderModeChoice();
+                    var modeChoiceView = new ModeChoiceView();
+                    app.layout.renderViewIntoRegion(modeChoiceView, 'main');
                 } else {
                     that.setMessage(result.message);
                 }
@@ -1559,78 +1667,7 @@ var caApp = (function (Backbone, $) {
             this.$el.find('.ca_login_error').html(msg);
         },
         
-        doModeChoice: function() {
-            var mode = this.$el.find("#ca_activity_choice").val();
-            if (mode != "--") {
-            
-                var data = {};
-                data.mode = mode;
-                //TODO unnecessary call
-                var p = $.ajax({
-                    url: '/api/v1/modeChoice',
-                    dataType: 'json',
-                    data: data,
-                    method: 'GET'
-                });    
-            
-               var that = this;
-                p.then(function(result) {
-                    if (result.status == "success") {
-                    
-                        if (mode == 'prints') {
-                            coll =  'printThumbsCollection' ;
-                        } else {
-                            coll =  'proofsThumbsCollection' ;
-                        }
-                        
-                       //reset true in case there are 2 mode choices in session. TODO is this right? 
-                       app.basketCollection.fetch({reset: true}).then(  
-                            function() {
-                                var clientAreaStorage = new ClientAreaStorage(app.appData.username, _);  
-                                if (clientAreaStorage.supported) {
-                                    clientAreaStorage.resetStorage("ca_prints", app.basketCollection.toJSON());        
-                                }
-                                
-                                //reset true in case there are 2 mode choices in session. TODO is this right?
-                                app[coll].fetch({reset: true}).then(
-                                function() {
-                              
-                                    var thumbsPerPage = parseInt(app.appData.thumbsPerPage) ;
-                                    var pageModelsJSON = app[coll].pagination(thumbsPerPage, 1);
-                                    var pagedCollection = new  Backbone.Collection(pageModelsJSON);
-                                    
-                                
-                                    var thumbsView = new ThumbsView({collection: pagedCollection, mode: mode, maxHeight: app[coll].maxHeight, labelHeight: app[coll].labelHeight });
-                                    app.layout.renderViewIntoRegion(thumbsView, 'main');
-                                    if (mode == 'prints') {
-                                        var menuView = new PrintsMenuView({totalThumbs: app[coll].length, thumbsPerPage: thumbsPerPage, active: 1});
-                                    } else {
-                                        var menuView = new ProofsMenuView();
-                                    }
-                                    app.layout.renderViewIntoRegion(menuView, 'menu');
-                            },
-                               function() {
-                                    console.log("TODO - error unknownError - 500");
-                                }
-                            )
-                                  
-                            }
-                        );  
-                        
-                        
-                     } else {
-                        that.options.message = result.message;       //this appears to render the login screen with a message. TODO - don't we have an error page to send them to?
-                        that.render();
-                    }
-                },
-                function() {
-                    console.log("TODO - error unknownError - 500");    
-                }
-                
-                
-                )
-            }
-        },
+
         
         render: function() {
             data = {};
@@ -1638,29 +1675,8 @@ var caApp = (function (Backbone, $) {
             data.msg = this.options.message;
             var html = this.loginTemplate(data);
             this.$el.html(html);         
-        },
-        
-        renderModeChoice: function() {
-            data = {};
-            data.langStrings = app.langStrings.toJSON(); //TODO do this in other places
-             
-            if (!app.appData["proofs_on"]) {
-                data.proofsOn = "disabled";  
-            } else {
-                data.proofsOn = "";     
-            }
-            
-            if (!app.appData["prints_on"]) {
-                data.printsOn = "disabled";  
-            } else {
-                data.printsOn = "";     
-            }
-            
-            data.human_name = app.appData["human_name"];
-            
-            var html = this.modeChoiceTmpl(data);
-            this.$el.html(html); 
         }
+        
 
     });
     

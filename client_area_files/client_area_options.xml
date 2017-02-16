@@ -28,8 +28,10 @@
             <paypalAccountEmail>info@mms-oxford.com</paypalAccountEmail>
             <paypalSandboxAccountEmail>info-facilitator@mms-oxford.com</paypalSandboxAccountEmail>
             <paypalPaymentDescription>Payment for Photographic Prints</paypalPaymentDescription>
-            <!-- this is the url which wwill handle callbacks from PayPal. See the POS documentation about this. You can still use PayPal without handling the IPNs. Just leave this field blank -->
-            <paypalIPNHandler>https://jwp.mms-oxford.com/ca_notify.php</paypalIPNHandler>
+            <!-- set to true if your server supports SSL for handling the IPN request from PayPal TODO not implemented. leave as false -->
+            <paypalIPNSSL>false</paypalIPNSSL>
+            <!-- this is the web path which wwill handle callbacks from PayPal. You can still use PayPal without handling the IPNs. Just leave this field blank -->
+            <paypalIPNHandler>/ca_notify.php</paypalIPNHandler>
             
         </system>
         

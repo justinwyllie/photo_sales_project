@@ -223,6 +223,12 @@
    </field> 
    <field name="paySecurelyWithPayPal">
         Pay Securely with PayPal
-   </field>         
+   </field> 
+   <field name="paypalThanks">
+        Thank-you for your payment.
+   </field>
+   <field name="paypalCancel">
+        Transaction cancelled.
+   </field>        
 
 </strings>

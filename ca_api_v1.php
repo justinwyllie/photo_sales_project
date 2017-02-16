@@ -47,7 +47,7 @@ class ClientAreaAPI
             $obj = new stdClass();
             $obj->status = "error";
             $obj->message = $this->lang('loginError');
-            $this->outputJson($obj);
+            $this->outputJson($obj);                        
         }
     
     }
@@ -61,6 +61,7 @@ class ClientAreaAPI
         $obj = new stdClass();
         $obj->status = "success";
         $obj->message = "";
+        $obj->appData = $_SESSION['options'];
         $this->outputJson($obj);
     }
     
@@ -440,11 +441,7 @@ class ClientAreaAPI
         if (!empty($userOptions->deliveryChargesEnabled)) {
             $this->options["deliveryChargesEnabled"]   = $userOptions->deliveryChargesEnabled == 'true' ? true: false;
         }
-        
-        if (!empty($userOptions->addDeliveryChargesPayPalNotEnabled)) {
-            $this->options["addDeliveryChargesPayPalNotEnabled"]   = $userOptions->addDeliveryChargesPayPalNotEnabled == 'true' ? true: false;
-        }
-        
+      
         if (!empty($userOptions->proofsModeMessage)) {
             $this->options["proofsModeMessage"]   = $userOptions->proofsModeMessage . "";
         }
@@ -485,6 +482,7 @@ class ClientAreaAPI
         $options["paypalAccountEmail"]  =  $client_area_options->options->system->paypalAccountEmail . "";
         $options["paypalSandboxAccountEmail"]  =  $client_area_options->options->system->paypalSandboxAccountEmail . "";
         $options["paypalIPNHandler"]  =  $client_area_options->options->system->paypalIPNHandler . "";
+        $options["paypalIPNSSL"] = $userOptions->paypalIPNSSL == 'true' ? true: false;
         $options["adminEmail"]  =  $client_area_options->options->system->adminEmail . "";
         $options["mode"]  =  $client_area_options->options->system->mode . "";
         $options["domain"]  =  $client_area_options->options->system->domain . "";

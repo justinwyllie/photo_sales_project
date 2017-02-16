@@ -1073,11 +1073,25 @@ EOF;
                     <input type="hidden" id="currency_code" name="currency_code" value="<%= paypal_code %>">
                     <input type="hidden" name="return" value="<%= thanks_url %>">
                     <input type="hidden" name="cancel_return" value="<%= cancel_url %>">
-                    <input type="hidden" name="notify_url" value="<%= notify_url %>" >
+                    <% if (notify_url != '') { %>
+                        <input type="hidden" name="notify_url" value="<%= notify_url %>" >
+                    <% } %>    
                     <input id="item_name" type="hidden" name="item_name" value="<%= item_name %>">
                     <input id="custom" type="hidden" name="custom" value="<%= custom %>">
                 </form>
             
+            </script>
+            
+            <script type="text/html" id="ca_paypal_thanks">
+                <p>
+                    <%= langStrings.paypalThanks %>
+                </p>
+            </script>
+            
+            <script type="text/html" id="ca_paypal_cancel">
+                <p>
+                    <%= langStrings.paypalCancel %>
+                </p>
             </script>
         
             <script type="text/html" id="ca_breadcrumbs">
