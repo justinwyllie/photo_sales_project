@@ -23,12 +23,22 @@ var caApp = (function (Backbone, $) {
         }
     }
     
+    
+    app.isSessionAlive = function() {
+        return $.ajax(
+            {
+                url: '/api/v1/sessionStatus',
+                method: 'GET',
+                dataType: 'json'
+        });
+        
+    }    
 
          
     
     app.init = function() {
     
-        //A few variables
+        //A few variables    TODO put somewhere else. options?
         app.labelHeight = 10; //this sets the height of the lables underneath the thunb images. units: pixels. 
         app.maxPopupWidth = 1600; //the maximum width of the popup which displays the main images. (In general this should not be larger than the typical width of your landscape orientation images.  units: pixels)
         app.lightBoxWidthFraction = 0.95; //effects prints mode only. the width of the image popup if not constrained by the above setting. units: percentage. you probably don't need to change this. 
@@ -40,52 +50,48 @@ var caApp = (function (Backbone, $) {
         app.basketCollection = new BasketCollection();
         app.printThumbsCollection = new PrintThumbsCollection();
         app.proofsThumbsCollection = new ProofsThumbsCollection();
-        
+        app.langStrings = new LangStrings();
+        app.layout = new Layout();
         app.appData = {};
+        
+        
+        runRoutes = function() {
+            var AppRouter = Backbone.Router.extend({
+            routes: {    "": "home",
+                        "thanks": "paypalThanks",
+                       '*notFound': 'notFound'
+                    },
+                    
+                    home: function() {
+                        console.log("home");
+                        var loginView = new LoginView({message: ''});
+                        app.layout.renderViewIntoRegion(loginView, 'main');
+                        //what to do if they are already logged in?   show the what do you want to do screen. TODO
+                    }, 
+                    paypalThanks: function() {
+                         console.log("thanks");
+                         //how we handle this depends on is logged in or not. TODO
+                    },
+                    notFound:function() {
+                        console.log("not_found");
+                    }        
+             });
+             
+                app.router = new AppRouter();
+                Backbone.history.start({pushState:true, root: "/client_area"});
+         }    
 
-        app.langStrings = new app.LangStrings;
-        app.langStrings.fetch().then(
+        
+        var xhr = app.langStrings.fetch();
+        xhr.then(
             function() {
-                app.layout = new Layout();
-                var loc = window.location.search;
-                //TODO if they are not logged in show login screen. if they are logged in show the prints menu and a thanks/cancel view. make these urls configurable
-                if (search == '?thanks') {
-                    console.log("thanks");
-                }
-                if (search == '?cancel') {
-                    console.log("cancel");
-                }
-  
-                
-            }
-        );
-        
-
-        
-        
-        /*
-        //TODO WIP
-        //don't forget we need to support the urls on the backend.
-        var AppRouter = Backbone.Router.extend({
-            routes: {
-                "thanks": "paypalThanks",
-                "cancel": "paypalCancel"
+                runRoutes();
             },
-            
-            paypalThanks: function() {
-                console.log("thanks");
-            }, 
-            
-            paypalCancel: function() {
-                console.log("canx");
-            }   
-        });
-        
-        app.router = new AppRouter();
-        Backbone.history.start();
-        */
-
-        
+            function() {
+                var errorView = new ErrorView();   //TODO test this
+                that.renderViewIntoRegion(errorView, 'main'); 
+            }
+        )
     };
     
    
@@ -402,7 +408,7 @@ var caApp = (function (Backbone, $) {
     });
     
     //Language String model
-    app.LangStrings = Backbone.Model.extend({
+    LangStrings = Backbone.Model.extend({
         url: "/api/v1/langStrings",    
     
     }); 
@@ -671,8 +677,8 @@ var caApp = (function (Backbone, $) {
   
         
         initialize: function(options) {
-            var loginView = new LoginView({message: ''});
-            this.renderViewIntoRegion(loginView, 'main');
+            //var loginView = new LoginView({message: ''});
+            //this.renderViewIntoRegion(loginView, 'main');
         },
 
         renderViewIntoRegion: function(view, region)   {
@@ -744,7 +750,7 @@ var caApp = (function (Backbone, $) {
             var messageBarTemple = $("#ca_message_bar").html();
             this.messageBarTmpl = _.template(messageBarTemple);
             var paypalTemplate = $("#ca_paypal_standard").html();
-            this.paypalTmpl = _.template(screen1Template);
+            this.paypalTmpl = _.template(paypalTemplate);
             this.errorState = false;
             this.errorMessage = '';
 
@@ -862,29 +868,30 @@ var caApp = (function (Backbone, $) {
             var that = this;
             
             xhr.then(
-                function() {
+                function(result) {
                     if (app.appData.printsModeMessagePayPalEnabled) {
                         console.log("proceedd to paypal form");
                         var data = {};
                         if (app.appData.mode == "prod") {
                             data.action = 'https://www.paypal.com/cgi-bin/webscr';    
+                            data.paypal_email = app.appData.paypalAccountEmail;
                         } else {
                             data.action = 'https://www.sandbox.paypal.com/cgi-bin/webscr';
+                            data.paypal_email = app.appData.paypalSandboxAccountEmail;
                         }
                         
                         var loc = document.location.href;
                         
                         data.payment_title = app.appData.paypalPaymentDescription;
                         data.amount = that.model.get("grandTotal");
-                        data.paypal_email = app.appData.paypalAccountEmail;
                         data.paypal_code = app.pricingModel.get("currency").payPayCode;
                         data.thanks_url =   loc + '?thanks';
                         data.cancel_url =   loc + '?cancel';
                         data.notify_url =    app.appData.paypalIPNHandler;
-                        data.item_number = app.appData.sessId;
+                        data.custom = result.orderRef;
                         data.item_name = app.appData.eventName;
                         console.log(data);
-                        var html = that.this.paypalTmpl(data);
+                        var html = that.paypalTmpl(data);
                         that.$el.find('#ca_paypal_form').remove();
                         console.log(html);
                         that.$el.append(html);

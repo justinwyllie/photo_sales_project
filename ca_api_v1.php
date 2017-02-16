@@ -57,7 +57,7 @@ class ClientAreaAPI
     
     public function getSessionStatus()
     {
-        //if we got this far... 
+        //if we got this far...
         $obj = new stdClass();
         $obj->status = "success";
         $obj->message = "";
@@ -81,11 +81,15 @@ class ClientAreaAPI
      */
     public function postOrderStep1() {
         $mode = $_POST['mode'];
+        $date =  date('m/d/Y');
+        $orderRef =  $_SESSION["user"] . '_' .  $date;
         $data = $this->packageOrder($mode);
-        $this->mailAdmin($data, "Provisional Order on Website");
+        $data = "ORDER REF: $orderRef \n\n" . $data;
+        $this->mailAdmin($data, "Provisional Order on Website.");
         $obj = new stdClass();
         $obj->status = "success";
         $obj->message = "";
+        $obj->orderRef = $orderRef;
         $this->outputJson($obj);  
     }
     
@@ -479,6 +483,8 @@ class ClientAreaAPI
         $options["printsModeMessagePayPalEnabled"] = $userOptions->printsModeMessagePayPalEnabled . "";
         $options["printsModeMessagePayPalNotEnabled"] = $userOptions->printsModeMessagePayPalNotEnabled . "";
         $options["paypalAccountEmail"]  =  $client_area_options->options->system->paypalAccountEmail . "";
+        $options["paypalSandboxAccountEmail"]  =  $client_area_options->options->system->paypalSandboxAccountEmail . "";
+        $options["paypalIPNHandler"]  =  $client_area_options->options->system->paypalIPNHandler . "";
         $options["adminEmail"]  =  $client_area_options->options->system->adminEmail . "";
         $options["mode"]  =  $client_area_options->options->system->mode . "";
         $options["domain"]  =  $client_area_options->options->system->domain . "";

@@ -1072,10 +1072,10 @@ EOF;
                     <input type="hidden" name="business" value="<%= paypal_email %>">
                     <input type="hidden" id="currency_code" name="currency_code" value="<%= paypal_code %>">
                     <input type="hidden" name="return" value="<%= thanks_url %>">
-                    <input type="hidden" name="cancel_return" value="<% cancel_url %>">
-                    <input type="hidden" name="notify_url" value="<% notify_url %>" >
-                    <input id="item_name" type="hidden" name="item_name" value="<% item_name %>">
-                    <input id="item_number" type="hidden" name="item_number" value="<% item_number %>">
+                    <input type="hidden" name="cancel_return" value="<%= cancel_url %>">
+                    <input type="hidden" name="notify_url" value="<%= notify_url %>" >
+                    <input id="item_name" type="hidden" name="item_name" value="<%= item_name %>">
+                    <input id="custom" type="hidden" name="custom" value="<%= custom %>">
                 </form>
             
             </script>

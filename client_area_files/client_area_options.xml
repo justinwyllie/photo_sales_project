@@ -26,6 +26,7 @@
             <adminEmail>justinwyllie@hotmail.co.uk</adminEmail>
              <!-- PyaPal Email - the email for your PayPal account. if you never enablePayPal you can leave these blank -->
             <paypalAccountEmail>info@mms-oxford.com</paypalAccountEmail>
+            <paypalSandboxAccountEmail>info-facilitator@mms-oxford.com</paypalSandboxAccountEmail>
             <paypalPaymentDescription>Payment for Photographic Prints</paypalPaymentDescription>
             <!-- this is the url which wwill handle callbacks from PayPal. See the POS documentation about this. You can still use PayPal without handling the IPNs. Just leave this field blank -->
             <paypalIPNHandler>https://jwp.mms-oxford.com/ca_notify.php</paypalIPNHandler>

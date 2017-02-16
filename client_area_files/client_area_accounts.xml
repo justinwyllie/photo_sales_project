@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <client_area_accounts>
 
+    <!-- usernames should not exceed 128 chars -->
+
     <account username="nascimento">
         <password>xxxxsx</password>
         <human_name>Decio</human_name>
