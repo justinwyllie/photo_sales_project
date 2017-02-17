@@ -24,14 +24,28 @@
             <!-- use https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js for legacy IE support back to IE6 - untested. may well not work. -->
             <jQueryUrl>https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js</jQueryUrl>
             <adminEmail>justinwyllie@hotmail.co.uk</adminEmail>
-             <!-- PyaPal Email - the email for your PayPal account. if you never enablePayPal you can leave these blank -->
-            <paypalAccountEmail>info@mms-oxford.com</paypalAccountEmail>
-            <paypalSandboxAccountEmail>info-facilitator@mms-oxford.com</paypalSandboxAccountEmail>
-            <paypalPaymentDescription>Payment for Photographic Prints</paypalPaymentDescription>
-            <!-- set to true if your server supports SSL for handling the IPN request from PayPal TODO not implemented. leave as false -->
-            <paypalIPNSSL>false</paypalIPNSSL>
-            <!-- this is the web path which wwill handle callbacks from PayPal. You can still use PayPal without handling the IPNs. Just leave this field blank -->
-            <paypalIPNHandler>/ca_notify.php</paypalIPNHandler>
+            <paymentGateway>
+                <!-- only one of these can be true. the userOverride setting enableOnlinePayments determines if your chosen gateway is activated or not -->
+                <paypalStandard>true</paypalStandard>
+                <googleWallet>false</googleWallet>
+            </paymentGateway>
+            <paypalStandard>
+                <!-- PyaPal Email - the email for your PayPal account. if you never enablePayPal you can leave these blank -->
+                <paypalAccountEmail>info@mms-oxford.com</paypalAccountEmail>
+                <paypalSandboxAccountEmail>info-facilitator@mms-oxford.com</paypalSandboxAccountEmail>
+                <paypalPaymentDescription>Payment for Photographic Prints</paypalPaymentDescription>
+                <!-- set to true if your server supports SSL for handling the IPN request from PayPal TODO not implemented. leave as false -->
+                <paypalIPNSSL>false</paypalIPNSSL>
+                <!-- this is the web path which wwill handle callbacks from PayPal. You can still use PayPal without handling the IPNs. Just leave this field blank -->
+                <paypalIPNHandler>/ca_notify.php</paypalIPNHandler>
+            </paypalStandard>
+            
+            <googleWallet>
+                <!-- only complete these fields if you enable googleWallet -->
+                <accountEmail>justinwyllie@hotmail.co.uk</accountEmail>
+                <!-- the message text displayed to the user is in client_area_lang. field: googleWalletMessage -->
+            </googleWallet>
+             
             
         </system>
         
@@ -43,14 +57,14 @@
             <proofsShowLabels>true</proofsShowLabels>
             <!-- true / false -->
             <showNannyingMessageAboutMoreThanOnePage>false</showNannyingMessageAboutMoreThanOnePage>
-            <!-- false or true -->
-            <enablePaypal>true</enablePaypal>
+            <!-- true or false. if you set this to true one of the paymentGateway methods MUST be set to true. if you set it to false, after pressing the order button, the user will see langString.manualOrderText which should advise them of what happens next -->
+            <enableOnlinePayments>true</enableOnlinePayments>
             <!-- charge for delivery. true or false. -->
             <deliveryChargesEnabled>true</deliveryChargesEnabled>
        
             <proofsModeMessage>TODO</proofsModeMessage>
-            <printsModeMessagePayPalEnabled>Enter address details. Confirm charges. Then pay on PayPal.</printsModeMessagePayPalEnabled>
-            <printsModeMessagePayPalNotEnabled>TODO</printsModeMessagePayPalNotEnabled>
+            <!-- the message which appears at the top of the basket/checkout pages. consider whether or not you have enabled online payments: enableOnlinePayments  -->
+            <printsModeMessage>Please make your selection and complete your order using PayPal.</printsModeMessage>
          </userOverrideable>
 
     </options>

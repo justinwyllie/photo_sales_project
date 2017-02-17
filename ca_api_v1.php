@@ -82,9 +82,10 @@ class ClientAreaAPI
      */
     public function postOrderStep1() {
         $mode = $_POST['mode'];
-        $date =  date('m/d/Y');
+        $gateway = $_POST['gateway'];
+        $date =  date('m-d-Y-H-i-s');
         $orderRef =  $_SESSION["user"] . '_' .  $date;
-        $data = $this->packageOrder($mode);
+        $data = $this->packageOrder($mode, $gateway);
         $data = "ORDER REF: $orderRef \n\n" . $data;
         $this->mailAdmin($data, "Provisional Order on Website.");
         $obj = new stdClass();
@@ -319,13 +320,13 @@ class ClientAreaAPI
      *   make this look nicer
      *
      */
-    private function packageOrder($mode) {
+    private function packageOrder($mode, $gateway) {
     
     
         $package = "Hi\n\n";    
     
-        if ($mode == 'paypal') {
-            $package.= "This is NOT the actual order. It indicates the user MAY be attempting a purchase. Wait for the 'Order Confirmed' email and/or check your PayPal account";
+        if ($mode == 'online_payment') {
+            $package.= "This is NOT the actual order. It indicates the user MAY be attempting a purchase. Wait for the 'Order Confirmed' email and/or check your account ($gateway) to check that you have received the payment";
         }   else {
             $package.= 'An order has been placed on the web site. You need to take payment manually.';    
         }
@@ -474,11 +475,19 @@ class ClientAreaAPI
         $options["thumbsPerPage"] = (int) $userOptions->thumbsPerPage;
         $options["proofsShowLabels"] = $userOptions->proofsShowLabels == 'true' ? true: false;
         $options["showNannyingMessageAboutMoreThanOnePage"] =  $userOptions->showNannyingMessageAboutMoreThanOnePage == 'true' ? true: false;
-        $options["enablePaypal"] = $userOptions->enablePaypal == 'true' ? true: false;
+        $options["enableOnlinePayments"] = $userOptions->enableOnlinePayments == 'true' ? true: false;
+        $options["paymentGateway"] = false;
+          foreach ($client_area_options->options->system->paymentGateway as $gateway) {
+            if (gateway == 'true') {
+                $options["paymentGateway"] = $gateway->name;
+                break;    
+            }
+        }
+       
+        
         $options["deliveryChargesEnabled"] = $userOptions->deliveryChargesEnabled == 'true' ? true: false;
         $options["proofsModeMessage"] = $userOptions->proofsModeMessage . "";
-        $options["printsModeMessagePayPalEnabled"] = $userOptions->printsModeMessagePayPalEnabled . "";
-        $options["printsModeMessagePayPalNotEnabled"] = $userOptions->printsModeMessagePayPalNotEnabled . "";
+        $options["printsModeMessage"] = $userOptions->printsModeMessage . "";
         $options["paypalAccountEmail"]  =  $client_area_options->options->system->paypalAccountEmail . "";
         $options["paypalSandboxAccountEmail"]  =  $client_area_options->options->system->paypalSandboxAccountEmail . "";
         $options["paypalIPNHandler"]  =  $client_area_options->options->system->paypalIPNHandler . "";

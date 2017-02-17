@@ -1129,11 +1129,7 @@ EOF;
                             <div class="ca_row">
                                 <div class="col-xs-12">
                                     <button id="ca_complete_order">
-                                        <% if (enablePaypal) {%>
-                                            <%= langStrings.paySecurelyWithPayPal %>
-                                        <% } else { %>
-                                            <%= langStrings.order %>
-                                        <% } %>
+                                        <%= payButtonText %>
                                     </button>
                                 </div>
                   

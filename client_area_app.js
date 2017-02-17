@@ -829,24 +829,31 @@ var caApp = (function (Backbone, $) {
         },
         
         completeOrder: function() {
-            console.log("complete order");
-            //paypal case
- 
-            //call the trigger to send the first email to admin
-            //in the callback from that send them to paypal
-            //we need a thanks, cancel and notify handler
-            
-            if (app.appData.printsModeMessagePayPalEnabled) {
-                var mode = "paypal";
-            }  else {
-                var mode = "manual_payments";
-            }
-            
-            var xhr = $.ajax(
+           if (app.appData.enableOnlinePayments && (app.appData.paymentGateway !== false)) {
+                var func = app.appData.paymentGateway;
+                this[func].call(this); 
+           }  else {
+                this.manualOrder();
+           }
+        },
+        
+        manualOrder: function() {
+            //TODO
+            //a view which explains what will happen - or simply display the message here next to the button
+        
+        },
+
+        googleWallet: function(mode) {
+        //TODO     - probably show a screen with information on how to make the payment and a link to the site.
+        
+        } ,
+        
+        paypalStandard: function() {
+           var xhr = $.ajax(
                 {
                     url: '/api/v1/orderStep1',
                     method: 'POST',
-                    data: {mode: mode},
+                    data: {mode: 'online_payment', gateway: 'paypalStandard'},
                     dataType: 'json'
                 }
             );
@@ -900,6 +907,7 @@ var caApp = (function (Backbone, $) {
                     app.layout.renderViewIntoRegion(errorView, 'main'); 
                 }
             );
+        
         },
         
         showChargesScreen: function() {
@@ -911,20 +919,23 @@ var caApp = (function (Backbone, $) {
             
             var messageBar = {};
             
-            if (app.appData.enablePaypal) {
-                messageBar.message = app.appData.printsModeMessagePayPalEnabled;    
-            } else {
-                messageBar.message = app.appData.printsModeMessagePayPalNotEnabled;     
-            }
-            
+      
+            messageBar.message = app.appData.printsModeMessage;   
+                   
             messageBar.errorState = this.errorState;
             messageBar.errorMessage = this.errorMessage;
             data.message = this.messageBarTmpl(messageBar);
-            
-            
-            data.enablePaypal = app.appData.enablePaypal;
+  
+            data.enableOnlinePayments = app.appData.enableOnlinePayments;
             data.deliveryChargesEnabled = app.appData.deliveryChargesEnabled;  
             data.langStrings = app.langStrings.toJSON();
+            if (app.appData.enableOnlinePayments && (app.appData.paymentGateway !== false)) {
+                var field = app.appData.paymentGateway + 'ButtonText';
+                data.payButtonText = data.langStrings[field];    
+            } else {
+                data.payButtonText = data.langStrings['order'];
+            }
+            
             data.currSymbol = app.pricingModel.get("currency").symbol;
 
             var totalItems = app.basketCollection.getTotalCost().toFixed(2);
@@ -946,11 +957,11 @@ var caApp = (function (Backbone, $) {
             var xhr = this.model.save();
             var that = this;
             xhr.then(function() {
-                that.$el.html(that.screen2Tmpl(data)); 
-            },
-            function() {
-                var errorView = new ErrorView();
-                app.layout.renderViewIntoRegion(errorView, 'main'); 
+                    that.$el.html(that.screen2Tmpl(data)); 
+                },
+                function() {
+                    var errorView = new ErrorView();
+                    app.layout.renderViewIntoRegion(errorView, 'main'); 
             });
 
         },
@@ -961,13 +972,8 @@ var caApp = (function (Backbone, $) {
             breadcrumbs.nodes = [{txt: app.langStrings.get("enterAddress"), class: 'ca_breadcrumb_in_chain', method: ''}, {txt: app.langStrings.get("confirmOrder"), class: '', method: ''}];
             data.breadcrumbs = this.breadcrumbsTmpl(breadcrumbs);
             var messageBar = {};
-            
-            if (app.appData.enablePaypal) {
-                messageBar.message = app.appData.printsModeMessagePayPalEnabled;    
-            } else {
-                messageBar.message = app.appData.printsModeMessagePayPalNotEnabled;     
-            }
-            
+            messageBar.message = app.appData.printsModeMessage;    
+      
             messageBar.errorState = this.errorState;
             messageBar.errorMessage = this.errorMessage;
             data.message = this.messageBarTmpl(messageBar);
@@ -1063,7 +1069,7 @@ var caApp = (function (Backbone, $) {
             var data = {};
             data.active =  this.options.active;
             data.basket_label = app.langStrings.get("basketButtonText");
-            if (app.appData.enablePaypal) {
+            if (app.appData.enableOnlinePayments) {
                 data.checkout_label = app.langStrings.get("checkoutButtonText");     
             } else {
                data.checkout_label = app.langStrings.get("order"); 

@@ -229,6 +229,21 @@
    </field>
    <field name="paypalCancel">
         Transaction cancelled.
-   </field>        
+   </field>     
+   <field name="googleWalletText">
+        Your order has been provisionally accepted. Please take a note of your order reference printed below. To confirm the order please send a payment via Google Wallet. Details below:
+   </field> 
+   <field name="manualOrderText">
+        Thanks. Your order has been received. I will be in touch to confirm details, arrange delivery and take payment.
+   </field>  
+   <field name="paypalStandardText">
+        You can pay for your order securely, with PayPal.
+   </field>
+   <field name="paypalStandardButtonText">
+        Pay securely with PayPal.
+   </field>
+   <field name="googleWalletButtonText">
+        Make a payment with your credit or debit card using Google Wallet
+   </field>
 
 </strings>
