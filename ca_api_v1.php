@@ -4,7 +4,7 @@ session_start();
 //see http://coreymaynard.com/blog/creating-a-restful-api-with-php/ if you want to do this properly
 
 $API = new ClientAreaAPI($_REQUEST['request'] );
-
+include_once('ca_database.php');
 
 
 class ClientAreaAPI
@@ -16,6 +16,8 @@ class ClientAreaAPI
     
          //absolute path on your system to the client_area_files directory
         $this->clientAreaDirectory = "/var/www/vhosts/mms-oxford.com/jwp_client_area_files";
+  
+        $this->db = new ClientAreaDB($this->clientAreaDirectory);
 
         $this->accountsPath = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_accounts.xml";
         $this->imageProvider = "/client_area_image_provider.php";
@@ -61,7 +63,9 @@ class ClientAreaAPI
         $obj = new stdClass();
         $obj->status = "success";
         $obj->message = "";
-        $obj->appData = $_SESSION['options'];
+        $this->setOptions();
+        $this->setUserOptions($_SESSION['user']);
+        $obj->appData = $this->options;
         $this->outputJson($obj);
     }
     
@@ -80,11 +84,11 @@ class ClientAreaAPI
      * send the current state of the Basket and The Order to the site owner *before the payment transaction
      * we do this in case there is an error e.g the SESSION is lost - and we no longer have the Basket and Order when the PayPal notify is handled
      */
-    public function postOrderStep1() {
+    public function postPaypalStandard() {
+   
         $mode = $_POST['mode'];
         $gateway = $_POST['gateway'];
-        $date =  date('m-d-Y-H-i-s');
-        $orderRef =  $_SESSION["user"] . '_' .  $date;
+        $orderRef =  $_SESSION["user"] . '_' .  time();
         $data = $this->packageOrder($mode, $gateway);
         $data = "ORDER REF: $orderRef \n\n" . $data;
         $this->mailAdmin($data, "Provisional Order on Website.");
@@ -92,6 +96,7 @@ class ClientAreaAPI
         $obj->status = "success";
         $obj->message = "";
         $obj->orderRef = $orderRef;
+        $this->db->createEntry('paypalStandard', $orderRef, session_id());
         $this->outputJson($obj);  
     }
     
@@ -427,8 +432,8 @@ class ClientAreaAPI
            $this->options["thumbsPerPage"]   = (int) $userOptions->thumbsPerPage;  
         }
 
-        if (!empty($userOptions->enablePaypal)) {
-            $this->options["enablePaypal"]   = $userOptions->enablePaypal == 'true' ? true: false; 
+        if (!empty($userOptions->enableOnlinePayments)) {
+            $this->options["enableOnlinePayments"]   = $userOptions->enableOnlinePayments == 'true' ? true: false; 
         }
             
         if (!empty($userOptions->proofsShowLabels)) {
@@ -477,25 +482,25 @@ class ClientAreaAPI
         $options["showNannyingMessageAboutMoreThanOnePage"] =  $userOptions->showNannyingMessageAboutMoreThanOnePage == 'true' ? true: false;
         $options["enableOnlinePayments"] = $userOptions->enableOnlinePayments == 'true' ? true: false;
         $options["paymentGateway"] = false;
-          foreach ($client_area_options->options->system->paymentGateway as $gateway) {
-            if (gateway == 'true') {
-                $options["paymentGateway"] = $gateway->name;
+        $gateways = $client_area_options->options->system->paymentGateway->children();
+          foreach ($gateways as $gateway) {
+             if ($gateway  == 'true') {
+                $options["paymentGateway"] = $gateway->getName();
                 break;    
             }
         }
        
-        
         $options["deliveryChargesEnabled"] = $userOptions->deliveryChargesEnabled == 'true' ? true: false;
         $options["proofsModeMessage"] = $userOptions->proofsModeMessage . "";
         $options["printsModeMessage"] = $userOptions->printsModeMessage . "";
-        $options["paypalAccountEmail"]  =  $client_area_options->options->system->paypalAccountEmail . "";
-        $options["paypalSandboxAccountEmail"]  =  $client_area_options->options->system->paypalSandboxAccountEmail . "";
-        $options["paypalIPNHandler"]  =  $client_area_options->options->system->paypalIPNHandler . "";
-        $options["paypalIPNSSL"] = $userOptions->paypalIPNSSL == 'true' ? true: false;
+        $options["paypalAccountEmail"]  =  $client_area_options->options->system->paypalStandard->paypalAccountEmail . "";
+        $options["paypalSandboxAccountEmail"]  =  $client_area_options->options->system->paypalStandard->paypalSandboxAccountEmail . "";
+        $options["paypalIPNHandler"]  =  $client_area_options->options->system->paypalStandard->paypalIPNHandler . "";
+        $options["paypalIPNSSL"] = $client_area_options->options->system->paypalStandard->paypalIPNSSL == 'true' ? true: false;
         $options["adminEmail"]  =  $client_area_options->options->system->adminEmail . "";
         $options["mode"]  =  $client_area_options->options->system->mode . "";
         $options["domain"]  =  $client_area_options->options->system->domain . "";
-        $options["paypalPaymentDescription"]  =  $client_area_options->options->system->paypalPaymentDescription . "";
+        $options["paypalPaymentDescription"]  =  $client_area_options->options->system->paypalStandard->paypalPaymentDescription . "";
         $options["sessId"]  =  session_id();
 
         $this->options = $options;

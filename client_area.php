@@ -29,6 +29,7 @@ class ClientArea
     private $accounts;
     protected $template;
     private $adminEmail;
+    private $appName = 'Client Area System';
 
 
     public function __construct()

@@ -851,7 +851,7 @@ var caApp = (function (Backbone, $) {
         paypalStandard: function() {
            var xhr = $.ajax(
                 {
-                    url: '/api/v1/orderStep1',
+                    url: '/api/v1/paypalStandard',
                     method: 'POST',
                     data: {mode: 'online_payment', gateway: 'paypalStandard'},
                     dataType: 'json'
@@ -862,7 +862,7 @@ var caApp = (function (Backbone, $) {
             
             xhr.then(
                 function(result) {
-                    if (app.appData.printsModeMessagePayPalEnabled) {
+                    
                         console.log("proceedd to paypal form");
                         var data = {};
                         if (app.appData.mode == "prod") {
@@ -890,8 +890,8 @@ var caApp = (function (Backbone, $) {
                         } else {
                             data.notify_url = '';    
                         }
-                        data.custom = result.orderRef + '1';
-                        data.item_name = app.appData.eventName + '1';
+                        data.custom = result.orderRef;
+                        data.item_name = app.appData.eventName;
                         console.log(data);
                         var html = that.paypalTmpl(data);
                         that.$el.find('#ca_paypal_form').remove();
@@ -899,7 +899,7 @@ var caApp = (function (Backbone, $) {
                         that.$el.append(html);
                         that.$el.find('#ca_paypal_form').submit();
 
-                    }
+                   
                 
                 },
                 function() {
@@ -1090,12 +1090,13 @@ var caApp = (function (Backbone, $) {
         
         showBasket: function() {
             this.options.active = 'basket';
+            var that = this;
             //getting it again in case its been cleared by the PayPal IPN
             app.basketCollection.fetch({reset: true}).then( 
                 function() {
                     var basketView =  new BasketView({collection: app.basketCollection});
                     app.layout.renderViewIntoRegion(basketView, 'main'); 
-                    this.render();
+                    that.render();
                 },
                 function() {
                     var errorView = new ErrorView();   //TODO test this
@@ -1116,9 +1117,9 @@ var caApp = (function (Backbone, $) {
         
         changePage: function(evt) {
             var targetPage = $(evt.currentTarget).data('index');
-            var pageModelsJSON = app[coll].pagination(45, targetPage);
+            var pageModelsJSON = app.printsThumbsCollection.pagination(45, targetPage);
             var pagedCollection = new  Backbone.Collection(pageModelsJSON);
-            var thumbsView = new ThumbsView({collection: pagedCollection, mode: 'prints', maxHeight: app[coll].maxHeight, labelHeight: app[coll].labelHeight });
+            var thumbsView = new ThumbsView({collection: pagedCollection, mode: 'prints', maxHeight: app.printsThumbsCollection.maxHeight, labelHeight: app.printsThumbsCollection.labelHeight });
             app.layout.renderViewIntoRegion(thumbsView, 'main');
             this.options.active = targetPage;
             this.render();
