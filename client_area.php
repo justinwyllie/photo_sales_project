@@ -1085,7 +1085,8 @@ EOF;
             
             <script type="text/html" id="ca_paypal_thanks">
                 <p>
-                    <%= langStrings.paypalThanks %>
+                    <%= langStrings.paypalThanks %>  <br>
+                    <a href="choose"><%= continue %>
                 </p>
             </script>
             
@@ -1368,10 +1369,17 @@ EOF;
                 <div class="ca_menu_buttons">
                     <button class="ca_basket_event <% if (active == 'basket') { %>ca_highlighted_pagination<% } %>"><%= basket_label %></button>
                     <button class="ca_checkout_event"><%= checkout_label %></button>
-                    <button class="ca_logout_event"><%= logout_label %></button>
+                    <button class="ca_logout_event"><%= langStrings.logout %></button>
                     
                 </div>
             </div>    
+        </script>
+        <script type="text/html" id="ca_logout_menu">
+            <div class="ca_menu_bar">
+                <div class="ca_menu_buttons">
+                    <button class="ca_logout_event"><%= langStrings.logout %></button>
+                </div>
+            </div> 
         </script>
         <script type="text/html" id="ca_basket">
             <div class="ca_container_fluid">

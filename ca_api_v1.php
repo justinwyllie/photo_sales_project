@@ -1,10 +1,11 @@
 <?php
 
 session_start();
+include('ca_database.php');
 //see http://coreymaynard.com/blog/creating-a-restful-api-with-php/ if you want to do this properly
 
 $API = new ClientAreaAPI($_REQUEST['request'] );
-include_once('ca_database.php');
+
 
 
 class ClientAreaAPI
@@ -56,6 +57,15 @@ class ClientAreaAPI
     
     
     //APP methods
+    
+    public function getClearCompleteBasket() {
+        $_SESSION['basket'] = array();
+        $obj = new stdClass();
+        $obj->status = "success";
+        $obj->message = "";
+        $this->outputJson($obj);
+    
+    }
     
     public function getSessionStatus()
     {

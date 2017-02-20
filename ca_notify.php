@@ -92,13 +92,11 @@ if (strcmp ($res, "VERIFIED") == 0) {
 
 function processCompletedOrder($orderRef) {
     error_log('step4');
-    include('ca_api_v1.php');
-    $ca = new ClientAreaAPI();
     $path = $ca->clientAreaDirectory;
     include('ca_database.php');
     $db = new  ClientAreaDB($path);  
     $sessionIdOfOrder = $db->markOrderStatus($orderRef, $paymentStatus, $ipnTrackId);
-    if ($sessionIdOfOrder !== null) {
+    if ($sessionIdOfOrder !== null) {       //TDOO use clearBasket on the caAPI class? if so we need to handle all diff sceneraios to do with active session in that class
         session_id($sessionIdOfOrder);
         session_start();
         $_SESSION['basket'] = array();
@@ -106,7 +104,7 @@ function processCompletedOrder($orderRef) {
 
     
     //TODO 
-    mail('justinwyllie@hotmail.co.uk', 'Confirmed Order on Web Site', 'The confirm order ref is: ' . $orderRef);
+    mail('justinwyllie@hotmail.co.uk', 'Confirmed Order on Web Site', 'The confirmed order ref is: ' . $orderRef);
 }
 
 ?>

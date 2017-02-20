@@ -60,6 +60,7 @@ var caApp = (function (Backbone, $) {
             routes: {    "": "home",
                         "thanks": "paypalThanks",
                         "cancel": "paypalCancel",
+                        "choose": "chooseMode",
                        '*notFound': 'notFound'
                     },
                     
@@ -72,6 +73,10 @@ var caApp = (function (Backbone, $) {
                             app.layout.renderViewIntoRegion(loginView, 'main');
                         }
                     }, 
+                    chooseMode: function() {
+                        var modeChoiceView = new ModeChoiceView();
+                        app.layout.renderViewIntoRegion(modeChoiceView, 'main'); 
+                    },                 
                     paypalThanks: function() {
                     
                         this.paypalHandler('thanks');       
@@ -80,36 +85,62 @@ var caApp = (function (Backbone, $) {
                     paypalCancel: function() {
                         this.paypalHandler('cancel');     
                     },
-                    
+
                     paypalHandler: function(mode) {
                     
                         if (data.loggedIn) {
-                        
-                            app['printsThumbsCollection'].fetch().then(
+                            if (mode == 'thanks') {
+                                var xhr = $.ajax(
+                                {
+                                    url: '/api/v1/clearCompleteBasket',
+                                    method: 'GET',
+                                    dataType: 'json'
+                                }
+                                );
+                                xhr.then(
+                                    function() {
+                                        var clientAreaStorage = new ClientAreaStorage(app.appData.username, _);  
+                                        if (clientAreaStorage.supported) { 
+                                            clientAreaStorage.resetStorage("ca_prints", new Array());
+                                        }
+                                        var paypalView = new PaypalThanksView();
+                                        var logoutMenu - new LogoutMenuView();
+                                        app.layout.renderViewIntoRegion(logoutMenu, 'menu');
+                                        app.layout.renderViewIntoRegion(paypalView, 'main');
+                                },
                                 function() {
-                              
-                                    var thumbsPerPage = parseInt(app.appData.thumbsPerPage) ;
-                                    var menuView = new PrintsMenuView({totalThumbs: app['printsThumbsCollection'].length, thumbsPerPage: thumbsPerPage, active: 1});
-                                    app.layout.renderViewIntoRegion(menuView, 'menu');
-                                    if (mode == 'thanks') {
-                                        var paypalReturnView = new PaypalThanksView();    
-                                    }  else {
-                                        var paypalReturnView = new PaypalCancelView();  
-                                    }
-                                    app.layout.renderViewIntoRegion(paypalReturnView, 'main');
-                            },
-                            function() {
-                                var errorView = new ErrorView();   //TODO test this
-                                app.layout.renderViewIntoRegion(errorView, 'main');  
-                            }
-                            );
-                            
+                                    var errorView = new ErrorView();   //TODO test this
+                                    app.layout.renderViewIntoRegion(errorView, 'main');  
+                                }
+                                );
+    
+                            }  else {
+                                 
+                                var thumbsPerPage = parseInt(app.appData.thumbsPerPage); 
+                                var xhrPricingModel = app.pricingModel.fetch({reset: true});
+                                var xhrBasketCollection = app.basketCollection.fetch({reset: true})  ;
+                                var xhrPrintsThumbsCollection = app.printsThumbsCollection.fetch({reset: true});
+               
+                                $.when(xhrPricingModel, xhrBasketCollection, xhrPrintsThumbsCollection).then(function() {
+                                        var menuView = new PrintsMenuView({totalThumbs: app.printsThumbsCollection.length, thumbsPerPage: thumbsPerPage, active: 1});
+                                        app.layout.renderViewIntoRegion(menuView, 'menu');
+                                        var paypalView = new PaypalCancelView();
+                                        app.layout.renderViewIntoRegion(paypalView, 'main');
+                                    },
+                                    function() {
+                                        var errorView = new ErrorView();   //TODO test this
+                                        app.layout.renderViewIntoRegion(errorView, 'main');
+                                }); 
+                                
+                            } 
+                        
                         } else {
                             var loginView = new LoginView({message: ''});
                             app.layout.renderViewIntoRegion(loginView, 'main');
+                        
                         }
                     
-                    },
+                    },  
                     
                     notFound:function() {
                         console.log("not_found TODO");
@@ -117,6 +148,8 @@ var caApp = (function (Backbone, $) {
              });
              
             app.router = new AppRouter();
+            //TODO - this meanst that the app has to be run in the web root?
+            //e.g. domain.com/something/client_area/thanks won't match because the root won't work. should this be dynamic?
             Backbone.history.start({pushState:true, root: "/client_area"});
         } 
          
@@ -1075,7 +1108,7 @@ var caApp = (function (Backbone, $) {
                data.checkout_label = app.langStrings.get("order"); 
             }
             
-            data.logout_label = app.langStrings.get("logout");
+            data.langStrings = app.langStrings.toJSON();
             var menu = this.menuTmpl(data)
             this.$el.html(menu);
         },
@@ -1544,13 +1577,13 @@ var caApp = (function (Backbone, $) {
                     //reset true in case there are 2 mode choices in session. 
                     var xhrPricingModel = app.pricingModel.fetch({reset: true});
                     var xhrBasketCollection = app.basketCollection.fetch({reset: true})  ;
-                    var xhrPrintsThumbsCollection = app.printsThumbsCollection.fetch({reset: true}) ;
+                    var xhrPrintsThumbsCollection = app.printsThumbsCollection.fetch({reset: true});
                
                     $.when(xhrPricingModel, xhrBasketCollection, xhrPrintsThumbsCollection).then(
                         function(result1, result2, result3) {
                             var clientAreaStorage = new ClientAreaStorage(app.appData.username, _);  
                             if (clientAreaStorage.supported) {
-                                clientAreaStorage.resetStorage("ca_prints", app.basketCollection.toJSON());          //TODO do we actually want to do this?
+                                clientAreaStorage.resetStorage("ca_prints", app.basketCollection.toJSON());   //if it has been cleared on the back-end this will clear the storage.
                             }
                             
                             var pageModelsJSON = app.printsThumbsCollection.pagination(thumbsPerPage, 1);
@@ -1618,6 +1651,31 @@ var caApp = (function (Backbone, $) {
     });
     
     
+    
+    LogoutMenuView = Backbone.View.extend({
+    
+         initialize: function() {
+            var template =  $('#ca_logout_menu').html();
+            this.tmpl = _.template(template);
+        },
+        
+        events {
+            'click .ca_logout_event': 'showLogout'
+        },
+        
+       showLogout: function() {
+            var logoutView =  new LogoutView();
+            app.layout.renderViewIntoRegion(logoutView, 'main'); 
+        },
+        
+        render: function() {
+            data = {};
+            data.langStrings = app.langStrings.toJSON();
+            var html = this.tmpl(data);
+            this.$el.html(html);  
+        }
+  
+    }); 
     
     LoginView = Backbone.View.extend({
           

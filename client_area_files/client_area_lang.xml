@@ -245,5 +245,8 @@
    <field name="googleWalletButtonText">
         Make a payment with your credit or debit card using Google Wallet
    </field>
+   <field name="continue">
+        Continue...
+   </field>
 
 </strings>
