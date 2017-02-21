@@ -231,6 +231,9 @@ class ClientAreaAPI
                     $_SESSION["basket"] = $restoredPrintsArray;
                     $obj->clearBasket = false;
                 } else {
+                     $expires = $expires =  time() + (10 * 365 * 24 * 60 * 60);
+                     $cookie = array('name'=>'client_area_basket_in_progress', 'value'=>'', 'expires'=>$expires);  
+                     setcookie($cookie['name'], $cookie['value'], $cookie['expires']);
                      $obj->clearBasket = true;    
                 }
             }
