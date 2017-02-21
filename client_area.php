@@ -1086,7 +1086,7 @@ EOF;
             <script type="text/html" id="ca_paypal_thanks">
                 <p>
                     <%= langStrings.paypalThanks %>  <br>
-                    <a href="choose"><%= continue %>
+                    <a href="choose"><%= langStrings.continue %>
                 </p>
             </script>
             

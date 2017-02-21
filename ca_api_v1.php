@@ -17,8 +17,7 @@ class ClientAreaAPI
     
          //absolute path on your system to the client_area_files directory
         $this->clientAreaDirectory = "/var/www/vhosts/mms-oxford.com/jwp_client_area_files";
-  
-        $this->db = new ClientAreaDB($this->clientAreaDirectory);
+        $this->db = new ClientAreaDB();
 
         $this->accountsPath = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_accounts.xml";
         $this->imageProvider = "/client_area_image_provider.php";
@@ -98,7 +97,12 @@ class ClientAreaAPI
    
         $mode = $_POST['mode'];
         $gateway = $_POST['gateway'];
-        $orderRef =  $_SESSION["user"] . '_' .  time();
+        $clientAreaTracker =   '';
+        if (isset($_COOKIE['client_area_tracker'])) {
+            $clientAreaTracker = $_COOKIE['client_area_tracker'];
+        }
+        
+        $orderRef =  $_SESSION["user"] . '_' . $clientAreaTracker . '_' . time();
         $data = $this->packageOrder($mode, $gateway);
         $data = "ORDER REF: $orderRef \n\n" . $data;
         $this->mailAdmin($data, "Provisional Order on Website.");
@@ -107,7 +111,9 @@ class ClientAreaAPI
         $obj->message = "";
         $obj->orderRef = $orderRef;
         $this->db->createEntry('paypalStandard', $orderRef, session_id());
-        $this->outputJson($obj);  
+        $expires = $expires =  time() + (10 * 365 * 24 * 60 * 60);
+        $cookie = array('name'=>'client_area_basket_in_progress', 'value'=>$orderRef, 'expires'=>$expires);
+        $this->outputJson($obj, $cookie);  
     }
     
     public function getPrintThumbs()
@@ -212,10 +218,20 @@ class ClientAreaAPI
             }
             
             //If the user is logging in try to restore the prints chosen based on what was stored in html data if it is available
+            //however. if the browser cookie client_area_basket_in_progress id is set AND if this has been marked as Completed in the orders database
+            // then do not do this and send back a flag to tell the f/e to clear local storage
+            //the logic is: when they start an order we set an id into cookie client_area_basket_in_progress and if that id is not completed we regenerate the basket
+
+
+            $orderCompleted = $this->getOrderCompletedStatus();
+           
             if (!empty($restoredPrints)) {
                 $restoredPrintsArray = json_decode($restoredPrints);
-                if (is_array($restoredPrintsArray)) {
+                if (is_array($restoredPrintsArray) && !$orderCompleted) {
                     $_SESSION["basket"] = $restoredPrintsArray;
+                    $obj->clearBasket = false;
+                } else {
+                     $obj->clearBasket = true;    
                 }
             }
             
@@ -235,8 +251,13 @@ class ClientAreaAPI
             $obj->status = "error";
             $obj->message = $this->lang('loginError');
         }
-        
-        $this->outputJson($obj);
+        $expires =  time() + (10 * 365 * 24 * 60 * 60);
+        $cookie = null;
+        if (!isset($_COOKIE['client_area_tracker'])) {
+            $rand = rand(0, 1000000);
+            $cookie = array('name'=>'client_area_tracker', 'value'=>$rand, 'expires'=>$expires);
+        }    
+        $this->outputJson($obj, $cookie);
 
     }
     
@@ -286,6 +307,7 @@ class ClientAreaAPI
     //COLLECTION METHODS
     public function getBasket() 
     {
+           
         $result = new stdClass();
         $basket = $_SESSION["basket"];
         $deIndexedBasket = array();
@@ -376,6 +398,16 @@ class ClientAreaAPI
         
     }
     
+    private function getOrderCompletedStatus() 
+    {
+        $orderStatus = false;
+        if (isset($_COOKIE['client_area_basket_in_progress'])) {
+            $orderRef = $_COOKIE['client_area_basket_in_progress'];
+            $orderStatus = $this->db->getOrderCompletedStatus($orderRef);
+        }
+        return $orderStatus;    
+    }
+    
     
     private function generateUniqueOrderId()
     {
@@ -461,14 +493,12 @@ class ClientAreaAPI
         if (!empty($userOptions->proofsModeMessage)) {
             $this->options["proofsModeMessage"]   = $userOptions->proofsModeMessage . "";
         }
-       
-        if (!empty($userOptions->printsModeMessagePayPalEnabled)) {
-            $this->options["printsModeMessagePayPalEnabled"]   = $userOptions->printsModeMessagePayPalEnabled . "";
-        }
         
-        if (!empty($userOptions->printsModeMessagePayPalNotEnabled)) {
-            $this->options["printsModeMessagePayPalNotEnabled"]   = $userOptions->printsModeMessagePayPalNotEnabled . "";
-        }
+       if (!empty($userOptions->printsModeMessage)) {
+            $this->options["printsModeMessage"]   = $userOptions->printsModeMessage . "";
+      }
+       
+     
             
         $this->options["human_name"] =  $this->accounts[$user]["human_name"]   ;
         $this->options["username"] =  $user;
@@ -565,13 +595,19 @@ class ClientAreaAPI
         return $result;
      }
     
-    private function outputJson($output) {
+    private function outputJson($output, $cookie = null) {
         header("Content-type: application/json");
+        if (!is_null($cookie))
+        {
+            setcookie($cookie['name'], $cookie['value'], $cookie['expires']);
+        }
         echo json_encode($output);
         exit();
     }
     
     private function outputJson500($errMessage) {
+    
+       
         //TODO email $errMessage to admin
         header("Content-type: application/json");
         header("HTTP/1.1 500 Internal Server Error");

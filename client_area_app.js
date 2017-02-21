@@ -104,7 +104,7 @@ var caApp = (function (Backbone, $) {
                                             clientAreaStorage.resetStorage("ca_prints", new Array());
                                         }
                                         var paypalView = new PaypalThanksView();
-                                        var logoutMenu - new LogoutMenuView();
+                                        var logoutMenu = new LogoutMenuView();
                                         app.layout.renderViewIntoRegion(logoutMenu, 'menu');
                                         app.layout.renderViewIntoRegion(paypalView, 'main');
                                 },
@@ -1659,7 +1659,7 @@ var caApp = (function (Backbone, $) {
             this.tmpl = _.template(template);
         },
         
-        events {
+        events: {
             'click .ca_logout_event': 'showLogout'
         },
         
@@ -1721,6 +1721,12 @@ var caApp = (function (Backbone, $) {
                     app.appData = result.appData;
                     var modeChoiceView = new ModeChoiceView();
                     app.layout.renderViewIntoRegion(modeChoiceView, 'main');
+                    if (result.clearBasket) {
+                        var clientAreaStorage = new ClientAreaStorage(app.appData.username, _);  
+                        if (clientAreaStorage.supported) { 
+                            clientAreaStorage.resetStorage("ca_prints", new Array());
+                        }    
+                    }
                 } else {
                     that.setMessage(result.message);
                 }

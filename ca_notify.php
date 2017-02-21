@@ -1,14 +1,13 @@
 <?php
-error_log('step1');
+
 //https://developer.paypal.com/docs/classic/ipn/ht_ipn/
 // STEP 1: read POST data
 // Reading POSTed data directly from $_POST causes serialization issues with array data in the POST.
 // Instead, read raw POST data from the input stream.
 $raw_post_data = file_get_contents('php://input');
 $raw_post_array = explode('&', $raw_post_data);
-error_log('RAW--');
-error_log( $raw_post_data );
-error_log('--');
+
+
 $myPost = array();
 foreach ($raw_post_array as $keyval) {
   $keyval = explode ('=', $keyval);
@@ -22,11 +21,9 @@ if (function_exists('get_magic_quotes_gpc')) {
 }
 foreach ($myPost as $key => $value) {
   if ($get_magic_quotes_exists == true && get_magic_quotes_gpc() == 1) {
-    error_log('AAAA');
     $value = urlencode(stripslashes($value));
   } else {
-    error_log('BBB');
-    $value = urlencode($value);
+     $value = urlencode($value);
   }
   $req .= "&$key=$value";
   if ($key == 'custom') {
@@ -43,9 +40,6 @@ foreach ($myPost as $key => $value) {
   }
 }
 
-error_log('RET--');
-error_log($req);
-error_log('--');
 
 // Step 2: POST IPN data back to PayPal to validate
 
@@ -72,15 +66,13 @@ curl_setopt($ch, CURLOPT_HTTPHEADER, array('Connection: Close'));
 // the directory path of the certificate as shown below:
 // curl_setopt($ch, CURLOPT_CAINFO, dirname(__FILE__) . '/cacert.pem');
 if ( !($res = curl_exec($ch)) ) {
-  error_log("Got " . curl_error($ch) . " when processing IPN data");
+ 
   curl_close($ch);
   exit;
 }
 curl_close($ch);
 
-error_log('step3');
-error_log($res);
-error_log('--step3');
+
 
 if (strcmp ($res, "VERIFIED") == 0) {
   // The IPN is verified, process it
@@ -90,17 +82,18 @@ if (strcmp ($res, "VERIFIED") == 0) {
   // IPN invalid, log for manual investigation
 }
 
-function processCompletedOrder($orderRef) {
-    error_log('step4');
-    $path = $ca->clientAreaDirectory;
+function processCompletedOrder($orderRef, $paymentStatus, $ipnTrackId) {
     include('ca_database.php');
-    $db = new  ClientAreaDB($path);  
+    $db = new  ClientAreaDB();  
     $sessionIdOfOrder = $db->markOrderStatus($orderRef, $paymentStatus, $ipnTrackId);
-    if ($sessionIdOfOrder !== null) {       //TDOO use clearBasket on the caAPI class? if so we need to handle all diff sceneraios to do with active session in that class
+    if ($sessionIdOfOrder !== null) {      
         session_id($sessionIdOfOrder);
         session_start();
+        //TODO IF the ipn takes a while they could have started a new order and then we'll clear it..
+        // not sure how else to do this.
         $_SESSION['basket'] = array();
     }
+
 
     
     //TODO 
