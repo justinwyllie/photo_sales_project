@@ -187,7 +187,6 @@ var caApp = (function (Backbone, $) {
     //MODELS
     //used for the delivery: the actual basket is in the session (and local storage)
     OrderModel =  Backbone.Model.extend({
-        url: "/api/v1/order",
         initialize: function() {
     
         },
@@ -814,7 +813,7 @@ var caApp = (function (Backbone, $) {
                         address_type: 'address_on_file'        
                      }); 
                      //the address has come from site owner config: can't tell user it is invalid.
-                     var xhr = this.model.save(null, {validate: false});
+                     
                      var that = this;
                      xhr.then(
                             function() {
@@ -826,30 +825,24 @@ var caApp = (function (Backbone, $) {
                             }
                         );
                 }  else {
-                    this.model.set({
-                        clientName: this.$el.find('#ca_address_name').val(),
-                        address1: this.$el.find('#ca_address1').val(),
-                        address2: this.$el.find('#ca_address2').val(),
-                        city: this.$el.find('#ca_city').val(),
-                        zip: this.$el.find('#ca_zip').val(),
-                        country: this.$el.find('#ca_country').val(),
-                        address_type: 'address_entered'
-                     }); 
-                    
-                    
-                        var xhr = this.model.save();
-                        if (xhr === false) {
+                        this.model.set({
+                            clientName: this.$el.find('#ca_address_name').val(),
+                            address1: this.$el.find('#ca_address1').val(),
+                            address2: this.$el.find('#ca_address2').val(),
+                            city: this.$el.find('#ca_city').val(),
+                            zip: this.$el.find('#ca_zip').val(),
+                            country: this.$el.find('#ca_country').val(),
+                            address_type: 'address_entered'
+                         }); 
+                         if (!this.model.isValid()) {
                             this.errorState = true;
                             this.errorMessage = this.model.validationError;   
-                            this.render(); 
-                        } else {
-                            var that = this;
-                            xhr.then(function() {
+                            this.render();   
+                         }  else {
                                 that.errorState = true;
                                 that.errorMessage = '';  
-                                that.showChargesScreen();
-                            });
-                        }
+                                that.showChargesScreen();     
+                         }
                  }
             }
         },
@@ -879,7 +872,7 @@ var caApp = (function (Backbone, $) {
                 {
                     url: '/api/v1/paypalStandard',
                     method: 'POST',
-                    data: {mode: 'online_payment', gateway: 'paypalStandard'},
+                    data: {mode: 'online_payment', gateway: 'paypalStandard', order: this.model.toJSON()},
                     dataType: 'json'
                 }
             );

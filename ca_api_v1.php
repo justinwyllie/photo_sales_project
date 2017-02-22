@@ -138,6 +138,7 @@ class ClientAreaAPI
    
         $mode = $_POST['mode'];
         $gateway = $_POST['gateway'];
+        $deliveryAndTotalShownToCustomer =  $_POST['order'];
         $clientAreaTracker =   '';
         if (isset($_COOKIE['client_area_tracker'])) {
             $ref = $this->user . '_' .  $_COOKIE['client_area_tracker'];
@@ -146,8 +147,8 @@ class ClientAreaAPI
             {
                 $this->outputJson500("Tracking cookie not set in postPaypalStandard");        
             }
-            $basket = $this->useBackendPrices($basket);
-            $orderRef = $this->db->createPendingOrder($ref, $basket);
+            $pendingOrder = $this->createPendingOrderFromBasket($basket, json_decode($deliveryAndTotalShownToCustomer));
+            $orderRef = $this->db->createPendingOrder($ref, $pendingOrder);
             if ($orderRef === false)
             {
                 $this->outputJson500("error calling createPendingOrder in postPaypalStandard");
@@ -331,53 +332,7 @@ class ClientAreaAPI
         return  $this->langStrings();
     }
     
-    public function postOrder()
-    {
-        $order = file_get_contents('php://input');
-        $order = json_decode($order);
-
-        if (isset($_COOKIE['client_area_tracker'])) {
-            $ref = $this->user . '_' . $_COOKIE['client_area_tracker'];
-            $result = $this->db->updateFieldToBasket($ref, 'DeliveryAndTotalShownToUser', $order);
-            if ($result === false) 
-            {
-                $this->outputJson500("Error calling updateFieldToBasket in postOrder");
-            }
-            else
-            {
-                $order->id = 1; 
-                return $order; 
-            }
-        }
-        else
-        {
-            $this->outputJson500("Tracking cookie not sent in call to postOrder");
-        }
-
-    }
-    
-    public function putOrder()
-    {    
-        $order = file_get_contents('php://input');
-        $order = json_decode($order);
-
-        if (isset($_COOKIE['client_area_tracker'])) {
-            $ref = $this->user . '_' . $_COOKIE['client_area_tracker'];
-            $result = $this->db->updateFieldToBasket($ref, 'DeliveryAndTotalShownToUser', $order);
-            if ($result === false) 
-            {
-                $this->outputJson500("Error calling updateFieldToBasket in putOrder");
-            }
-            else
-            {
-                 return $order; 
-            }
-        }
-        else
-        {
-            $this->outputJson500("Tracking cookie not sent in call to putOrder");
-        }  
-    }
+   
   
   
     //COLLECTION METHODS
@@ -495,9 +450,12 @@ class ClientAreaAPI
         return $this->db->createBasket($trackerId);
     }
     
-    private function useBackendPrices($basket)
+    private function createPendingOrderFromBasket($basket, $deliveryAndTotalShownToCustomer)
     {
-        return $basket;      //TODO
+         //TODO         also calculate the totals and the delivery charges and add these in. we can do this here so long as delivery charges are either on or off  at the admin config level and the user has no choices
+         $pendingOrder = array('basket'=>$basket, 'deliveryAndTotalShownToCustomer'=>$deliveryAndTotalShownToCustomer, 'calculatedDeliveryAndTotal'=>'TODO');
+         return $pendingOrder;
+         
     }
     
     
@@ -541,21 +499,7 @@ class ClientAreaAPI
     }
     
 
-    
-    
-    private function generateUniqueOrderId()
-    {
-        $id = 0;
-        $basket = $_SESSION["basket"];
-        foreach ($basket as $order) {
-            if ($order->id > $id) {
-                $id = $order->id;
-            }
-        }
-        
-        return $id + 1;
- 
-    } 
+     
     
     private function setLangStrings()
     {

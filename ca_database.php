@@ -47,8 +47,34 @@ class ClientAreaTextDB
         }
     }
     
+    private function cleanUpFiles()
+    {
+        $threeMonthsInSeconds = 60 * 60 * 24 * 90;
+        $this->cleanUp($this->basketDir, $threeMonthsInSeconds); 
+        $this->cleanUp($this->pendingDir, $threeMonthsInSeconds);
+        $this->cleanUp($this->completedDir, $threeMonthsInSeconds); 
+    }
+    
+    private function cleanUp($dir, $age)
+    {
+        $now = time();
+        foreach (new DirectoryIterator($dir) as $fileInfo) {
+            if ($fileInfo->isDot())
+            {
+                continue;
+            }     
+            $path = $fileInfo->getPathname(); 
+            if (($now - filemtime($path)) >= $age) 
+            {
+                unlink($path);
+            }
+        }   
+    }
+    
     public function createBasket($ref)
     {
+    
+        $this->cleanUpFiles();
         $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref ;
         if (file_exists($basketFile))
         {
@@ -56,7 +82,8 @@ class ClientAreaTextDB
         }
         else
         {
-            $result = file_put_contents($this->basketDir . DIRECTORY_SEPARATOR . $ref, json_encode(array())) ;
+            $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref;
+            $result = file_put_contents($basketFile, json_encode(array())) ;
             if ($result === false)
             {
                 return false;
@@ -88,18 +115,90 @@ class ClientAreaTextDB
     {
         $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref ;
         return unlink($basketFile);       
-
     }
     
+    /**
+     * @return $orderId
+     *
+     */
+    public function addToBasket($ref, $order)
+    {
+        $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref;
+        $basket = $this->getBasket($ref);
+        $newOrderId = $this->generateUniqueOrderId($basket);
+        $order->id = $newOrderId;
+        $basket[] = $order;
+        
+        $result = file_put_contents($basketFile, json_encode($basket)) ; //TODO we have no backup?
+        if ($result === false)
+        {
+            return false;
+        }   
+        else
+        {
+            return $newOrderId;
+        }  
+    }
+    
+    public function updateFieldToBasket($ref, $fieldName, $fieldValue)
+    {
+        $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref;
+        $basket = $this->getBasket($ref);
+        
+    
+    
+    }
+    
+    public function updateBasket($ref, $orderId, $order)
+    {
+        $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref;
+        $basket = $this->getBasket($ref);
+        $updatedBasket = array();
+        
+        foreach ($basket as $orderLine)
+        {
+            if ($orderLine->id == $orderId) {
+                $updatedBasket[] = $order;       
+            }
+            else
+            {
+                $updatedBasket[] = $orderLine;    
+            }
+        }
+        
+        $result = file_put_contents($basketFile, json_encode($updatedBasket)) ; 
+        if ($result === false)
+        {
+            return false;
+        }   
+        else
+        {
+            return true;
+        }  
+    }
+    
+    private function generateUniqueOrderId($basket)
+    {
+        $id = 0;
+        foreach ($basket as $order) {
+            if ($order->id > $id) {
+                $id = $order->id;
+            }
+        }
+        
+        return $id + 1;
 
-    public function createPendingOrder($ref, $basketWithBackendPricing)
+    } 
+    
+
+    public function createPendingOrder($ref, $basketWithBackendPricingDelAndTotals)
     {
         
         $orderId = time(); //TODO how close are we getting to 255 max length?
         $orderRef = $ref . '_' . $orderId;
         $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref ;
         $pendingFile =   $this->pendingDir . DIRECTORY_SEPARATOR . $orderRef;
-        $result = file_put_contents($pendingFile, json_encode($basketWithBackendPricing)) ;
+        $result = file_put_contents($pendingFile, json_encode($basketWithBackendPricingDelAndTotals)) ;
         if ($result === false)
         {
             return false;
@@ -111,20 +210,13 @@ class ClientAreaTextDB
        
     }
     
-    public function movePendingOrderToCompleted($ref)
+    public function movePendingOrderToCompleted($orderRef, $ipnTrackId)
     {
-        $basket = $this->getBasket($ref);
-        if  ($basket === false)
+        $pendingFile = $this->pendingDir . DIRECTORY_SEPARATOR . $orderRef;
+        $completedFile = $this->completedFile . DIRECTORY_SEPARATOR . $orderRef;
+        if (file_exists($pendingFile))
         {
-            return false;
-        }
-        $orderId = time(); //TODO how close are we getting to 255 max length?
-        $orderRef = $ref . '_' . $orderId;
-        $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref ;
-        $pendingFile =   $this->pendingDir . DIRECTORY_SEPARATOR . $orderRef;
-        $result = rename($basketFile, $pendingFile);
-        if ($result) {
-            return array('orderRef'=>$orderRef, 'basket'=>$basket);
+            return rename($pendingFile, $completedFile);
         }
         else
         {
