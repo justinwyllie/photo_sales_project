@@ -6,11 +6,11 @@
  class ClientAreaDB
  {
     
-    private $path = "/var/www/vhosts/mms-oxford.com/jwp_client_area_files"; 
+    private static $path = "/var/www/vhosts/mms-oxford.com/jwp_client_area_files"; 
 
     public static function create()
     {
-        return new ClientAreaTextDB(self::path);
+        return new ClientAreaTextDB(self::$path);
     }
  
 }
@@ -30,17 +30,17 @@ class ClientAreaTextDB
     private function createDirectories()
     {
         
-        $this->basketDir =  $this->path . DIRECTORY_SEPARATOR . 'basket'
+        $this->basketDir =  $this->path . DIRECTORY_SEPARATOR . 'basket';
         if (!file_exists($this->basketDir))
         {
             mkdir($this->basketDir, 0644);    
         }
-        $thi->pendingDir =  $this->path . DIRECTORY_SEPARATOR . 'pending'
+        $this->pendingDir =  $this->path . DIRECTORY_SEPARATOR . 'pending';
         if (!file_exists($this->pendingDir))
         {
             mkdir($this->pendingDir, 0644);    
         }
-        $this->completedDir =  $this->path . DIRECTORY_SEPARATOR . 'completed'
+        $this->completedDir =  $this->path . DIRECTORY_SEPARATOR . 'completed';
         if (!file_exists($this->completedDir))
         {
             mkdir($this->completedDir, 0644);    
