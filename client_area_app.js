@@ -99,10 +99,6 @@ var caApp = (function (Backbone, $) {
                                 );
                                 xhr.then(
                                     function() {
-                                        var clientAreaStorage = new ClientAreaStorage(app.appData.username, _);  
-                                        if (clientAreaStorage.supported) { 
-                                            clientAreaStorage.resetStorage("ca_prints", new Array());
-                                        }
                                         var paypalView = new PaypalThanksView();
                                         var logoutMenu = new LogoutMenuView();
                                         app.layout.renderViewIntoRegion(logoutMenu, 'menu');
@@ -570,9 +566,6 @@ var caApp = (function (Backbone, $) {
             this.on("add", function(newModel) {
                 newModel.set("edit_mode", "save"); 
                 var clientAreaStorage = new ClientAreaStorage(app.appData.username, _);  
-                if (clientAreaStorage.supported) {
-                    var storedPrintBasketItems = clientAreaStorage.updateStorage("ca_prints", newModel.toJSON());        
-                }
             });    
         },
         
@@ -1492,10 +1485,6 @@ var caApp = (function (Backbone, $) {
         
         updateSuccess: function(model) {
             model.set("edit_mode", "save");
-            var clientAreaStorage = new ClientAreaStorage(app.appData.username, _);  
-            if (clientAreaStorage.supported) {
-                var storedPrintBasketItems = clientAreaStorage.updateStorage("ca_prints", model.toJSON());        
-            }
         },
         
        updateError: function(model) {
@@ -1575,31 +1564,47 @@ var caApp = (function (Backbone, $) {
                 var thumbsPerPage = parseInt(app.appData.thumbsPerPage);
                 if (mode == 'prints') {
                     //reset true in case there are 2 mode choices in session. 
-                    var xhrPricingModel = app.pricingModel.fetch({reset: true});
-                    var xhrBasketCollection = app.basketCollection.fetch({reset: true})  ;
-                    var xhrPrintsThumbsCollection = app.printsThumbsCollection.fetch({reset: true});
-               
-                    $.when(xhrPricingModel, xhrBasketCollection, xhrPrintsThumbsCollection).then(
-                        function(result1, result2, result3) {
-                            var clientAreaStorage = new ClientAreaStorage(app.appData.username, _);  
-                            if (clientAreaStorage.supported) {
-                                clientAreaStorage.resetStorage("ca_prints", app.basketCollection.toJSON());   //if it has been cleared on the back-end this will clear the storage.
-                            }
-                            
-                            var pageModelsJSON = app.printsThumbsCollection.pagination(thumbsPerPage, 1);
-                            var pagedCollection = new  Backbone.Collection(pageModelsJSON);
-        
-                            var thumbsView = new ThumbsView({collection: pagedCollection, mode: mode, maxHeight: app.printsThumbsCollection.maxHeight, labelHeight: app.printsThumbsCollection.labelHeight });
-                            app.layout.renderViewIntoRegion(thumbsView, 'main');
-                            var menuView = new PrintsMenuView({totalThumbs: app.printsThumbsCollection.length, thumbsPerPage: thumbsPerPage, active: 1});
-                            app.layout.renderViewIntoRegion(menuView, 'menu');
-                        
-                        },
-                        function() {
-                            var errorView = new ErrorView();   //TODO test this
-                            app.layout.renderViewIntoRegion(errorView, 'main');  
-                        }    
+                    var xhrCreateBasket = $.ajax(
+                        {
+                            url: '/api/v1/createBasket',
+                            method: 'GET',
+                            dataType: 'json'
+                        }
                     );
+                    
+                    xhrCreateBasket.then(
+                        function() {
+                            var xhrPricingModel = app.pricingModel.fetch({reset: true});
+                            var xhrBasketCollection = app.basketCollection.fetch({reset: true})  ;
+                            var xhrPrintsThumbsCollection = app.printsThumbsCollection.fetch({reset: true});
+                   
+                            $.when(xhrPricingModel, xhrBasketCollection, xhrPrintsThumbsCollection).then(
+                                function(result1, result2, result3) {
+                                    
+                                    var pageModelsJSON = app.printsThumbsCollection.pagination(thumbsPerPage, 1);
+                                    var pagedCollection = new  Backbone.Collection(pageModelsJSON);
+                
+                                    var thumbsView = new ThumbsView({collection: pagedCollection, mode: mode, maxHeight: app.printsThumbsCollection.maxHeight, labelHeight: app.printsThumbsCollection.labelHeight });
+                                    app.layout.renderViewIntoRegion(thumbsView, 'main');
+                                    var menuView = new PrintsMenuView({totalThumbs: app.printsThumbsCollection.length, thumbsPerPage: thumbsPerPage, active: 1});
+                                    app.layout.renderViewIntoRegion(menuView, 'menu');
+                                
+                                },
+                                function() {
+                                    var errorView = new ErrorView();   //TODO test this
+                                    app.layout.renderViewIntoRegion(errorView, 'main');  
+                                }    
+                            );
+                        },
+                        function()
+                        {
+                            var errorView = new ErrorView();   //TODO test this
+                            app.layout.renderViewIntoRegion(errorView, 'main'); 
+                        }
+                    
+                    
+                    )
+         
                     
                 } else {
                     var xhrProofsThumbsCollection = app.proofsThumbsCollection.fetch({reset: true}) ; 
@@ -1701,10 +1706,10 @@ var caApp = (function (Backbone, $) {
             data.password = password;
 
             var clientAreaStorage = new ClientAreaStorage(user);
+            //TODO are we using any of this?
             if (clientAreaStorage.supported) {
                 data.restoredProofs = clientAreaStorage.getValueAsString("ca_proofs")
                 data.restoredProofsPagesVisited = clientAreaStorage.getValueAsString("ca_proofs_pages_visited");
-                data.restoredPrints =  clientAreaStorage.getValueAsString("ca_prints");
                 data.restoredPrintsPagesVisited =  clientAreaStorage.getValueAsString("ca_prints_pages_visited"); 
             }     
 
@@ -1721,13 +1726,7 @@ var caApp = (function (Backbone, $) {
                     app.appData = result.appData;
                     var modeChoiceView = new ModeChoiceView();
                     app.layout.renderViewIntoRegion(modeChoiceView, 'main');
-                    if (result.clearBasket) {
-                        var clientAreaStorage = new ClientAreaStorage(app.appData.username, _);  
-                        if (clientAreaStorage.supported) { 
-                            clientAreaStorage.resetStorage("ca_prints", new Array());
-                        }    
-                    }
-                } else {
+                 } else {
                     that.setMessage(result.message);
                 }
             });

@@ -1,107 +1,158 @@
 <?php
 
 
-/**
- * Database fields: gateway, orderRef, sessionId, datePlaced(epoch), paymentStatus, ipnTrackId
- * paymentStatus is initially 'provisional' then the PayPal value. we are looking for 'Completed'
- *    TODO - if something goes wrong we will lose the database need a backup 
- *
- */
 
-class ClientAreaDB
-{
-    //absolute path on your system to the client_area_files directory
+ 
+ class ClientAreaDB
+ {
+    
     private $path = "/var/www/vhosts/mms-oxford.com/jwp_client_area_files"; 
 
-    public function __construct()
+    public static function create()
     {
+        return new ClientAreaTextDB(self::path);
+    }
+ 
+}
+ 
+ 
+class ClientAreaTextDB
+{
 
-        $this->file = $this->path . DIRECTORY_SEPARATOR . 'ca_orders_database.csv';
-        $this->db = [];
-        $this->createDatabase();
-
+    public function __construct($path)
+    {
+        $this->path = $path;
+        $this->createDirectories();
+ 
+    }
+    
+    //requires safe_mode_include_dir.
+    private function createDirectories()
+    {
+        
+        $this->basketDir =  $this->path . DIRECTORY_SEPARATOR . 'basket'
+        if (!file_exists($this->basketDir))
+        {
+            mkdir($this->basketDir, 0644);    
+        }
+        $thi->pendingDir =  $this->path . DIRECTORY_SEPARATOR . 'pending'
+        if (!file_exists($this->pendingDir))
+        {
+            mkdir($this->pendingDir, 0644);    
+        }
+        $this->completedDir =  $this->path . DIRECTORY_SEPARATOR . 'completed'
+        if (!file_exists($this->completedDir))
+        {
+            mkdir($this->completedDir, 0644);    
+        }
+    }
+    
+    public function createBasket($ref)
+    {
+        $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref ;
+        if (file_exists($basketFile))
+        {
+            return true;
+        }
+        else
+        {
+            $result = file_put_contents($this->basketDir . DIRECTORY_SEPARATOR . $ref, json_encode(array())) ;
+            if ($result === false)
+            {
+                return false;
+            }   
+            else
+            {
+                return true;
+            }   
+        }
     }
     
     
-    /**
-     * return the sessionId of the updated order
-     */
-
-    public function markOrderStatus($orderRef, $paymentStatus, $ipnTrackId) {
-        //TODO if we support gateways other than PayPal standard we will have to equalise the paymentStatus field as we check for 'Completed' in postLogin
-        $sessionId = null;
-        foreach ($this->db as &$order) {
-            error_log('gothere'.$order[1]);
-            if ($order[1] == $orderRef) {
-                $order[4]   =  $paymentStatus;
-                $order[5]   =  $ipnTrackId;
-                $sessionId = $order[2];
-                break;
-            }
+    public function getBasket($ref)
+    {
+        $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref ;
         
+        if (file_exists($basketFile))
+        {
+            $basketString = file_get_contents($this->basketDir);  
+            return json_decode($basketString);
         }
-        $this->saveDatabase();
-        return $sessionId;
-     }
-    
-    public function getOrderCompletedStatus($orderRef) {
-        $orderStatus = false;
-        foreach ($this->db as $order) {
-            if ($order[1] == $orderRef) {
-                $orderStatus = $order[4];
-                break;
-            }
-        }
-        if ($orderStatus === 'Completed') {
-            return true;
-        } 
-        else  
+        else
         {
             return false;
         }
+    }
+    
+    public function clearBasket($ref)
+    {
+        $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref ;
+        return unlink($basketFile);       
+
+    }
+    
+
+    public function createPendingOrder($ref, $basketWithBackendPricing)
+    {
+        
+        $orderId = time(); //TODO how close are we getting to 255 max length?
+        $orderRef = $ref . '_' . $orderId;
+        $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref ;
+        $pendingFile =   $this->pendingDir . DIRECTORY_SEPARATOR . $orderRef;
+        $result = file_put_contents($pendingFile, json_encode($basketWithBackendPricing)) ;
+        if ($result === false)
+        {
+            return false;
+        }
+        else
+        {
+            return $this->clearBasket($ref);
+        }
        
-
     }
     
-    public function createEntry($gateway, $orderRef, $sessionId)   {
-        $epoch = time();
-        $this->db[] = array($gateway, $orderRef, $sessionId, $epoch, 'provisional', '');
-        $this->saveDatabase();
-    }
-    
-
-     
- 
-    private function createDatabase() {
-        $fileHandle = fopen($this->file, 'r') ;
-        $epoch = time();
-        $oneMonthSeconds = 60 * 60 * 24 * 30 * 3;
-        if (!empty($fileHandle)) {
-            while ( ($order = fgetcsv($fileHandle) ) !== FALSE ) {
-                //lose records more than 3 months old to prevent database ever expanding   TODO test
-                if ($order[3] > ($epoch - $oneMonthSeconds)) {
-                     $this->db[] = $order;
-                }
-            }
-        error_log('aaa'.sizeof($this->db));    
-        $this->closeFileHandle($fileHandle);    
+    public function movePendingOrderToCompleted($ref)
+    {
+        $basket = $this->getBasket($ref);
+        if  ($basket === false)
+        {
+            return false;
+        }
+        $orderId = time(); //TODO how close are we getting to 255 max length?
+        $orderRef = $ref . '_' . $orderId;
+        $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref ;
+        $pendingFile =   $this->pendingDir . DIRECTORY_SEPARATOR . $orderRef;
+        $result = rename($basketFile, $pendingFile);
+        if ($result) {
+            return array('orderRef'=>$orderRef, 'basket'=>$basket);
+        }
+        else
+        {
+            return false;
         }
     }
     
-    private function saveDatabase() {
-        $fileHandle = fopen($this->file, 'w') ;
-        if (!empty($fileHandle)) {
-            foreach ($this->db as $order) {
-                fputcsv($fileHandle, $order);
-            }
-            $this->closeFileHandle($fileHandle);   
-        }    
-    }
     
-    private function closeFileHandle($fileHandle) {
-        fclose($fileHandle); 
-    }
-    
-}    
+
+}
+ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
 
 ?>

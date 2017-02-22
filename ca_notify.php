@@ -84,14 +84,18 @@ if (strcmp ($res, "VERIFIED") == 0) {
 
 function processCompletedOrder($orderRef, $paymentStatus, $ipnTrackId) {
     include('ca_database.php');
-    $db = new  ClientAreaDB();  
-    $sessionIdOfOrder = $db->markOrderStatus($orderRef, $paymentStatus, $ipnTrackId);
-    if ($sessionIdOfOrder !== null) {      
-        session_id($sessionIdOfOrder);
-        session_start();
-        //TODO IF the ipn takes a while they could have started a new order and then we'll clear it..
-        // not sure how else to do this.
-        $_SESSION['basket'] = array();
+    try 
+    {
+        $db = ClientAreaDB::create();  
+    }
+    catch(Exception $e)
+    {
+       mail('justinwyllie@hotmail.co.uk', 'Error opening DB in PayPal IPN handler', 'The confirmed order ref is: ' . $e->getMessage());
+       exit();        
+    }
+    
+    if ($paymentStatus === 'Completed') {
+        $db->movePendingOrdertoCompleted($orderRef, $ipnTrackId);
     }
 
 

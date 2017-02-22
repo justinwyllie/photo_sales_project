@@ -17,7 +17,14 @@ class ClientAreaAPI
     
          //absolute path on your system to the client_area_files directory
         $this->clientAreaDirectory = "/var/www/vhosts/mms-oxford.com/jwp_client_area_files";
-        $this->db = new ClientAreaDB();
+        try 
+        {
+            $this->db = ClientAreaDB::create();
+        }
+        catch(Exception $e)
+        {
+            $this->outputJson500($e->getMessage());         
+        }
 
         $this->accountsPath = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_accounts.xml";
         $this->imageProvider = "/client_area_image_provider.php";
@@ -57,12 +64,51 @@ class ClientAreaAPI
     
     //APP methods
     
-    public function getClearCompleteBasket() {
-        $_SESSION['basket'] = array();
-        $obj = new stdClass();
-        $obj->status = "success";
-        $obj->message = "";
-        $this->outputJson($obj);
+    public function getCreateBasket()
+    {
+    
+        if (isset($_COOKIE['client_area_tracker'])) {
+            $result =  $this->createBasket($_COOKIE['client_area_tracker']);
+            if ($result === false) {
+                  $this->outputJson500("Error calling createBasket in getCreateBasket");           
+            }
+            else
+            {
+                  $obj = new stdClass();
+                  $obj->status = "success";
+                  $obj->message = "";
+                  $this->outputJson($obj);
+            }
+        }
+        else
+        {
+            $this->outputJson500("Tracking cookie not set in getCreateBasket");     
+        }
+         
+    
+    }
+    
+    public function getClearCompleteBasket() 
+    {
+        if (isset($_COOKIE['client_area_tracker'])) {
+            $result =  $this->clearBasket($_COOKIE['client_area_tracker']);
+            if ($result === false) {
+                  $this->outputJson500("Error calling clearBasket in getClearCompleteBasket");           
+            }
+            else
+            {
+                  $obj = new stdClass();
+                  $obj->status = "success";
+                  $obj->message = "";
+                  $this->outputJson($obj);
+            }
+        }
+        else
+        {
+            $this->outputJson500("Tracking cookie not set in getClearCompleteBasket");     
+        }
+         
+        
     
     }
     
@@ -87,33 +133,44 @@ class ClientAreaAPI
 
     }
     
-    
-    /**
-     * called at the start of the order process
-     * send the current state of the Basket and The Order to the site owner *before the payment transaction
-     * we do this in case there is an error e.g the SESSION is lost - and we no longer have the Basket and Order when the PayPal notify is handled
-     */
+
     public function postPaypalStandard() {
    
         $mode = $_POST['mode'];
         $gateway = $_POST['gateway'];
         $clientAreaTracker =   '';
         if (isset($_COOKIE['client_area_tracker'])) {
-            $clientAreaTracker = $_COOKIE['client_area_tracker'];
+            $ref = $this->user . '_' .  $_COOKIE['client_area_tracker'];
+            $basket = $this->db->getBasket($ref);
+            if ($basket === false)
+            {
+                $this->outputJson500("Tracking cookie not set in postPaypalStandard");        
+            }
+            $basket = $this->useBackendPrices($basket);
+            $orderRef = $this->db->createPendingOrder($ref, $basket);
+            if ($orderRef === false)
+            {
+                $this->outputJson500("error calling createPendingOrder in postPaypalStandard");
+            }
+            else
+            {
+
+                $data = $this->packageOrderForEmail($orderRef, $basket, $mode, $gateway);
+                $data = "ORDER REF: $orderRef \n\n" . $data;
+                $this->mailAdmin($data, "Provisional Order on Website.");
+                $obj = new stdClass();
+                $obj->status = "success";
+                $obj->message = "";
+                $obj->orderRef = $orderRef;
+                $this->outputJson($obj); 
+            }
+        }
+        else
+        {
+            $this->outputJson500("Tracking cookie not set in postPaypalStandard");    
         }
         
-        $orderRef =  $_SESSION["user"] . '_' . $clientAreaTracker . '_' . time();
-        $data = $this->packageOrder($mode, $gateway);
-        $data = "ORDER REF: $orderRef \n\n" . $data;
-        $this->mailAdmin($data, "Provisional Order on Website.");
-        $obj = new stdClass();
-        $obj->status = "success";
-        $obj->message = "";
-        $obj->orderRef = $orderRef;
-        $this->db->createEntry('paypalStandard', $orderRef, session_id());
-        $expires = $expires =  time() + (10 * 365 * 24 * 60 * 60);
-        $cookie = array('name'=>'client_area_basket_in_progress', 'value'=>$orderRef, 'expires'=>$expires);
-        $this->outputJson($obj, $cookie);  
+         
     }
     
     public function getPrintThumbs()
@@ -179,9 +236,9 @@ class ClientAreaAPI
                                                              
         $user = $_POST['name'];
         $password = $_POST['password'];
+        //TODO are we using any of these?
         $restoredProofs = $_POST['restoredProofs'];                  
         $restoredProofsPagesVisited = $_POST['restoredProofsPagesVisited'];
-        $restoredPrints = $_POST['restoredPrints'];                  
         $restoredPrintsPagesVisited = $_POST['restoredPrintsPagesVisited'];
 
         if (!empty($this->accounts[$user]) && !empty($password) && ($this->accounts[$user]["password"] === $password)) {
@@ -217,32 +274,21 @@ class ClientAreaAPI
                 }
             }
             
-            //If the user is logging in try to restore the prints chosen based on what was stored in html data if it is available
-            //however. if the browser cookie client_area_basket_in_progress id is set AND if this has been marked as Completed in the orders database
-            // then do not do this and send back a flag to tell the f/e to clear local storage
-            //the logic is: when they start an order we set an id into cookie client_area_basket_in_progress and if that id is not completed we regenerate the basket
-
-
-            $orderCompleted = $this->getOrderCompletedStatus();
-           
-            if (!empty($restoredPrints)) {
-                $restoredPrintsArray = json_decode($restoredPrints);
-                if (is_array($restoredPrintsArray) && !$orderCompleted) {
-                    $_SESSION["basket"] = $restoredPrintsArray;
-                    $obj->clearBasket = false;
-                } else {
-                     $expires = $expires =  time() + (10 * 365 * 24 * 60 * 60);
-                     $cookie = array('name'=>'client_area_basket_in_progress', 'value'=>'', 'expires'=>$expires);  
-                     setcookie($cookie['name'], $cookie['value'], $cookie['expires']);
-                     $obj->clearBasket = true;    
-                }
-            }
+          
+            $cookie = null;
+           //if this user (identified by browser cookie) has an order in /baskets regenerate from that
+            if (!isset($_COOKIE['client_area_tracker'])) {
+                $expires =  time() + (10 * 365 * 24 * 60 * 60);
+                $rand = time() . rand(0, 1000000);
+                $cookie = array('name'=>'client_area_tracker', 'value'=>$rand, 'expires'=>$expires);
+             } 
+          
             
             //If the user is logging in try to restore the prints pages visited chosen based on what was stored in html data if it is available  
+            //TODO not sure if we are using this?
             if (!empty($restoredPrintsPagesVisited)) {
                 $restoredPrintsPagesVisitedArray = json_decode($restoredPrintsPagesVisited);
                 if (is_array($restoredPrintsPagesVisitedArray)) {
-
                     $_SESSION["printsPagesVisited"] = $restoredPrintsPagesVisitedArray;
                 }
             }
@@ -254,12 +300,8 @@ class ClientAreaAPI
             $obj->status = "error";
             $obj->message = $this->lang('loginError');
         }
-        $expires =  time() + (10 * 365 * 24 * 60 * 60);
-        $cookie = null;
-        if (!isset($_COOKIE['client_area_tracker'])) {
-            $rand = rand(0, 1000000);
-            $cookie = array('name'=>'client_area_tracker', 'value'=>$rand, 'expires'=>$expires);
-        }    
+        
+  
         $this->outputJson($obj, $cookie);
 
     }
@@ -293,17 +335,48 @@ class ClientAreaAPI
     {
         $order = file_get_contents('php://input');
         $order = json_decode($order);
-        $_SESSION["order"] = $order;
-        $order->id = 1; 
-        return $order;    
+
+        if (isset($_COOKIE['client_area_tracker'])) {
+            $ref = $this->user . '_' . $_COOKIE['client_area_tracker'];
+            $result = $this->db->updateFieldToBasket($ref, 'DeliveryAndTotalShownToUser', $order);
+            if ($result === false) 
+            {
+                $this->outputJson500("Error calling updateFieldToBasket in postOrder");
+            }
+            else
+            {
+                $order->id = 1; 
+                return $order; 
+            }
+        }
+        else
+        {
+            $this->outputJson500("Tracking cookie not sent in call to postOrder");
+        }
+
     }
     
     public function putOrder()
     {    
         $order = file_get_contents('php://input');
         $order = json_decode($order);
-        $_SESSION["order"] = $order;
-        return $order;    
+
+        if (isset($_COOKIE['client_area_tracker'])) {
+            $ref = $this->user . '_' . $_COOKIE['client_area_tracker'];
+            $result = $this->db->updateFieldToBasket($ref, 'DeliveryAndTotalShownToUser', $order);
+            if ($result === false) 
+            {
+                $this->outputJson500("Error calling updateFieldToBasket in putOrder");
+            }
+            else
+            {
+                 return $order; 
+            }
+        }
+        else
+        {
+            $this->outputJson500("Tracking cookie not sent in call to putOrder");
+        }  
     }
   
   
@@ -312,23 +385,49 @@ class ClientAreaAPI
     {
            
         $result = new stdClass();
-        $basket = $_SESSION["basket"];
-        $deIndexedBasket = array();
-        foreach ($basket as $id => $order) {
-            $deIndexedBasket[] = $order;
+        if (isset($_COOKIE['client_area_tracker'])) {
+            $ref = $this->user . '_' . $_COOKIE['client_area_tracker'];
+            $basket = $this->db->getBasket($ref);
+            if ($basket === false) 
+            {
+                $this->outputJson500("Error getting basket in getBasket");
+            }
+            else
+            {
+                return $basket;
+            }
         }
-        return $deIndexedBasket;
+        else
+        {
+            $this->outputJson500("Tracking cookie not sent in call to getBasket");
+        }
+        
     }
     
     public function postBasket()
     {
         $newOrderLine = file_get_contents('php://input');
-        $newId = $this->generateUniqueOrderId();
         $order = json_decode($newOrderLine);
-        $order->id = $newId;
-        $_SESSION["basket"][$newId] = $order;
         
-        return $order;
+        if (isset($_COOKIE['client_area_tracker'])) {
+            $ref = $this->user . '_' . $_COOKIE['client_area_tracker'];
+            $result = $this->db->addToBasket($ref, $order);
+            if ($result === false) 
+            {
+                $this->outputJson500("Error calling db->addToBasket in postBasket");
+            }
+            else
+            {
+                $newId = $result;
+                $order->id = $newId;
+                return $order;
+                    
+            }
+        }
+        else
+        {
+            $this->outputJson500("Tracking cookie not sent in call to postBasket");
+        }
 
     }
     
@@ -337,31 +436,77 @@ class ClientAreaAPI
         $updatedOrderLine = file_get_contents('php://input');
         $orderId = $this->param;
         $order = json_decode($updatedOrderLine);
-        $_SESSION["basket"][$orderId] = $order;
-        return $order;
+        if (isset($_COOKIE['client_area_tracker'])) {
+            $ref = $this->user . '_' . $_COOKIE['client_area_tracker'];
+            $result = $this->db->updateBasket($ref, $orderId, $order);
+            if ($result === false) 
+            {
+                $this->outputJson500("Error calling db->updateBasket in putBasket");
+            }
+            else
+            {
+                return $order;    
+            }
+        }
+        else
+        {
+            $this->outputJson500("Tracking cookie not sent in call to putBasket");
+        }
+      
+      
 
     }
     
     public function deleteBasket()
     {
         $orderId = $this->param;
-        $basket = $_SESSION["basket"];
-        unset($basket[$orderId]);
-        $_SESSION["basket"] = $basket;
-        return  ""; 
+        if (isset($_COOKIE['client_area_tracker'])) {
+            $ref = $this->user . '_' . $_COOKIE['client_area_tracker'];
+            $result = $this->db->clearBasket($ref);
+            if ($result === false) 
+            {
+                $this->outputJson500("Error calling db->clearBasket in deleteBasket");
+            }
+            else
+            {
+                return "";   
+            }
+        }
+        else
+        {
+            $this->outputJson500("Tracking cookie not sent in call to deleteBasket");
+        }
     
     }
     
 
   
     //HELPERS
+
+   
+    private function clearBasket($trackerId)
+    {
+          return $this->db->clearBasket($trackerId);    
+    }
+    
+   
+    private function createBasket($trackerId)
+    {
+        return $this->db->createBasket($trackerId);
+    }
+    
+    private function useBackendPrices($basket)
+    {
+        return $basket;      //TODO
+    }
+    
+    
     /**
      *   TODO - text in lang file
      *   make this look nicer
      *
      */
-    private function packageOrder($mode, $gateway) {
-    
+    private function packageOrderForEmail($orderRef, $basket, $mode, $gateway) {
     
         $package = "Hi\n\n";    
     
@@ -371,20 +516,14 @@ class ClientAreaAPI
             $package.= 'An order has been placed on the web site. You need to take payment manually.';    
         }
 
-        if (isset($_SESSION["basket"])) {
-            $package = "\n\n" . $package . "\n\nBasket:\n\n";
-            $basket = $_SESSION["basket"];
-            foreach ($basket as $orderLine) {
-                $package = $package . json_encode($orderLine) . "\n\n";
-            }
-        } 
+
+        $package = "\n\n" . $package . "\n\nBasket:\n\n";
+        foreach ($basket as $orderLine) {
+            $package = $package . json_encode($orderLine) . "\n\n";
+        }    
+   
         
         $package.= "\n\n";
-        
-        if (!empty($_SESSION["order"] )) {
-            $package = $package .  "Order Info:\n\n";
-            $package = $package . json_encode($_SESSION["order"]);
-        } 
         
         $package = $package . "\n\n" . "Remember to check the pricing is correct!" . "\n\n" . "The Web Team";
         return $package;   
@@ -401,15 +540,7 @@ class ClientAreaAPI
         
     }
     
-    private function getOrderCompletedStatus() 
-    {
-        $orderStatus = false;
-        if (isset($_COOKIE['client_area_basket_in_progress'])) {
-            $orderRef = $_COOKIE['client_area_basket_in_progress'];
-            $orderStatus = $this->db->getOrderCompletedStatus($orderRef);
-        }
-        return $orderStatus;    
-    }
+
     
     
     private function generateUniqueOrderId()
