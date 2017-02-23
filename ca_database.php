@@ -33,17 +33,17 @@ class ClientAreaTextDB
         $this->basketDir =  $this->path . DIRECTORY_SEPARATOR . 'basket';
         if (!file_exists($this->basketDir))
         {
-            mkdir($this->basketDir, 0644);    
+            mkdir($this->basketDir, 0744);    
         }
         $this->pendingDir =  $this->path . DIRECTORY_SEPARATOR . 'pending';
         if (!file_exists($this->pendingDir))
         {
-            mkdir($this->pendingDir, 0644);    
+            mkdir($this->pendingDir, 0744);    
         }
         $this->completedDir =  $this->path . DIRECTORY_SEPARATOR . 'completed';
         if (!file_exists($this->completedDir))
         {
-            mkdir($this->completedDir, 0644);    
+            mkdir($this->completedDir, 0744);    
         }
     }
     
@@ -99,11 +99,11 @@ class ClientAreaTextDB
     public function getBasket($ref)
     {
         $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref ;
-        
         if (file_exists($basketFile))
         {
-            $basketString = file_get_contents($this->basketDir);  
-            return json_decode($basketString);
+            $basketString = file_get_contents($basketFile);  
+            $objBasket = json_decode($basketString);
+            return $objBasket;
         }
         else
         {
@@ -193,7 +193,6 @@ class ClientAreaTextDB
 
     public function createPendingOrder($ref, $basketWithBackendPricingDelAndTotals)
     {
-        
         $orderId = time(); //TODO how close are we getting to 255 max length?
         $orderRef = $ref . '_' . $orderId;
         $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref ;
@@ -205,18 +204,38 @@ class ClientAreaTextDB
         }
         else
         {
-            return $this->clearBasket($ref);
+            $this->clearBasket($ref);
+            return $orderRef;
         }
        
     }
     
-    public function movePendingOrderToCompleted($orderRef, $ipnTrackId)
+    public function movePendingOrderToCompleted($orderRef, $ipnTrackId = null, $txnId = null)
     {
         $pendingFile = $this->pendingDir . DIRECTORY_SEPARATOR . $orderRef;
-        $completedFile = $this->completedFile . DIRECTORY_SEPARATOR . $orderRef;
+        $completedFile = $this->completedDir . DIRECTORY_SEPARATOR . $orderRef;
         if (file_exists($pendingFile))
         {
-            return rename($pendingFile, $completedFile);
+            $moveResult = rename($pendingFile, $completedFile);
+            if ($moveResult) {
+                 $completedString = file_get_contents($completedFile);
+                $completed = json_decode($completedString);
+                $completed->ipnTrackId = $ipnTrackId;
+                $completed->txnId = $txnId; 
+                $addTransInfoResult = file_put_contents($completedFile, json_encode($completed));
+                if ($addTransInfoResult === false)
+                {
+                    return false;
+                }
+                else
+                {
+                    return $completed;
+                }
+            }
+            else
+            {
+                return false;
+            }
         }
         else
         {

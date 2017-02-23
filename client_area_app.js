@@ -812,18 +812,9 @@ var caApp = (function (Backbone, $) {
                     this.model.set({
                         address_type: 'address_on_file'        
                      }); 
-                     //the address has come from site owner config: can't tell user it is invalid.
-                     
-                     var that = this;
-                     xhr.then(
-                            function() {
-                                that.showChargesScreen();
-                            },
-                            function() {
-                                var errorView = new ErrorView();
-                                that.renderViewIntoRegion(errorView, 'main');    
-                            }
-                        );
+                     //the address has come from site owner config: can't tell user it is invalid so don't validate.
+                     this.showChargesScreen();
+
                 }  else {
                         this.model.set({
                             clientName: this.$el.find('#ca_address_name').val(),
@@ -898,6 +889,7 @@ var caApp = (function (Backbone, $) {
                         data.amount = that.model.get("grandTotal");
                         data.paypal_code = app.pricingModel.get("currency").payPayCode;
                         data.thanks_url =   loc.href + '/thanks';
+                        data.charset = 'UTF-8';
                         data.cancel_url =   loc.href + '/cancel';
                         if (app.appData.paypalIPNSSL) {
                             var protocol = 'https://';    
@@ -973,17 +965,8 @@ var caApp = (function (Backbone, $) {
             data.grandTotal = grandTotal;
             data.totalItems = totalItems;
             data.deliveryCharges = deliveryCharges;
-            var xhr = this.model.save();
-            var that = this;
-            xhr.then(function() {
-                    that.$el.html(that.screen2Tmpl(data)); 
-                },
-                function() {
-                    var errorView = new ErrorView();
-                    app.layout.renderViewIntoRegion(errorView, 'main'); 
-            });
-
-        },
+            this.$el.html(this.screen2Tmpl(data)); 
+         },
     
         render: function() {
             var data = {};

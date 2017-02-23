@@ -38,6 +38,9 @@ foreach ($myPost as $key => $value) {
   if ($key == 'ipn_track_id') {
     $ipnTrackId = $value;
   }
+  if ($key == 'txn_id') {
+    $txnId = $value;
+  }
 }
 
 
@@ -76,13 +79,13 @@ curl_close($ch);
 
 if (strcmp ($res, "VERIFIED") == 0) {
   // The IPN is verified, process it
-  processCompletedOrder($custom, $paymentStatus, $ipnTrackId);   
+  processCompletedOrder($custom, $paymentStatus, $ipnTrackId, $txnId);   
   
 } else if (strcmp ($res, "INVALID") == 0) {
   // IPN invalid, log for manual investigation
 }
 
-function processCompletedOrder($orderRef, $paymentStatus, $ipnTrackId) {
+function processCompletedOrder($orderRef, $paymentStatus, $ipnTrackId, $txnId) {
     include('ca_database.php');
     try 
     {
@@ -95,13 +98,23 @@ function processCompletedOrder($orderRef, $paymentStatus, $ipnTrackId) {
     }
     
     if ($paymentStatus === 'Completed') {
-        $db->movePendingOrdertoCompleted($orderRef, $ipnTrackId);
-    }
-
-
+        $completedOrder = $db->movePendingOrdertoCompleted($orderRef, $ipnTrackId, $txnId);
     
-    //TODO 
-    mail('justinwyllie@hotmail.co.uk', 'Confirmed Order on Web Site', 'The confirmed order ref is: ' . $orderRef);
+         $data = 'The confirmed order ref is: ' . $orderRef . "\n\n";
+         if ($completedOrder === false)
+         {
+                $data = $data . "\n\n" . "Unfortunately something went wrong. The order has been paid for but the order file has not been correctly stored on the system."  ;
+         }
+         else
+         {
+            $data = $data . json_encode($completedOrder);
+         }
+        
+        //TODO 
+        mail('justinwyllie@hotmail.co.uk', 'Confirmed Order on Web Site', $data);
+    
+    }    //TODO what other statuses do we need to handle?
+    
 }
 
 ?>

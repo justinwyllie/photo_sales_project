@@ -68,7 +68,7 @@ class ClientAreaAPI
     {
     
         if (isset($_COOKIE['client_area_tracker'])) {
-            $result =  $this->createBasket($_COOKIE['client_area_tracker']);
+            $result =  $this->createBasket($_SESSION['user'] . '_' . $_COOKIE['client_area_tracker']);
             if ($result === false) {
                   $this->outputJson500("Error calling createBasket in getCreateBasket");           
             }
@@ -141,13 +141,13 @@ class ClientAreaAPI
         $deliveryAndTotalShownToCustomer =  $_POST['order'];
         $clientAreaTracker =   '';
         if (isset($_COOKIE['client_area_tracker'])) {
-            $ref = $this->user . '_' .  $_COOKIE['client_area_tracker'];
+            $ref = $_SESSION['user'] . '_' .  $_COOKIE['client_area_tracker'];
             $basket = $this->db->getBasket($ref);
             if ($basket === false)
             {
                 $this->outputJson500("Tracking cookie not set in postPaypalStandard");        
             }
-            $pendingOrder = $this->createPendingOrderFromBasket($basket, json_decode($deliveryAndTotalShownToCustomer));
+            $pendingOrder = $this->createPendingOrderFromBasket($basket, $deliveryAndTotalShownToCustomer);
             $orderRef = $this->db->createPendingOrder($ref, $pendingOrder);
             if ($orderRef === false)
             {
@@ -155,8 +155,7 @@ class ClientAreaAPI
             }
             else
             {
-
-                $data = $this->packageOrderForEmail($orderRef, $basket, $mode, $gateway);
+                $data = $this->packageOrderForEmail($orderRef, $pendingOrder, $mode, $gateway);
                 $data = "ORDER REF: $orderRef \n\n" . $data;
                 $this->mailAdmin($data, "Provisional Order on Website.");
                 $obj = new stdClass();
@@ -170,8 +169,6 @@ class ClientAreaAPI
         {
             $this->outputJson500("Tracking cookie not set in postPaypalStandard");    
         }
-        
-         
     }
     
     public function getPrintThumbs()
@@ -338,10 +335,10 @@ class ClientAreaAPI
     //COLLECTION METHODS
     public function getBasket() 
     {
-           
+         
         $result = new stdClass();
         if (isset($_COOKIE['client_area_tracker'])) {
-            $ref = $this->user . '_' . $_COOKIE['client_area_tracker'];
+            $ref = $_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'];
             $basket = $this->db->getBasket($ref);
             if ($basket === false) 
             {
@@ -365,7 +362,7 @@ class ClientAreaAPI
         $order = json_decode($newOrderLine);
         
         if (isset($_COOKIE['client_area_tracker'])) {
-            $ref = $this->user . '_' . $_COOKIE['client_area_tracker'];
+            $ref = $_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'];
             $result = $this->db->addToBasket($ref, $order);
             if ($result === false) 
             {
@@ -392,7 +389,7 @@ class ClientAreaAPI
         $orderId = $this->param;
         $order = json_decode($updatedOrderLine);
         if (isset($_COOKIE['client_area_tracker'])) {
-            $ref = $this->user . '_' . $_COOKIE['client_area_tracker'];
+            $ref = $_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'];
             $result = $this->db->updateBasket($ref, $orderId, $order);
             if ($result === false) 
             {
@@ -416,7 +413,7 @@ class ClientAreaAPI
     {
         $orderId = $this->param;
         if (isset($_COOKIE['client_area_tracker'])) {
-            $ref = $this->user . '_' . $_COOKIE['client_area_tracker'];
+            $ref = $_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'];
             $result = $this->db->clearBasket($ref);
             if ($result === false) 
             {
