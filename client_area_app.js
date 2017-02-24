@@ -863,7 +863,7 @@ var caApp = (function (Backbone, $) {
                 {
                     url: '/api/v1/paypalStandard',
                     method: 'POST',
-                    data: {mode: 'online_payment', gateway: 'paypalStandard', order: this.model.toJSON()},
+                    data: {mode: 'online_payment', order: this.model.toJSON()},
                     dataType: 'json'
                 }
             );

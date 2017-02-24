@@ -27,6 +27,7 @@ class ClientAreaAPI
         }
 
         $this->accountsPath = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_accounts.xml";
+        $this->pricingPath = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_pricing.xml";
         $this->imageProvider = "/client_area_image_provider.php";
        
         $this->args = explode('/', rtrim($request, '/'));
@@ -137,7 +138,6 @@ class ClientAreaAPI
     public function postPaypalStandard() {
    
         $mode = $_POST['mode'];
-        $gateway = $_POST['gateway'];
         $deliveryAndTotalShownToCustomer =  $_POST['order'];
         $clientAreaTracker =   '';
         if (isset($_COOKIE['client_area_tracker'])) {
@@ -147,7 +147,8 @@ class ClientAreaAPI
             {
                 $this->outputJson500("Tracking cookie not set in postPaypalStandard");        
             }
-            $pendingOrder = $this->createPendingOrderFromBasket($basket, $deliveryAndTotalShownToCustomer);
+            $pendingOrder = array('basket'=>$basket, 'deliveryAndTotalShownToCustomer'=>$deliveryAndTotalShownToCustomer);
+            $pendingOrder = $this->fixBackendPricingOnBasket($pendingOrder);
             $orderRef = $this->db->createPendingOrder($ref, $pendingOrder);
             if ($orderRef === false)
             {
@@ -155,7 +156,9 @@ class ClientAreaAPI
             }
             else
             {
-                $data = $this->packageOrderForEmail($orderRef, $pendingOrder, $mode, $gateway);
+                include_once('ca_utilities.php');
+                $formattedPendingOrder =  ClientAreaUtilities::formatBasketJsonObjectToHumanReadable($pendingOrder);
+                $data = $this->packageOrderForEmail($orderRef, $formattedPendingOrder, $mode, 'paypalStandard');
                 $data = "ORDER REF: $orderRef \n\n" . $data;
                 $this->mailAdmin($data, "Provisional Order on Website.");
                 $obj = new stdClass();
@@ -170,6 +173,152 @@ class ClientAreaAPI
             $this->outputJson500("Tracking cookie not set in postPaypalStandard");    
         }
     }
+    
+    /**
+     * reads the basket order which contains pricing calculated on the front-end and replaces the pricing with
+     * pricing calculated on the back-end using the pricing config file. client side pricing is open to manipulation.
+     * TODO the question is - do we replicate the same calculation logic as in the f/e? here we replicate the JS code into PHP and hope
+     * we've got the logic the same. ideally these calculations should be done in a single place. there is an item in the RoadMap to do this.
+     * for now we replicate the logic: from 
+     * BasketCollection.getTotalCost() and BasketCollection.getDeliveryCost()
+     * PricingModel.getSizesForRatio()  (gets the correct pricing block for the image based on the best available match between image ratio size blocks and the image ratio itself)
+     * OrderLineModel.setPrices() (sets pricing totals per order line row)
+     * 
+     * as an interim step we add into the order the correctly calculated totals while leaving the pricing and totals which was shown to the client.
+     * the site onwer can then verify that the totals shown to the user and the totals correctly calculated are the same. 
+     * obviously this is not ideal and when a single source of pricing is implemented we we will drop the client side pricing from this file. 
+     * 
+     * the added in block has the following structure:
+     * in the current field basket.[{}, {}] where each {} is an order line: add a field confirmed_total_price
+     *      also on each order line we also lose path field and edit_mode field
+     * and add a new field to the root:
+     * confirmedDeliveryAndTotal.totalItems = 20.00
+     * confirmedDeliveryAndTotal.deliveryCharges = 5.00
+     * confirmedDeliveryAndTotal.grandTotal = 25.00
+     * 
+     * when there is a single source of calculation then the next step is on each order line to replace the fields: image_ratio, print_price, mount_price, frame_price and total_price we ones calculated here.
+     *      - they won't be different unless client had manipulated the data
+     * and lose the field deliveryAndTotalShownToCustomer 
+     * 
+     * the basic idea ia the ClientAreaPricingCalculator will do all calculations and the calculations
+     * in the f/e as above will instead call services provided by this class. 
+     *
+     */
+    private function fixBackendPricingOnBasket($pendingOrder)
+    {
+    
+        try
+        {
+            $pricingCalculator = new ClientAreaPricingCalculator($this->pricingPath);
+        }
+        catch(Exception $e)
+        {
+            $this->outputJson500($e->getMessage());        
+        }
+        
+        $thumbsDir = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
+            DIRECTORY_SEPARATOR . 'prints' . DIRECTORY_SEPARATOR . "thumbs";
+         
+        $confirmedDeliveryAndTotal = new stdClass(); 
+        $confirmedDeliveryAndTotal->totalItems = 0;
+        foreach ($pendingOrder->basket as &$orderLine)
+        {
+            $imageDimensions = $this->getImageDimensions($thumbsDir . DIRECTORY_SEPARATOR . $orderLine->image_ref);
+            $width = $imageDimensions['width'];
+            $height = $imageDimensions['height'];
+            //JS replicated ((Math.max(width, height)) / (Math.min(width, height))).toFixed(2);
+            $actualImageRatio =   (max($width, $height) /  min(width, height));
+            $actualImageRatio = number_format((float) $actualImageRatio, 2);
+            
+            
+            $rowTotal = 0;
+            //logic here from OrderLineModel.setPrices and PricingModel
+            if ($orderLine->print_size !== null) 
+            {
+                $printAndMountPrice = $pricingCalculator->getPrintPriceAndMountPriceForRatioAndSize($actualImageRatio, $orderLine->print_size);
+                $rowTotal = $printAndMountPrice->printPrice * $orderLine->qty;    
+            }
+            if (($orderLine->mount_style !== null) && ($orderLine->mount_style !== 'no_mount')) 
+            {
+                $printAndMountPrice = $pricingCalculator->getPrintPriceAndMountPriceForRatioAndSize($actualImageRatio, $orderLine->print_size);
+                $rowTotal = $rowTotal + ($printAndMountPrice->mountPrice * $orderLine->qty);    
+            }
+            if (($orderLine->frame_style !== null) && ($orderLine->frame_style !== 'no_frame')) 
+            {
+                $framePrices = $pricingCalculator->getFramePriceMatrixForGivenRatioAndSize($actualImageRatio, $orderLine->print_size);   
+                $applicableFramePrice = $framePrices[$orderLine->frame_style];
+                $rowTotal = $rowTotal + ($applicableFramePrice * $orderLine->qty);    
+            }
+            $orderLine->confirmed_total_price = number_format((float) $rowTotal, 2);
+            unset($orderLine->path);
+            unset($orderLine->edit_mode); 
+        }
+        
+        //logic in calculateDeliveryAndTotals is from BasketCollection
+        $pendingOrder['confirmedDeliveryAndTotal'] = $pricingCalculator->calculateDeliveryAndTotals($pendingOrder->basket);
+        return $pendingOrder;
+    
+    }
+    
+ 
+//basically copied from PricingModel and will eventually provide all the calculations currently being done in that model as services to the model
+//so that there is a single source of truth for price calculations    
+class ClientAreaPricingCalculator
+{
+
+    public function __construct($pricingFilePath)
+    {
+        $pricingModel = simplexml_load_file($pricingFilePath );
+        $this->pricingModel = json_decode($pricingModel);
+        $this->cache = new stdClass();
+        $cache->sizesForRatio = new stdClass();
+        $cache->sizeGroupForRatioAndSize = new stdClass();
+        $cache->printPriceAndMountPriceForRatioAndSize = new stdClass();
+        $cache->framePriceMatrixForGivenRatioAndSize = new stdClass();
+    }
+    
+    private function  getSizeGroupForRatioAndSize($imageRatio, $printSize)
+    {
+    
+    }
+    
+    public function getPrintPriceAndMountPriceForRatioAndSize($imageRatio, $printSize)
+    {
+        if ((property_exists($this->cache->printPriceAndMountPriceForRatioAndSize, $imageRatio)) && (property_exists($this->cache.printPriceAndMountPriceForRatioAndSize[$imageRatio], $printSize))) 
+        {
+            return $this->cache->printPriceAndMountPriceForRatioAndSize[$imageRatio][$printSize];
+        }
+        else
+        {
+            $mountPrice = null;
+            $printPrice = null;
+            $sizeGroup = $this->getSizeGroupForRatioAndSize($imageRatio, $printSize);  
+            $ret = new stdClass();
+            $ret->mountPrice = $sizeGroup->mountPrice;
+            $ret->printPrice = $sizeGroup->printPrice;                
+            if (!property_exists($this->cache->printPriceAndMountPriceForRatioAndSize, $imageRatio)) 
+            {
+               $this->cache->printPriceAndMountPriceForRatioAndSize[$imageRatio] = new stdClass();    
+            }
+            $this->cache->printPriceAndMountPriceForRatioAndSize[$imageRatio][$printSize] = $ret;
+            return $ret ;    
+       } 
+    }
+
+}  
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     public function getPrintThumbs()
     {
@@ -311,7 +460,7 @@ class ClientAreaAPI
    
     public function getPricing() 
     {                                          
-        $pricingModel = simplexml_load_file($this->clientAreaDirectory . DIRECTORY_SEPARATOR . "client_area_pricing.xml" );
+        $pricingModel = simplexml_load_file($this->pricingPath );
         //$obj = new stdClass();
         // $obj->pricingModel = $pricingModel;
         if ($pricingModel === false) 
@@ -447,13 +596,7 @@ class ClientAreaAPI
         return $this->db->createBasket($trackerId);
     }
     
-    private function createPendingOrderFromBasket($basket, $deliveryAndTotalShownToCustomer)
-    {
-         //TODO         also calculate the totals and the delivery charges and add these in. we can do this here so long as delivery charges are either on or off  at the admin config level and the user has no choices
-         $pendingOrder = array('basket'=>$basket, 'deliveryAndTotalShownToCustomer'=>$deliveryAndTotalShownToCustomer, 'calculatedDeliveryAndTotal'=>'TODO');
-         return $pendingOrder;
-         
-    }
+ 
     
     
     /**
@@ -461,7 +604,7 @@ class ClientAreaAPI
      *   make this look nicer
      *
      */
-    private function packageOrderForEmail($orderRef, $basket, $mode, $gateway) {
+    private function packageOrderForEmail($orderRef, $formattedOrder, $mode, $gateway) {
     
         $package = "Hi\n\n";    
     
@@ -473,12 +616,7 @@ class ClientAreaAPI
 
 
         $package = "\n\n" . $package . "\n\nBasket:\n\n";
-        foreach ($basket as $orderLine) {
-            $package = $package . json_encode($orderLine) . "\n\n";
-        }    
-   
-        
-        $package.= "\n\n";
+        $package = $package . $formattedOrder . "\n\n";
         
         $package = $package . "\n\n" . "Remember to check the pricing is correct!" . "\n\n" . "The Web Team";
         return $package;   
@@ -692,5 +830,9 @@ class ClientAreaAPI
   
  
 }
+
+
+
+  
 
 ?>

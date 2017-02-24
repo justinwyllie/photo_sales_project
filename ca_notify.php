@@ -87,18 +87,20 @@ if (strcmp ($res, "VERIFIED") == 0) {
 
 function processCompletedOrder($orderRef, $paymentStatus, $ipnTrackId, $txnId) {
     include('ca_database.php');
+    include('ca_utilities.php');
     try 
     {
         $db = ClientAreaDB::create();  
     }
     catch(Exception $e)
     {
-       mail('justinwyllie@hotmail.co.uk', 'Error opening DB in PayPal IPN handler', 'The confirmed order ref is: ' . $e->getMessage());
+       mail('justinwyllie@hotmail.co.uk', 'Error opening DB in PayPal IPN handler', 'The confirmed order ref is: ' .  $orderRef);
        exit();        
     }
     
     if ($paymentStatus === 'Completed') {
         $completedOrder = $db->movePendingOrdertoCompleted($orderRef, $ipnTrackId, $txnId);
+        $formattedOrder =  ClientAreaUtilities::formatBasketJsonObjectToHumanReadable($completedOrder);
     
          $data = 'The confirmed order ref is: ' . $orderRef . "\n\n";
          if ($completedOrder === false)
@@ -107,7 +109,7 @@ function processCompletedOrder($orderRef, $paymentStatus, $ipnTrackId, $txnId) {
          }
          else
          {
-            $data = $data . json_encode($completedOrder);
+            $data = $data . $formattedOrder;
          }
         
         //TODO 
