@@ -46,8 +46,6 @@ class ClientAreaPricingCalculator
                 $availableRatios[] = $sizeGroup->ratio . '';    
             }
             
-          
-            
             //work out nearest match ratio
             $lastDiff = null;
             $bestMatchRatio;
@@ -61,7 +59,6 @@ class ClientAreaPricingCalculator
                 }
             }
             //get the size group using the bestMatchRatio
- 
             foreach ($sizeGroups as $sizeGroup)
             {
                 if (($sizeGroup->ratio . '' ) ==  $bestMatchRatio)
@@ -121,8 +118,8 @@ class ClientAreaPricingCalculator
             $printPrice = null;
             $sizeGroup = $this->getSizeGroupForRatioAndSize($imageRatio, $printSize);  
             $ret = new stdClass();
-            $ret->mountPrice = $sizeGroup->mountPrice;
-            $ret->printPrice = $sizeGroup->printPrice;                
+            $ret->mountPrice = $sizeGroup->mountPrice . '';
+            $ret->printPrice = $sizeGroup->printPrice . '';;                
             if (!array_key_exists($imageRatio, $this->cache->printPriceAndMountPriceForRatioAndSize)) 
             {
                $this->cache->printPriceAndMountPriceForRatioAndSize[$imageRatio] = array();    
@@ -141,11 +138,12 @@ class ClientAreaPricingCalculator
         }
         else
         {
-            $sizeGrpup = $this->getSizeGroupForRatioAndSize($imageRatio, $printSize);
+            $sizeGroup = $this->getSizeGroupForRatioAndSize($imageRatio, $printSize);
             $framePricesObj = array();    
             foreach($sizeGroup->xpath('./framePrices/framePrice') as $framePrice)
             {
-                $framePricesObj[($framePrice.style . '')] = $framePrice->price . '';   
+                $style = $framePrice->style . '';
+                $framePricesObj[$style] = $framePrice->price . '';   
             }
             if (!array_key_exists($imageRatio, $this->cache->framePriceMatrixForGivenRatioAndSize )) 
             {
@@ -168,35 +166,45 @@ class ClientAreaPricingCalculator
      */
     public function calculateDeliveryAndTotals($basket, $calculateDelivery)
     {
+    
+        $basket = $basket->basket;
         $totalItems = 0;
         $deliveryCharges = 0;
         $grandTotal = 0; 
         if ($calculateDelivery)
         {
-            $deliveryCharges = $this->pricingModel->deliveryCharges;
+            
+            $deliveryChargesNodeList = $this->pricingModel->xpath('./deliveryCharges');
+            $deliveryCharges =  $deliveryChargesNodeList[0];
         }
+        
+        $perPrintItem = $deliveryCharges->perPrintItem . '';
+        $perMountItem = $deliveryCharges->perMountItem . '';
+        $perFrameItem = $deliveryCharges->perFrameItem . '';
+        
         
         foreach($basket as $orderLine)
         {
+            
             $totalItems = $totalItems + $orderLine->confirmed_total_price;
             $qty = $orderLine->qty;
             if ($calculateDelivery)
-            {
-                $lineDelCost = $qty * $deliveryCharges->perPrintItem;
-                if ($orderLine['mount_style'] !== null)
+            {   
+                $lineDelCost = $qty * $perPrintItem;
+                if ($orderLine->mount_style !== null)
                 {
-                    $lineDelCost = $lineDelCost + ($qty * $chargeStructure->perMountItem);
+                    $lineDelCost = $lineDelCost + ($qty * $perMountItem);
                 } 
-                if ($orderLine['frame_style'] !== null)
+                if ($orderLine->frame_style !== null)
                 {
-                    $lineDelCost = $lineDelCost + ($qty * $chargeStructure->perFrameItem);
+                    $lineDelCost = $lineDelCost + ($qty * $perFrameItem);
                 } 
                 $deliveryCharges = $deliveryCharges + $lineDelCost;
             }
         }
         
         return array(
-            'totalItems' => number_format((float) $totalItems. 2),
+            'totalItems' => number_format((float) $totalItems, 2),
             'deliveryCharges' =>   number_format((float) $deliveryCharges, 2),
             'grandTotal' =>  number_format((float) ($deliveryCharges + $totalItems) , 2)
         );
