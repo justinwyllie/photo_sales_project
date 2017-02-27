@@ -300,7 +300,7 @@ var caApp = (function (Backbone, $) {
                 var bestMatchRatio;
                 _.each(availableRatios, function(availableRatio) {
                     var newDiff = Math.abs(imageRatio - availableRatio);
-                     if ((lastDiff) === null || (newDiff < lastDiff))  {
+                     if ((lastDiff === null) || (newDiff < lastDiff))  {
                         bestMatchRatio = availableRatio;
                         lastDiff = newDiff;
                     } 

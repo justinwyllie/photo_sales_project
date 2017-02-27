@@ -9,7 +9,7 @@
             <!-- enter either dev or prod. in dev mode if PayPal is enabled it will use the Sandbox -->
             <mode>dev</mode>
             <!-- system path to where the client images are stored. -->
-            <clientAreaDirectory>/var/www/vhosts/justinwylliephotography.com/httpdocs/client_area_files</clientAreaDirectory>
+            <clientAreaDirectory>/var/www/vhosts/mms-oxford.com/client_area_files</clientAreaDirectory>
             <!-- web path to where the client images are stored -->
             <clientAreaUrl>/client_area_files</clientAreaUrl>
             <!-- web path to the Javascript files -->

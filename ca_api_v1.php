@@ -2,6 +2,7 @@
 
 session_start();
 include('ca_database.php');
+
 //see http://coreymaynard.com/blog/creating-a-restful-api-with-php/ if you want to do this properly
 
 $API = new ClientAreaAPI($_REQUEST['request'] );
@@ -209,6 +210,7 @@ class ClientAreaAPI
     
         try
         {
+            include('ca_pricing_calculator.php');
             $pricingCalculator = new ClientAreaPricingCalculator($this->pricingPath);
         }
         catch(Exception $e)
@@ -255,69 +257,13 @@ class ClientAreaAPI
         }
         
         //logic in calculateDeliveryAndTotals is from BasketCollection
-        $pendingOrder['confirmedDeliveryAndTotal'] = $pricingCalculator->calculateDeliveryAndTotals($pendingOrder->basket);
+        $calculateDelivery = $_SESSION['options']['deliveryChargesEnabled'] ;
+        $pendingOrder['confirmedDeliveryAndTotal'] = $pricingCalculator->calculateDeliveryAndTotals($pendingOrder->basket, $calculateDelivery);
         return $pendingOrder;
     
     }
     
- 
-//basically copied from PricingModel and will eventually provide all the calculations currently being done in that model as services to the model
-//so that there is a single source of truth for price calculations    
-class ClientAreaPricingCalculator
-{
 
-    public function __construct($pricingFilePath)
-    {
-        $pricingModel = simplexml_load_file($pricingFilePath );
-        $this->pricingModel = json_decode($pricingModel);
-        $this->cache = new stdClass();
-        $cache->sizesForRatio = new stdClass();
-        $cache->sizeGroupForRatioAndSize = new stdClass();
-        $cache->printPriceAndMountPriceForRatioAndSize = new stdClass();
-        $cache->framePriceMatrixForGivenRatioAndSize = new stdClass();
-    }
-    
-    private function  getSizeGroupForRatioAndSize($imageRatio, $printSize)
-    {
-    
-    }
-    
-    public function getPrintPriceAndMountPriceForRatioAndSize($imageRatio, $printSize)
-    {
-        if ((property_exists($this->cache->printPriceAndMountPriceForRatioAndSize, $imageRatio)) && (property_exists($this->cache.printPriceAndMountPriceForRatioAndSize[$imageRatio], $printSize))) 
-        {
-            return $this->cache->printPriceAndMountPriceForRatioAndSize[$imageRatio][$printSize];
-        }
-        else
-        {
-            $mountPrice = null;
-            $printPrice = null;
-            $sizeGroup = $this->getSizeGroupForRatioAndSize($imageRatio, $printSize);  
-            $ret = new stdClass();
-            $ret->mountPrice = $sizeGroup->mountPrice;
-            $ret->printPrice = $sizeGroup->printPrice;                
-            if (!property_exists($this->cache->printPriceAndMountPriceForRatioAndSize, $imageRatio)) 
-            {
-               $this->cache->printPriceAndMountPriceForRatioAndSize[$imageRatio] = new stdClass();    
-            }
-            $this->cache->printPriceAndMountPriceForRatioAndSize[$imageRatio][$printSize] = $ret;
-            return $ret ;    
-       } 
-    }
-
-}  
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     public function getPrintThumbs()
@@ -830,6 +776,9 @@ class ClientAreaPricingCalculator
   
  
 }
+    
+    
+    
 
 
 
