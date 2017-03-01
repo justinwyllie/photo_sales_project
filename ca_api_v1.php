@@ -141,12 +141,15 @@ class ClientAreaAPI
         $mode = $_POST['mode'];
         $deliveryAndTotalShownToCustomer =  $_POST['order'];
         $clientAreaTracker =   '';
+        
+        
         if (isset($_COOKIE['client_area_tracker'])) {
             $ref = $_SESSION['user'] . '_' .  $_COOKIE['client_area_tracker'];
             $basket = $this->db->getBasket($ref);
+            
             if ($basket === false)
             {
-                $this->outputJson500("Tracking cookie not set in postPaypalStandard");        
+                $this->outputJson500("Unable to get basket in postPaypalStandard");        
             }
             $pendingOrder = array('basket'=>$basket, 'deliveryAndTotalShownToCustomer'=>$deliveryAndTotalShownToCustomer);
             $pendingOrder = $this->fixBackendPricingOnBasket($pendingOrder);
@@ -217,22 +220,24 @@ class ClientAreaAPI
         {
             $this->outputJson500($e->getMessage());        
         }
-        
+
         $thumbsDir = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
             DIRECTORY_SEPARATOR . 'prints' . DIRECTORY_SEPARATOR . "thumbs";
          
         $confirmedDeliveryAndTotal = new stdClass(); 
         $confirmedDeliveryAndTotal->totalItems = 0;
-        foreach ($pendingOrder->basket as &$orderLine)
+    
+        
+        foreach ($pendingOrder['basket'] as &$orderLine)
         {
             $imageDimensions = $this->getImageDimensions($thumbsDir . DIRECTORY_SEPARATOR . $orderLine->image_ref);
+            
             $width = $imageDimensions['width'];
             $height = $imageDimensions['height'];
             //JS replicated ((Math.max(width, height)) / (Math.min(width, height))).toFixed(2);
-            $actualImageRatio =   (max($width, $height) /  min(width, height));
+            $actualImageRatio =   max($width, $height) /  min($width, $height);
             $actualImageRatio = number_format((float) $actualImageRatio, 2);
-            
-            
+
             $rowTotal = 0;
             //logic here from OrderLineModel.setPrices and PricingModel
             if ($orderLine->print_size !== null) 
@@ -258,7 +263,7 @@ class ClientAreaAPI
         
         //logic in calculateDeliveryAndTotals is from BasketCollection
         $calculateDelivery = $_SESSION['options']['deliveryChargesEnabled'] ;
-        $pendingOrder['confirmedDeliveryAndTotal'] = $pricingCalculator->calculateDeliveryAndTotals($pendingOrder->basket, $calculateDelivery);
+        $pendingOrder['confirmedDeliveryAndTotal'] = $pricingCalculator->calculateDeliveryAndTotals($pendingOrder['basket'], $calculateDelivery);
         return $pendingOrder;
     
     }

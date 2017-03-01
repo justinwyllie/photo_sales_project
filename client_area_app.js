@@ -291,7 +291,7 @@ var caApp = (function (Backbone, $) {
                 //TODO. This is painful.
                 
                var availableRatios = new Array();
-                _.each(printSizes.sizeGroup, function(sizeGroup) {
+                _.each(printSizes.sizeGroups.sizeGroup, function(sizeGroup) {
                     availableRatios.push(sizeGroup.ratio);
                 });
                     
@@ -307,7 +307,7 @@ var caApp = (function (Backbone, $) {
                 });
                 
                 //get the size group using the bestMatchRatio
-                _.each(printSizes.sizeGroup, function(sizeGroup) {
+                _.each(printSizes.sizeGroups.sizeGroup, function(sizeGroup) {
                         if (sizeGroup.ratio == bestMatchRatio) {
                             sizeGroupForRatio = sizeGroup.sizes.size;    
                         }

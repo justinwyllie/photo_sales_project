@@ -167,7 +167,6 @@ class ClientAreaPricingCalculator
     public function calculateDeliveryAndTotals($basket, $calculateDelivery)
     {
     
-        $basket = $basket->basket;
         $totalItems = 0;
         $deliveryCharges = 0;
         $grandTotal = 0; 

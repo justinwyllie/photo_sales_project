@@ -1,3 +1,5 @@
+<?php
+
 class ClientAreaUtilities
 {
     public function __construct()
@@ -17,3 +19,6 @@ class ClientAreaUtilities
     }
     
 }  
+
+
+?>
