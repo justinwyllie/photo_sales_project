@@ -353,7 +353,7 @@ var caApp = (function (Backbone, $) {
        }, 
        
        /*
-       * returns object
+       * returns promise
        */
         getPrintPriceAndMountPriceForRatioAndSize: function(imageRatio, printSize) {
             var cache =  this.get("cache");
@@ -415,6 +415,34 @@ var caApp = (function (Backbone, $) {
                 this.set("cache", cache);
                 return framesCodeToDisplay;
             }
+       }
+       
+       getCalculateApplicableDevliveryCharges: function(basket) {
+       //use the delivery changes on this and the passed in basket to return the delivery cahrges
+       //the calc is done on the back-end
+       /*
+                 getDeliveryCost: function(chargeStructure) {
+            var delCost = 0;
+            _.each(this.models, function(model) {
+                var lineCost = 0;
+                var qty = model.get("qty");
+                lineCost = qty * chargeStructure.perPrintItem;
+                if (model.get("mount_style") !== null) {
+                    lineCost = lineCost + (qty * chargeStructure.perMountItem);    
+                } 
+                if (model.get("frame_style") !== null) {
+                    lineCost = lineCost + (qty * chargeStructure.perFrameItem);    
+                }  
+                
+                delCost = delCost + lineCost;   
+            });
+            return delCost*1;
+       } 
+       
+       
+       */
+       
+       
        }
        
        
@@ -489,29 +517,44 @@ var caApp = (function (Backbone, $) {
             var frameStyle =  this.get("frame_style"); 
             var qty = this.get("qty"); 
             var totalPrice = 0;
-
+            
             if (printSize !== null) {
-                var printPrice = app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(imageRatio, printSize).printPrice;
-                this.set("print_price", printPrice);
-                totalPrice = qty * printPrice;
-            }
-               
-             if ((mountStyle !== null) && (mountStyle !== "no_mount")) {
-                var mountPrice = app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(imageRatio, printSize).mountPrice;  
-                this.set("mount_price", printPrice);
-                totalPrice = totalPrice + (qty * mountPrice);
-            }
+                var that = this;
+                var xhrGetPrintPriceAndMountPriceForRatioAndSize =  app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(imageRatio, printSize);
+                var xhrGetFramePriceMatrixForGivenRatioAndSize = app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(imageRatio, printSize);   
+                var xhrGetFrameDisplayNamesCodesLookup   = app.pricingModel.getFrameDisplayNamesCodesLookup();
+                $.when(xhrGetPrintPriceAndMountPriceForRatioAndSize, xhrGetFramePriceMatrixForGivenRatioAndSize, xhrGetFrameDisplayNamesCodesLookup).then(
+                    function(result1, result2, result3) {
+                        var printPrice = result1.data.printPrice;
+                        that.set("print_price", printPrice);
+                        totalPrice = qty * printPrice;
+                        if ((mountStyle !== null) && (mountStyle !== "no_mount")) {
+                            var mountPrice = result2.data.mountPrice;  
+                            that.set("mount_price", printPrice);
+                            totalPrice = totalPrice + (qty * mountPrice);
+                        }
+                        if ((frameStyle !== null) && (frameStyle !== "no_frame")) {
+                            var framePrices = result2.data;    
+                            var applicableFramePrice =   framePrices[frameStyle];
+                            var applicableFrameDisplayName = result3.data[frameStyle];
+                            this.set({"frame_price": applicableFramePrice, "frame_display_name": applicableFrameDisplayName});
+                            totalPrice = totalPrice + (qty * applicableFramePrice);
+                        } 
+                        totalPrice = totalPrice.toFixed(2);
+                        that.set({"total_price": totalPrice, "edit_mode": "edit"}); 
+                    
+                    },
+                    function() {
+                        //TODO actually this is more complicated we MAY BE in the popup - when we show the errorView always close the popup and hide the menu?
+                        var errorView = new ErrorView();
+                        app.layout.renderViewIntoRegion(errorView, 'main'); 
+                    }
                 
-            if ((frameStyle !== null) && (frameStyle !== "no_frame")) {
-                var framePrices = app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(imageRatio, printSize);    
-                var applicableFramePrice =   framePrices[frameStyle];
-                var applicableFrameDisplayName = app.pricingModel.getFrameDisplayNamesCodesLookup()[frameStyle];
-                this.set({"frame_price": applicableFramePrice, "frame_display_name": applicableFrameDisplayName});
-                totalPrice = totalPrice + (qty * applicableFramePrice);
-            }                                                                                                                                                                                                                                                                     
-                
-            totalPrice = totalPrice.toFixed(2);
-            this.set({"total_price": totalPrice, "edit_mode": "edit"});
+                )
+            
+            }  else {
+                //nothing to do
+            }
              
         },
 
@@ -584,25 +627,9 @@ var caApp = (function (Backbone, $) {
                 totalCost = totalCost + lineCost*1;    
             });
             return totalCost*1;
-        },
+        }
         
-       getDeliveryCost: function(chargeStructure) {
-            var delCost = 0;
-            _.each(this.models, function(model) {
-                var lineCost = 0;
-                var qty = model.get("qty");
-                lineCost = qty * chargeStructure.perPrintItem;
-                if (model.get("mount_style") !== null) {
-                    lineCost = lineCost + (qty * chargeStructure.perMountItem);    
-                } 
-                if (model.get("frame_style") !== null) {
-                    lineCost = lineCost + (qty * chargeStructure.perFrameItem);    
-                }  
-                
-                delCost = delCost + lineCost;   
-            });
-            return delCost*1;
-       }  
+    
     });
     
     
@@ -726,9 +753,9 @@ var caApp = (function (Backbone, $) {
             data.row_headers = this.headersTmpl(data);
             this.$el.html(this.tmpl(data));
             this.collection.each(function(orderLine) {
-                   var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: app.pricingModel, showThumb: true});
+                   var container = this.$el.find("#ca_basket_order_lines_container");
+                   var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: app.pricingModel, showThumb: true, container: container});
                    this.childViews.push(orderLineView);
-                   this.$el.find("#ca_basket_order_lines_container").append(orderLineView.render().$el);
                     
 	       }, this); 
         },
@@ -743,10 +770,7 @@ var caApp = (function (Backbone, $) {
         }
     });
     
-    
-    
 
-    
     
     
    CheckoutView =   Backbone.View.extend({
@@ -950,22 +974,39 @@ var caApp = (function (Backbone, $) {
             data.currSymbol = app.pricingModel.get("currency").symbol;
 
             var totalItems = app.basketCollection.getTotalCost().toFixed(2);
+            
+            var showScreen = function(data, totalItems, deliveryCharges, grandTotal) {
+                var grandTotal =  (totalItems*1 + deliveryCharges*1).toFixed(2);
+                this.model.set({
+                    "deliveryCharges":deliveryCharges,
+                    "totalItems": totalItems,
+                    "grandTotal": grandTotal
+                    });
+                    
+                data.grandTotal = grandTotal;
+                data.totalItems = totalItems;
+                data.deliveryCharges = deliveryCharges;
+                this.$el.html(this.screen2Tmpl(data)); 
+            };
+            
+            
             if  (data.deliveryChargesEnabled) {
-                var deliveryCharges = app.basketCollection.getDeliveryCost(app.pricingModel.get("deliveryCharges")).toFixed(2);
+                var xhrDeliveryCharges =  app.pricingModel.getCalculateApplicableDevliveryCharges(app.basketCollection);
+                var that = this;
+                xhrDeliveryCharges.then(
+                    function(result) {
+                        showScreen.call(that, data,  totalItems, result.data, grandTotal) ;
+                    },
+                    function() {
+                         var errorView = new ErrorView();   //TODO test this
+                        app.layout.renderViewIntoRegion(errorView, 'main');    
+                    }
+                )
             } else {
                var deliveryCharges = 0; 
+               showScreen.call(this, data,  totalItems, deliveryCharges, grandTotal);
             }
-            var grandTotal =  (totalItems*1 + deliveryCharges*1).toFixed(2);
-            this.model.set({
-                "deliveryCharges":deliveryCharges,
-                "totalItems": totalItems,
-                "grandTotal": grandTotal
-                });
-                
-            data.grandTotal = grandTotal;
-            data.totalItems = totalItems;
-            data.deliveryCharges = deliveryCharges;
-            this.$el.html(this.screen2Tmpl(data)); 
+       
          },
     
         render: function() {
@@ -1195,10 +1236,9 @@ var caApp = (function (Backbone, $) {
            //1. render existing order lines
            this.collection.each(function(orderLine) {
                 if (orderLine.get('image_ref') == (this.options.file)) {
-                    var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: this.options.pricingModel, showThumb: false});
+                    var container = this.$el.find("#ca_order_lines_container");
+                    var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: this.options.pricingModel, showThumb: false, container: container});
                     this.childViews.push(orderLineView);
-                    
-                    this.$el.find("#ca_order_lines_container").append(orderLineView.render().$el);
                 }    
                     
 	       }, this);
@@ -1400,7 +1440,7 @@ var caApp = (function (Backbone, $) {
         },
 
         displayModelErrors: function() {
-            that = this;
+           var that = this;
             _.each(this.model.validationError.fields, function(field) {
                 that.$el.find('.ca_' + field + '_group').addClass("has-error");
             });
@@ -1408,7 +1448,7 @@ var caApp = (function (Backbone, $) {
         },
         
         clearErrors: function(field) {
-            that = this;
+            var that = this;
             if (typeof(field) !== "undefined") {
                 that.$el.find('.ca_' + field + '_group').removeClass("has-error");    
             }  else {
@@ -1487,7 +1527,6 @@ var caApp = (function (Backbone, $) {
             var data = {};
             var pricingModel = this.options.pricingModelJSON;
             data = app.pricingModel.toJSON();
-            data.applicableSizesGroup = app.pricingModel.getSizesForRatio(ratio);
             data.order = this.model.toJSON();
 
             var editMode = this.model.get("edit_mode");
@@ -1501,25 +1540,50 @@ var caApp = (function (Backbone, $) {
             
             data.langStrings = {};
             data.langStrings = app.langStrings.toJSON();
+            data.alt_text = this.model.get("image_ref");
                  
             var printSize = this.model.get("print_size");  
             data.mountPrice = null;
             data.framePrices = null;
+            data.show_thumb = this.options.showThumb;
+            var that = this;
             
             if (printSize !== null) {
-                data.mountPrice = app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(ratio, printSize).mountPrice;
-                data.framePrices =  app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(ratio, printSize);
-                data.frameStylesToDisplay = app.pricingModel.getFrameDisplayNamesCodesLookup();
+                var xhrGetPrintPriceAndMountPriceForRatioAndSize =  app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(ratio, printSize);
+                var xhrGetFramePriceMatrixForGivenRatioAndSize = app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(ratio, printSize);
+                var xhrFrameStylesToDisplay =  app.pricingModel.getFrameDisplayNamesCodesLookup();
+                var xhrGetSizesForRatio = app.pricingModel.getSizesForRatio(ratio);
+                
+                $.when(xhrGetPrintPriceAndMountPriceForRatioAndSize, xhrGetFramePriceMatrixForGivenRatioAndSize, xhrFrameStylesToDisplay, xhrGetSizesForRatio).then(
+                    function(result1, result2, result3, result4) {
+                        data.mountPrice = result1.data.mountPrice;
+                        data.framePrices =  result2.data;
+                        data.frameStylesToDisplay = result3.data;
+                        data.applicableSizesGroup = result4.data;
+                        var html = that.template(data);
+                        that.$el.html(html);
+                        that.options.container.append(that.$el);
+                    },
+                    function() {
+                        var errorView = new ErrorView();   
+                        app.layout.renderViewIntoRegion(errorView, 'main');  
+                    }
+                )
+            } else {
+                var xhrGetSizesForRatio = app.pricingModel.getSizesForRatio(ratio);
+                xhrGetSizesForRatio.then(
+                    function(result) {
+                        data.applicableSizesGroup = result.data;
+                        var html = this.template(data);
+                        that.$el.html(html);
+                        that.options.container.append(that.$el);
+                    },
+                    function() {
+                        var errorView = new ErrorView();   
+                        app.layout.renderViewIntoRegion(errorView, 'main'); 
+                    }
+                );
             }
-            data.show_thumb = this.options.showThumb;
-            if (data.show_thumb) {
-                data.path =   this.model.get("path");
-                data.alt_text = this.model.get("image_ref");
-                data.thumb_mode = "ca_image_row_mode";
-            } 
-            var html = this.template(data);
-            this.$el.html(html);
-            return this;    
         }    
     });
     
