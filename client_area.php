@@ -1237,6 +1237,7 @@ EOF;
                     </div>    
                 </div>
             </script>
+            
             <script type="text/html" id="ca_order_line_tmpl">
                 <% if (show_thumb) { %>
                     <div class="col-xs-2 ca_basket_thumb "><div class="ca_clipper"><img src="<%= path %>" alt="<%= alt_text %>" class="ca_basket_thumb_hover_event"></div></div>
@@ -1304,6 +1305,7 @@ EOF;
                     </div>
                 
         </script>
+        
         <script type="text/html" id="ca_order_line_row_head_tmpl">
                 <div class="ca_row ca_row_header">
                       <% if (show_thumb) { %>

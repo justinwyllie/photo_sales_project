@@ -5,6 +5,7 @@
 //basically copied from PricingModel and will eventually provide all the calculations currently being done in that model as services to the model   plus those currently being 
 //done in basketColletion and orderLineModel
 //so that there is a single source of truth for price calculations    see inline comments for   fixBackendPricingOnBasket and road map
+
 class ClientAreaPricingCalculator
 {
 
@@ -24,7 +25,7 @@ class ClientAreaPricingCalculator
      *
      */
     
-    private function  getSizesForRatio($imageRatio)
+    public function  getSizesForRatio($imageRatio)
     {
      
             
@@ -118,8 +119,8 @@ class ClientAreaPricingCalculator
             $printPrice = null;
             $sizeGroup = $this->getSizeGroupForRatioAndSize($imageRatio, $printSize);  
             $ret = new stdClass();
-            $ret->mountPrice = $sizeGroup->mountPrice . '';
-            $ret->printPrice = $sizeGroup->printPrice . '';;                
+            $ret->mountPrice = number_format((float) ($sizeGroup->mountPrice . ''), 2);
+            $ret->printPrice = number_format((float) ($sizeGroup->printPrice . ''), 2);
             if (!array_key_exists($imageRatio, $this->cache->printPriceAndMountPriceForRatioAndSize)) 
             {
                $this->cache->printPriceAndMountPriceForRatioAndSize[$imageRatio] = array();    
@@ -143,7 +144,7 @@ class ClientAreaPricingCalculator
             foreach($sizeGroup->xpath('./framePrices/framePrice') as $framePrice)
             {
                 $style = $framePrice->style . '';
-                $framePricesObj[$style] = $framePrice->price . '';   
+                $framePricesObj[$style] = number_format((float) ($framePrice->price . ''), 2);   
             }
             if (!array_key_exists($imageRatio, $this->cache->framePriceMatrixForGivenRatioAndSize )) 
             {

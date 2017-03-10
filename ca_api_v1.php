@@ -424,6 +424,60 @@ class ClientAreaAPI
         return $pricingModel;
     }
     
+    public function postPricingCalculationData()
+    {
+        $call = $_POST['call'];
+        try
+        {
+            include('ca_pricing_calculator.php');
+            $pricingCalculator = new ClientAreaPricingCalculator($this->pricingPath);
+            switch ($call)
+            {
+                case 'getSizesForRatio':
+                    $ratio = $_POST['imageRatio'];
+                    $result = $pricingCalculator->getSizesForRatio($ratio);  
+                    break;
+                    
+                case 'getPrintPriceAndMountPriceForRatioAndSize':
+                    $ratio = $_POST['imageRatio'];
+                    $printSize = $_POST['printSize'];
+                    $result = $pricingCalculator->getPrintPriceAndMountPriceForRatioAndSize($ratio, $printSize);  
+                    break;   
+                    
+                case 'getFramePriceMatrixForGivenRatioAndSize':
+                    $ratio = $_POST['imageRatio'];
+                    $printSize = $_POST['printSize'];
+                    $result = $pricingCalculator->getFramePriceMatrixForGivenRatioAndSize($ratio, $printSize);  
+                    break;  
+                    
+                case 'getCalculateApplicableDevliveryCharges':
+                    $basket = $_POST['basket'];
+                    $calculateDelivery = $_SESSION['options']['deliveryChargesEnabled'] ;
+                    $result = $pricingCalculator->calculateDeliveryAndTotals(json_decode($basket), $calculateDelivery);
+                    break;                
+            
+            }
+            
+            
+            
+        }
+        catch(Exception $e)
+        {
+             $this->outputJson500("Effor getting price calculations in getPricingCalculationData");
+        }
+ 
+        $obj = new stdClass();
+        $obj->status = "success";
+        $obj->data = $result;
+        $this->outputJson($obj); 
+ 
+    
+    }
+    
+    
+    
+    
+    
     public function getLangStrings() 
     {                                          
         return  $this->langStrings();

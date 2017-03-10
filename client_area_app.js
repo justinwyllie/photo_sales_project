@@ -253,10 +253,7 @@ var caApp = (function (Backbone, $) {
     })
     
     //PricingModel Model   
-    //TODO make immutable
-    //TODO use xpath instead of loops where possible      
-    //TODO there is some duplication here       
-    //TODO lose app                                                                                                                                                                                         
+    //this gets calculated data from the backend so that the backend calculations and front-end are the same                                                                                                                                                                                        
     app.PricingModel = Backbone.Model.extend({
         url: "/api/v1/pricing",
         defaults: {
@@ -275,131 +272,182 @@ var caApp = (function (Backbone, $) {
             cacheStructure.frameDisplayNamesCodesLookups  = {};
             this.set("cache", cacheStructure);
        },
-       
-      
-       /*
-       *  returns array of size blocks
-        */
-       getSizesForRatio: function (imageRatio) {
-            var cache =  this.get("cache");
-            if (cache.sizesForRatio.hasOwnProperty(imageRatio)) {
-                return cache.sizesForRatio[imageRatio];
-            }  else {
-                var printSizes = this.get("printSizes");
-                var sizeGroupForRatio = null;
-                
-                //TODO. This is painful.
-                
-               var availableRatios = new Array();
-                _.each(printSizes.sizeGroups.sizeGroup, function(sizeGroup) {
-                    availableRatios.push(sizeGroup.ratio);
+       //TODO - this needs to cache the promises. on first request we make the same call multiple times
+       //because of the way the methods in this class use each other as well as being used directly.
+       proxyRequest: function(call, params)
+       {
+           params.call = call; 
+           return $.ajax({
+                    url: '/api/v1/pricingCalculationData',
+                    data: params,
+                    dataType: 'json',
+                    method: 'POST'
                 });
-                    
-                //work out nearest match ratio
-                var lastDiff = null;
-                var bestMatchRatio;
-                _.each(availableRatios, function(availableRatio) {
-                    var newDiff = Math.abs(imageRatio - availableRatio);
-                     if ((lastDiff === null) || (newDiff < lastDiff))  {
-                        bestMatchRatio = availableRatio;
-                        lastDiff = newDiff;
-                    } 
-                });
-                
-                //get the size group using the bestMatchRatio
-                _.each(printSizes.sizeGroups.sizeGroup, function(sizeGroup) {
-                        if (sizeGroup.ratio == bestMatchRatio) {
-                            sizeGroupForRatio = sizeGroup.sizes.size;    
-                        }
-                });
-                
-                //TODO we have to do this because of how simplexml_load_file / json_encode   handles the pricing xml. if there is one <size> we get it as an object. if there are > one we get an array of objects with the name 'size'.
-                //SO - is this going to break anywhere else in this class?
-                if (!app.isArray(sizeGroupForRatio)) {
-                    sizeGroupForRatio = [sizeGroupForRatio];    
-                }
-                cache.sizesForRatio[imageRatio] = sizeGroupForRatio;
-                this.set("cache", cache);
-                return sizeGroupForRatio;    
-            }          
-       
        },
        
-       /*
-       * returns an individual size block as object
-       */
+
        getSizeGroupForRatioAndSize: function(imageRatio, printSize) {
             var cache =  this.get("cache");
-            if ((cache.sizeGroupForRatioAndSize.hasOwnProperty(imageRatio)) && (cache.sizeGroupForRatioAndSize[imageRatio].hasOwnProperty(printSize))) {
-                return cache.sizeGroupForRatioAndSize[imageRatio][printSize];
+            if (1==2 && (cache.sizeGroupForRatioAndSize.hasOwnProperty(imageRatio)) && (cache.sizeGroupForRatioAndSize[imageRatio].hasOwnProperty(printSize))) {
+                var def = $.Deferred();
+                def.then(
+                  function () {
+                    return cache.sizeGroupForRatioAndSize[imageRatio][printSize];
+                  }
+                );
+                return def.promise();
             }   else {
                 var sizeBlock = null;
-                var sizeGroups = this.getSizesForRatio(imageRatio);
-                _.each(sizeGroups, function(size) {
-                    if (size.value == printSize) {
-                        sizeBlock = size;   
-                    }
-                }); 
+                var sizeGroupsXhr = this.getSizesForRatio(imageRatio);
+                
+                var that = this;
+                var result = sizeGroupsXhr.then(
+                    function(result) {
+                        _.each(result.data, function(size) {
+                            if (size.value == printSize) {
+                                sizeBlock = size;   
+                            }
+                         }); 
             
-            if (!cache.sizeGroupForRatioAndSize.hasOwnProperty(imageRatio)) {
-                cache.sizeGroupForRatioAndSize[imageRatio] = {};    
-            }
-            cache.sizeGroupForRatioAndSize[imageRatio][printSize] = sizeBlock;
-            this.set("cache", cache);   
-            return sizeBlock;  
-           
+                        if (!cache.sizeGroupForRatioAndSize.hasOwnProperty(imageRatio)) {
+                            cache.sizeGroupForRatioAndSize[imageRatio] = {};    
+                        }
+                        cache.sizeGroupForRatioAndSize[imageRatio][printSize] = sizeBlock;
+                        that.set("cache", cache);
+                        return sizeBlock;
+                    },
+                    function() {
+                        var errorView = new ErrorView();
+                        app.layout.renderViewIntoRegion(errorView, 'main');
+                    }
+                );
+                return result;   
+                
            } 
        
        }, 
+
+       getSizesForRatio: function (imageRatio) {
+            var cache =  this.get("cache");
+            var that = this;
+            if (1==2 && cache.sizesForRatio.hasOwnProperty(imageRatio)) {
+                var def = $.Deferred();
+                def.then(
+                  function () {
+                    return cache.sizesForRatio[imageRatio];
+                  }
+                );
+                return def.promise();
+            }  else {
+            
+                var xhr = this.proxyRequest('getSizesForRatio', {imageRatio: imageRatio});
+                xhr.then(
+                    function(result)
+                    {
+                        cache.sizesForRatio[imageRatio] = result.data;
+                        that.set("cache", cache);
+                     },
+                    function() {
+                        var errorView = new ErrorView();
+                        app.layout.renderViewIntoRegion(errorView, 'main'); 
+                    }
+                );
+                return xhr; 
+            }          
+       },
        
-       /*
-       * returns promise
-       */
+       
+
         getPrintPriceAndMountPriceForRatioAndSize: function(imageRatio, printSize) {
             var cache =  this.get("cache");
             if ((cache.printPriceAndMountPriceForRatioAndSize.hasOwnProperty(imageRatio)) && (cache.printPriceAndMountPriceForRatioAndSize[imageRatio].hasOwnProperty(printSize))) {
                 return cache.printPriceAndMountPriceForRatioAndSize[imageRatio][printSize];
             } else {
-                var mountPrice = null;
-                var printPrice = null;
-                var sizeGroup = this.getSizeGroupForRatioAndSize(imageRatio, printSize);                  
-                var ret = {mountPrice: sizeGroup.mountPrice, printPrice: sizeGroup.printPrice};
-                if (!cache.printPriceAndMountPriceForRatioAndSize.hasOwnProperty(imageRatio)) {
-                    cache.printPriceAndMountPriceForRatioAndSize[imageRatio] = {};    
-                }
-                cache.printPriceAndMountPriceForRatioAndSize[imageRatio][printSize] = ret;
-                this.set("cache", cache); 
-                return ret ;    
-            
-            } 
+                
+               var that = this; 
+               var xhr = this.proxyRequest('getPrintPriceAndMountPriceForRatioAndSize', {imageRatio:imageRatio, printSize: printSize});
+               xhr.then(
+                        function(result)
+                        {
+                            var ret = {mountPrice: result.data.mountPrice, printPrice: result.data.printPrice};
+                            if (!cache.printPriceAndMountPriceForRatioAndSize.hasOwnProperty(imageRatio)) {
+                                cache.printPriceAndMountPriceForRatioAndSize[imageRatio] = {};    
+                            }
+                            cache.printPriceAndMountPriceForRatioAndSize[imageRatio][printSize] = ret;
+                            that.set("cache", cache); 
+                                        
+                        },
+                        function() {
+                            var errorView = new ErrorView();
+                            app.layout.renderViewIntoRegion(errorView, 'main'); 
+                        }
+                    );
+                    
+               return xhr;     
+             }
        },
        
-       /*
-       * returns object
-       */
-       getFramePriceMatrixForGivenRatioAndSize: function(imageRatio, printSize) {
+
+       getFramePriceMatrixForGivenRatioAndSizeBACKENDVERSION: function(imageRatio, printSize) {
             var cache =  this.get("cache");
             if ((cache.framePriceMatrixForGivenRatioAndSize.hasOwnProperty(imageRatio)) && (cache.framePriceMatrixForGivenRatioAndSize[imageRatio].hasOwnProperty(printSize))) {
                 return  cache.framePriceMatrixForGivenRatioAndSize[imageRatio][printSize];
             } else {
-                var size = this.getSizeGroupForRatioAndSize(imageRatio, printSize);
-                var framePricesObj = {};
-                _.each(size.framePrices.framePrice, function(framePrice) {
-                   framePricesObj[framePrice.style] = framePrice.price;
-                });
-                if (!cache.framePriceMatrixForGivenRatioAndSize.hasOwnProperty(imageRatio)) {
-                    cache.framePriceMatrixForGivenRatioAndSize[imageRatio] = {};    
-                }
-                
-                cache.framePriceMatrixForGivenRatioAndSize[imageRatio][printSize] =  framePricesObj;
-                this.set("cache", cache); 
-                return framePricesObj;
+                var that = this; 
+                var xhr = this.proxyRequest('getFramePriceMatrixForGivenRatioAndSize', {imageRatio:imageRatio, printSize: printSize});
+                xhr.then(
+                     function(result)
+                     {
+                         if (!cache.framePriceMatrixForGivenRatioAndSize.hasOwnProperty(imageRatio)) {
+                                cache.framePriceMatrixForGivenRatioAndSize[imageRatio] = {};    
+                         }
+                         cache.framePriceMatrixForGivenRatioAndSize[imageRatio][printSize] = ret;
+                         that.set("cache", cache); 
+                      },
+                      function() {
+                         var errorView = new ErrorView();
+                         app.layout.renderViewIntoRegion(errorView, 'main'); 
+                      }
+               );
+               return xhr;  
+            }
+       },
+       
+      /*
+       * PUBLIC
+       */
+      getFramePriceMatrixForGivenRatioAndSize: function(imageRatio, printSize) {
+            var cache =  this.get("cache");
+            var that = this;
+            if ((cache.framePriceMatrixForGivenRatioAndSize.hasOwnProperty(imageRatio)) && (cache.framePriceMatrixForGivenRatioAndSize[imageRatio].hasOwnProperty(printSize))) {
+                return  cache.framePriceMatrixForGivenRatioAndSize[imageRatio][printSize];
+            } else {
+                var sizePromise = this.getSizeGroupForRatioAndSize(imageRatio, printSize);
+                var result = sizePromise.then(
+                    function(size) {
+                         var framePricesObj = {};
+                        _.each(size.framePrices.framePrice, function(framePrice) {
+                           framePricesObj[framePrice.style] = framePrice.price;
+                        });
+                        if (!cache.framePriceMatrixForGivenRatioAndSize.hasOwnProperty(imageRatio)) {
+                            cache.framePriceMatrixForGivenRatioAndSize[imageRatio] = {};    
+                        }
+                        
+                        cache.framePriceMatrixForGivenRatioAndSize[imageRatio][printSize] =  framePricesObj;
+                        that.set("cache", cache);
+                        return  framePricesObj;
+                    },
+                    function() {
+                        var errorView = new ErrorView();
+                        app.layout.renderViewIntoRegion(errorView, 'main'); 
+                    }
+                );
+                return result;
             }
        
-       },
-
+       }, 
        /*
-       * returns object
+       * PUBLIC returns promise which will return an object which maps frame code to frame display name or just that object
        */        
        getFrameDisplayNamesCodesLookup: function() {
             var cache =  this.get("cache");
@@ -415,38 +463,17 @@ var caApp = (function (Backbone, $) {
                 this.set("cache", cache);
                 return framesCodeToDisplay;
             }
-       }
+       },
        
-       getCalculateApplicableDevliveryCharges: function(basket) {
-       //use the delivery changes on this and the passed in basket to return the delivery cahrges
-       //the calc is done on the back-end
-       /*
-                 getDeliveryCost: function(chargeStructure) {
-            var delCost = 0;
-            _.each(this.models, function(model) {
-                var lineCost = 0;
-                var qty = model.get("qty");
-                lineCost = qty * chargeStructure.perPrintItem;
-                if (model.get("mount_style") !== null) {
-                    lineCost = lineCost + (qty * chargeStructure.perMountItem);    
-                } 
-                if (model.get("frame_style") !== null) {
-                    lineCost = lineCost + (qty * chargeStructure.perFrameItem);    
-                }  
-                
-                delCost = delCost + lineCost;   
-            });
-            return delCost*1;
-       } 
-       
-       
-       */
-       
-       
-       }
-       
-       
-   
+       /**
+        * returns promise which will return an object with the delivery and total charges on it
+        */
+
+        getCalculateApplicableDevliveryCharges: function(basketJSON) {
+            return this.proxyRequest('getCalculateApplicableDevliveryCharges', {basket: basketJSON});
+        }
+    
+    
     });
     
     //Language String model
@@ -468,6 +495,7 @@ var caApp = (function (Backbone, $) {
             "print_price": 0,
             "mount_price":0,
             "frame_price":0,
+            "frame_prices":null,
             "qty":1,
             "total_price": "0.00",
             "edit_mode": "",
@@ -503,6 +531,7 @@ var caApp = (function (Backbone, $) {
                     "print_price": 0, 
                     "mount_price":0,
                     "frame_price":0,
+                    "frame_prices":null,
                     "total_price":"0.00",
                     "qty": 0,
                     "edit_mode": "edit" 
@@ -525,18 +554,25 @@ var caApp = (function (Backbone, $) {
                 var xhrGetFrameDisplayNamesCodesLookup   = app.pricingModel.getFrameDisplayNamesCodesLookup();
                 $.when(xhrGetPrintPriceAndMountPriceForRatioAndSize, xhrGetFramePriceMatrixForGivenRatioAndSize, xhrGetFrameDisplayNamesCodesLookup).then(
                     function(result1, result2, result3) {
-                        var printPrice = result1.data.printPrice;
+                        var printPrice = result1[0].data.printPrice;
                         that.set("print_price", printPrice);
+                        //the 3 calculations here for print, mount and frame produce the row total for display to user  total_price
+                        //when the actual totals are calculated in CheckoutView this is done from the backend
+                        //so the 3 calculations here MUST result in same result as in those which  produce confirmed_total_price in fixBackendPricingOnBasket
+                        //which is then used in pricingCalculator to produce the overall total
+                        //toFixed seems to behave the same way as number_format in php so we *should* be ok. 
+                        //the alternative is to create a backend service for these calculations; which seems a bit of overkill plus a lot of calls
                         totalPrice = qty * printPrice;
                         if ((mountStyle !== null) && (mountStyle !== "no_mount")) {
-                            var mountPrice = result2.data.mountPrice;  
-                            that.set("mount_price", printPrice);
+                            var mountPrice = result2.mountPrice;  
+                            that.set("mount_price", mountPrice);
                             totalPrice = totalPrice + (qty * mountPrice);
                         }
                         if ((frameStyle !== null) && (frameStyle !== "no_frame")) {
-                            var framePrices = result2.data;    
+                            var framePrices = result2;   
+                            this.set({"frame_prices": result2}); 
                             var applicableFramePrice =   framePrices[frameStyle];
-                            var applicableFrameDisplayName = result3.data[frameStyle];
+                            var applicableFrameDisplayName = result3[frameStyle];
                             this.set({"frame_price": applicableFramePrice, "frame_display_name": applicableFrameDisplayName});
                             totalPrice = totalPrice + (qty * applicableFramePrice);
                         } 
@@ -610,25 +646,13 @@ var caApp = (function (Backbone, $) {
                 var clientAreaStorage = new ClientAreaStorage(app.appData.username, _);  
             });    
         },
-        
-     
-        
+
         byImage: function (ref) {
           filtered = this.filter(function (orderLine) {
               return orderLine.get("image") === ref;
           });
           return new Backbone.Collection(filtered);
         },
-        
-        getTotalCost: function() {
-            var totalCost = 0;
-            _.each(this.models, function(model) {
-                var lineCost  = model.get("total_price");
-                totalCost = totalCost + lineCost*1;    
-            });
-            return totalCost*1;
-        }
-        
     
     });
     
@@ -752,11 +776,36 @@ var caApp = (function (Backbone, $) {
             data.show_thumb = true;
             data.row_headers = this.headersTmpl(data);
             this.$el.html(this.tmpl(data));
+            var that = this;
             this.collection.each(function(orderLine) {
-                   var container = this.$el.find("#ca_basket_order_lines_container");
-                   var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: app.pricingModel, showThumb: true, container: container});
-                   this.childViews.push(orderLineView);
-                    
+                var pricing = {};
+                pricing.printPrice = null; 
+                pricing.mountPrice = null;  
+                pricing.framePrices = null;
+                pricing.frameStylesToDisplay = null;
+                pricing.applicableSizesGroup = null; 
+                var printSize = orderLine.get("print_size");
+                var ratio = orderLine.get("image_ratio");
+                var xhrGetPrintPriceAndMountPriceForRatioAndSize =  app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(ratio, printSize);
+                var xhrGetFramePriceMatrixForGivenRatioAndSize = app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(ratio, printSize);
+                var xhrFrameStylesToDisplay =  app.pricingModel.getFrameDisplayNamesCodesLookup();
+                var xhrGetSizesForRatio = app.pricingModel.getSizesForRatio(ratio);
+
+                $.when(xhrGetPrintPriceAndMountPriceForRatioAndSize, xhrGetFramePriceMatrixForGivenRatioAndSize, xhrFrameStylesToDisplay, xhrGetSizesForRatio).then(
+                    function(result1, result2, result3, result4) {
+                        data.printPrice = result1.data.printPrice;           //THIS IS WRONG 
+                        data.mountPrice = result1.data.mountPrice;
+                        data.framePrices =  result2.data;
+                        data.frameStylesToDisplay = result3.data;
+                        data.applicableSizesGroup = result4.data;
+                        var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: app.pricingModel, showThumb: true, pricing: pricing});
+                        that.childViews.push(orderLineView);
+                        that.$el.find("#ca_basket_order_lines_container").append(orderLineView.render().$el);
+                        },
+                        function() {
+                            var errorView = new ErrorView();   
+                            app.layout.renderViewIntoRegion(errorView, 'main');  
+                        });
 	       }, this); 
         },
         //TDOO instead of copying this code around can we make an ItemView and extend that?  and the childViews from the constructor
@@ -973,10 +1022,12 @@ var caApp = (function (Backbone, $) {
             
             data.currSymbol = app.pricingModel.get("currency").symbol;
 
-            var totalItems = app.basketCollection.getTotalCost().toFixed(2);
             
-            var showScreen = function(data, totalItems, deliveryCharges, grandTotal) {
-                var grandTotal =  (totalItems*1 + deliveryCharges*1).toFixed(2);
+            
+            var showScreen = function(data, totalItems, deliveryAndTotalCharges, grandTotal) {
+                var deliveryCharges = deliveryAndTotalCharges.deliveryCharges;
+                var totalItems = deliveryAndTotalCharges.totalItems;
+                var grandTotal =  deliveryAndTotalCharges.grandTotal;
                 this.model.set({
                     "deliveryCharges":deliveryCharges,
                     "totalItems": totalItems,
@@ -991,7 +1042,7 @@ var caApp = (function (Backbone, $) {
             
             
             if  (data.deliveryChargesEnabled) {
-                var xhrDeliveryCharges =  app.pricingModel.getCalculateApplicableDevliveryCharges(app.basketCollection);
+                var xhrDeliveryCharges =  app.pricingModel.getCalculateApplicableDevliveryCharges(app.basketCollection.toJSON());
                 var that = this;
                 xhrDeliveryCharges.then(
                     function(result) {
@@ -1233,28 +1284,63 @@ var caApp = (function (Backbone, $) {
         
         renderOrderLines: function() {  
             this.cleanUp();
+            var pricing = {};
+            pricing.printPrice = null; 
+            pricing.mountPrice = null;  
+            pricing.framePrices = null;
+            pricing.frameStylesToDisplay = null;
+            pricing.applicableSizesGroup = null; 
            //1. render existing order lines
-           this.collection.each(function(orderLine) {
-                if (orderLine.get('image_ref') == (this.options.file)) {
-                    var container = this.$el.find("#ca_order_lines_container");
-                    var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: this.options.pricingModel, showThumb: false, container: container});
-                    this.childViews.push(orderLineView);
-                }    
-                    
-	       }, this);
+          this.collection.each(function(orderLine) {
+                
+                var printSize = orderLine.get("print_size");
+                var ratio = orderLine.get("image_ratio");
+                var xhrGetPrintPriceAndMountPriceForRatioAndSize =  app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(ratio, printSize);
+                var xhrGetFramePriceMatrixForGivenRatioAndSize = app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(ratio, printSize);
+                var xhrFrameStylesToDisplay =  app.pricingModel.getFrameDisplayNamesCodesLookup();
+                var xhrGetSizesForRatio = app.pricingModel.getSizesForRatio(ratio);
+
+                $.when(xhrGetPrintPriceAndMountPriceForRatioAndSize, xhrGetFramePriceMatrixForGivenRatioAndSize, xhrFrameStylesToDisplay, xhrGetSizesForRatio).then(
+                    function(result1, result2, result3, result4) {
+                        pricing.printPrice = result1[0].data.printPrice;
+                        pricing.mountPrice = result1[0].data.mountPrice;
+                        pricing.framePrices =  result2;
+                        pricing.frameStylesToDisplay = result3;
+                        pricing.applicableSizesGroup = result4[0].data;
+                        var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: app.pricingModel, showThumb: false, pricing: pricing});
+                        that.childViews.push(orderLineView);
+                        that.$el.find("#ca_order_lines_container").append(orderLineView.render().$el);
+                        },
+                        function() {
+                            var errorView = new ErrorView();   
+                            app.layout.renderViewIntoRegion(errorView, 'main');  
+                        });
+	       }, this);   
+           
            //2. render a fresh blank order line
           var orderLine = new OrderLineModel();
           orderLine.set("image_ref", this.options.file);
-          orderLine.set("image_ratio", this.options.ratio);
-          orderLine.set("path", this.options.path);    
-          var orderLineView = new OrderLineView({collection: this.collection, model: orderLine, ref: this.options.file, 
-                    mode: 'new', pricingModel: this.options.pricingModel});
-          this.childViews.push(orderLineView);          
-          this.$el.find("#ca_order_lines_container").append(orderLineView.render().$el); 
-        
+          var ratio =  this.options.ratio;
+          orderLine.set("image_ratio", ratio);
+          orderLine.set("path", this.options.path);
+          var xhrGetSizesForRatio = app.pricingModel.getSizesForRatio(ratio);
+          var xhrFrameStylesToDisplay =  app.pricingModel.getFrameDisplayNamesCodesLookup();
+          var that = this;
+          $.when(xhrGetSizesForRatio, xhrFrameStylesToDisplay).then(
+                    function(result1, result2) {
+                        pricing.applicableSizesGroup = result1[0].data;
+                        pricing.frameStylesToDisplay = result2;
+                        var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: app.pricingModel, showThumb: false, pricing: pricing});
+                        that.childViews.push(orderLineView);
+                        that.$el.find("#ca_order_lines_container").append(orderLineView.render().$el); 
+                       },
+                       function() { 
+                            var errorView = new ErrorView();   
+                            app.layout.renderViewIntoRegion(errorView, 'main'); 
+                       }     
+                   );
         },  
-        
-       
+
         render: function() {
             var data = {};
             data.path = this.options.path.replace("thumbs", "main");
@@ -1523,7 +1609,6 @@ var caApp = (function (Backbone, $) {
         },
                     
         render: function() {
-            var ratio = this.model.get("image_ratio"); 
             var data = {};
             var pricingModel = this.options.pricingModelJSON;
             data = app.pricingModel.toJSON();
@@ -1541,49 +1626,18 @@ var caApp = (function (Backbone, $) {
             data.langStrings = {};
             data.langStrings = app.langStrings.toJSON();
             data.alt_text = this.model.get("image_ref");
-                 
-            var printSize = this.model.get("print_size");  
             data.mountPrice = null;
             data.framePrices = null;
-            data.show_thumb = this.options.showThumb;
-            var that = this;
-            
-            if (printSize !== null) {
-                var xhrGetPrintPriceAndMountPriceForRatioAndSize =  app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(ratio, printSize);
-                var xhrGetFramePriceMatrixForGivenRatioAndSize = app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(ratio, printSize);
-                var xhrFrameStylesToDisplay =  app.pricingModel.getFrameDisplayNamesCodesLookup();
-                var xhrGetSizesForRatio = app.pricingModel.getSizesForRatio(ratio);
-                
-                $.when(xhrGetPrintPriceAndMountPriceForRatioAndSize, xhrGetFramePriceMatrixForGivenRatioAndSize, xhrFrameStylesToDisplay, xhrGetSizesForRatio).then(
-                    function(result1, result2, result3, result4) {
-                        data.mountPrice = result1.data.mountPrice;
-                        data.framePrices =  result2.data;
-                        data.frameStylesToDisplay = result3.data;
-                        data.applicableSizesGroup = result4.data;
-                        var html = that.template(data);
-                        that.$el.html(html);
-                        that.options.container.append(that.$el);
-                    },
-                    function() {
-                        var errorView = new ErrorView();   
-                        app.layout.renderViewIntoRegion(errorView, 'main');  
-                    }
-                )
-            } else {
-                var xhrGetSizesForRatio = app.pricingModel.getSizesForRatio(ratio);
-                xhrGetSizesForRatio.then(
-                    function(result) {
-                        data.applicableSizesGroup = result.data;
-                        var html = this.template(data);
-                        that.$el.html(html);
-                        that.options.container.append(that.$el);
-                    },
-                    function() {
-                        var errorView = new ErrorView();   
-                        app.layout.renderViewIntoRegion(errorView, 'main'); 
-                    }
-                );
-            }
+            data.show_thumb = this.options.showThumb;             
+            data.size =  this.model.get("print_size");              //can be null
+            data.printPrice = this.model.get("print_price");      //can be null
+            data.mountPrice = this.model.get("mount_price");      //can be null
+            data.framePrices =  this.model.get("frame_prices");    //can be null
+            data.frameStylesToDisplay = this.options.pricing.frameStylesToDisplay;  //can never be null must always be passed to OrderLineView
+            data.applicableSizesGroup = this.options.pricing.applicableSizesGroup; //can never be null  must always be passed to OrderLineView
+            var html = this.template(data);
+            this.$el.html(html);
+            return this;
         }    
     });
     
