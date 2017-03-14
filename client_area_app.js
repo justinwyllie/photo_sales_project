@@ -360,7 +360,7 @@ var caApp = (function (Backbone, $) {
 
         getPrintPriceAndMountPriceForRatioAndSize: function(imageRatio, printSize) {
             var cache =  this.get("cache");
-            if ((cache.printPriceAndMountPriceForRatioAndSize.hasOwnProperty(imageRatio)) && (cache.printPriceAndMountPriceForRatioAndSize[imageRatio].hasOwnProperty(printSize))) {
+            if ((1==2) && (cache.printPriceAndMountPriceForRatioAndSize.hasOwnProperty(imageRatio)) && (cache.printPriceAndMountPriceForRatioAndSize[imageRatio].hasOwnProperty(printSize))) {
                 return cache.printPriceAndMountPriceForRatioAndSize[imageRatio][printSize];
             } else {
                 
@@ -390,7 +390,7 @@ var caApp = (function (Backbone, $) {
 
        getFramePriceMatrixForGivenRatioAndSizeBACKENDVERSION: function(imageRatio, printSize) {
             var cache =  this.get("cache");
-            if ((cache.framePriceMatrixForGivenRatioAndSize.hasOwnProperty(imageRatio)) && (cache.framePriceMatrixForGivenRatioAndSize[imageRatio].hasOwnProperty(printSize))) {
+            if (1==2 && (cache.framePriceMatrixForGivenRatioAndSize.hasOwnProperty(imageRatio)) && (cache.framePriceMatrixForGivenRatioAndSize[imageRatio].hasOwnProperty(printSize))) {
                 return  cache.framePriceMatrixForGivenRatioAndSize[imageRatio][printSize];
             } else {
                 var that = this; 
@@ -419,7 +419,7 @@ var caApp = (function (Backbone, $) {
       getFramePriceMatrixForGivenRatioAndSize: function(imageRatio, printSize) {
             var cache =  this.get("cache");
             var that = this;
-            if ((cache.framePriceMatrixForGivenRatioAndSize.hasOwnProperty(imageRatio)) && (cache.framePriceMatrixForGivenRatioAndSize[imageRatio].hasOwnProperty(printSize))) {
+            if (1==333 && (cache.framePriceMatrixForGivenRatioAndSize.hasOwnProperty(imageRatio)) && (cache.framePriceMatrixForGivenRatioAndSize[imageRatio].hasOwnProperty(printSize))) {
                 return  cache.framePriceMatrixForGivenRatioAndSize[imageRatio][printSize];
             } else {
                 var sizePromise = this.getSizeGroupForRatioAndSize(imageRatio, printSize);
@@ -495,7 +495,6 @@ var caApp = (function (Backbone, $) {
             "print_price": 0,
             "mount_price":0,
             "frame_price":0,
-            "frame_prices":null,
             "qty":1,
             "total_price": "0.00",
             "edit_mode": "",
@@ -507,15 +506,16 @@ var caApp = (function (Backbone, $) {
                 var printSize = this.get("print_size");
                 if (printSize === null) {
                     this.completeResetOrderLine();
-                }  else {
-                    this.setPrices();
-                }
+                }  
             }); 
-            this.on("change:mount_style", function() {
-                this.setPrices();    
+            this.on("change:print_price", function() {
+                this.setTotalPrice(); 
+            }); 
+            this.on("change:mount_price", function() {
+                this.setTotalPrice(); 
             });
-            this.on("change:frame_style", function() {
-                this.setPrices();    
+            this.on("change:frame_price", function() {
+                this.setTotalPrice(); 
             });
             this.on("change:qty", function() {
                 this.setPrices();    
@@ -531,7 +531,6 @@ var caApp = (function (Backbone, $) {
                     "print_price": 0, 
                     "mount_price":0,
                     "frame_price":0,
-                    "frame_prices":null,
                     "total_price":"0.00",
                     "qty": 0,
                     "edit_mode": "edit" 
@@ -539,59 +538,22 @@ var caApp = (function (Backbone, $) {
                 });
         },
         
-        setPrices: function() {
-            var printSize = this.get("print_size");
-            var imageRatio = this.get("image_ratio");
-            var mountStyle =  this.get("mount_style"); 
-            var frameStyle =  this.get("frame_style"); 
-            var qty = this.get("qty"); 
-            var totalPrice = 0;
-            
-            if (printSize !== null) {
-                var that = this;
-                var xhrGetPrintPriceAndMountPriceForRatioAndSize =  app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(imageRatio, printSize);
-                var xhrGetFramePriceMatrixForGivenRatioAndSize = app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(imageRatio, printSize);   
-                var xhrGetFrameDisplayNamesCodesLookup   = app.pricingModel.getFrameDisplayNamesCodesLookup();
-                $.when(xhrGetPrintPriceAndMountPriceForRatioAndSize, xhrGetFramePriceMatrixForGivenRatioAndSize, xhrGetFrameDisplayNamesCodesLookup).then(
-                    function(result1, result2, result3) {
-                        var printPrice = result1[0].data.printPrice;
-                        that.set("print_price", printPrice);
-                        //the 3 calculations here for print, mount and frame produce the row total for display to user  total_price
-                        //when the actual totals are calculated in CheckoutView this is done from the backend
-                        //so the 3 calculations here MUST result in same result as in those which  produce confirmed_total_price in fixBackendPricingOnBasket
-                        //which is then used in pricingCalculator to produce the overall total
-                        //toFixed seems to behave the same way as number_format in php so we *should* be ok. 
-                        //the alternative is to create a backend service for these calculations; which seems a bit of overkill plus a lot of calls
-                        totalPrice = qty * printPrice;
-                        if ((mountStyle !== null) && (mountStyle !== "no_mount")) {
-                            var mountPrice = result2.mountPrice;  
-                            that.set("mount_price", mountPrice);
-                            totalPrice = totalPrice + (qty * mountPrice);
-                        }
-                        if ((frameStyle !== null) && (frameStyle !== "no_frame")) {
-                            var framePrices = result2;   
-                            this.set({"frame_prices": result2}); 
-                            var applicableFramePrice =   framePrices[frameStyle];
-                            var applicableFrameDisplayName = result3[frameStyle];
-                            this.set({"frame_price": applicableFramePrice, "frame_display_name": applicableFrameDisplayName});
-                            totalPrice = totalPrice + (qty * applicableFramePrice);
-                        } 
-                        totalPrice = totalPrice.toFixed(2);
-                        that.set({"total_price": totalPrice, "edit_mode": "edit"}); 
-                    
-                    },
-                    function() {
-                        //TODO actually this is more complicated we MAY BE in the popup - when we show the errorView always close the popup and hide the menu?
-                        var errorView = new ErrorView();
-                        app.layout.renderViewIntoRegion(errorView, 'main'); 
-                    }
-                
-                )
-            
-            }  else {
-                //nothing to do
-            }
-             
+        setTotalPrice: function() {
+           var printPrice =  this.get("print_price");
+           var mountPrice =  this.get("mount_price");
+           var framePrice =  this.get("frame_price");
+           var totalPrice = 0;
+           var qty = this.get("qty");
+           totalPrice = qty * printPrice;
+           if (mountPrice !== null) {
+                totalPrice = totalPrice + (qty * mountPrice);     
+           }
+           if (framePrice !== null) {
+                totalPrice = totalPrice + (qty * framePrice);     
+           }
+           totalPrice = totalPrice.toFixed(2);
+           this.set({"total_price": totalPrice, "edit_mode": "edit"}); 
+  
         },
 
         validate: function(attrs, options) {
@@ -790,14 +752,18 @@ var caApp = (function (Backbone, $) {
                 var xhrGetFramePriceMatrixForGivenRatioAndSize = app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(ratio, printSize);
                 var xhrFrameStylesToDisplay =  app.pricingModel.getFrameDisplayNamesCodesLookup();
                 var xhrGetSizesForRatio = app.pricingModel.getSizesForRatio(ratio);
+                var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: app.pricingModel, showThumb: true});
+                that.childViews.push(orderLineView);
+                that.$el.find("#ca_basket_order_lines_container").append(orderLineView.render().$el);
 
+                /* think this can go
                 $.when(xhrGetPrintPriceAndMountPriceForRatioAndSize, xhrGetFramePriceMatrixForGivenRatioAndSize, xhrFrameStylesToDisplay, xhrGetSizesForRatio).then(
                     function(result1, result2, result3, result4) {
-                        data.printPrice = result1.data.printPrice;           //THIS IS WRONG 
-                        data.mountPrice = result1.data.mountPrice;
-                        data.framePrices =  result2.data;
-                        data.frameStylesToDisplay = result3.data;
-                        data.applicableSizesGroup = result4.data;
+                        pricing.printPrice = result1.data.printPrice;           
+                        pricing.mountPrice = result1.data.mountPrice;
+                        pricing.framePrices =  result2.data;
+                        pricing.frameStylesToDisplay = result3.data;
+                        pricing.applicableSizesGroup = result4.data;
                         var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: app.pricingModel, showThumb: true, pricing: pricing});
                         that.childViews.push(orderLineView);
                         that.$el.find("#ca_basket_order_lines_container").append(orderLineView.render().$el);
@@ -806,6 +772,7 @@ var caApp = (function (Backbone, $) {
                             var errorView = new ErrorView();   
                             app.layout.renderViewIntoRegion(errorView, 'main');  
                         });
+                    */    
 	       }, this); 
         },
         //TDOO instead of copying this code around can we make an ItemView and extend that?  and the childViews from the constructor
@@ -1307,6 +1274,7 @@ var caApp = (function (Backbone, $) {
                         pricing.framePrices =  result2;
                         pricing.frameStylesToDisplay = result3;
                         pricing.applicableSizesGroup = result4[0].data;
+                        pricing.mounts = app.pricingModel.toJSON().mounts;
                         var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: app.pricingModel, showThumb: false, pricing: pricing});
                         that.childViews.push(orderLineView);
                         that.$el.find("#ca_order_lines_container").append(orderLineView.render().$el);
@@ -1330,7 +1298,8 @@ var caApp = (function (Backbone, $) {
                     function(result1, result2) {
                         pricing.applicableSizesGroup = result1[0].data;
                         pricing.frameStylesToDisplay = result2;
-                        var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: app.pricingModel, showThumb: false, pricing: pricing});
+                        pricing.mounts = app.pricingModel.toJSON().mounts;
+                        var orderLineView = new OrderLineView({model: orderLine, mode: 'new', pricingModel: app.pricingModel, showThumb: false, pricing: pricing});  //TODO no need to pass pricingModel as well
                         that.childViews.push(orderLineView);
                         that.$el.find("#ca_order_lines_container").append(orderLineView.render().$el); 
                        },
@@ -1484,14 +1453,15 @@ var caApp = (function (Backbone, $) {
         tagName: 'div',
         className: 'ca_row', 
         template: null,
-        initialize: function(options) {
+         initialize: function(options) {
             this.listenTo(this.model, "invalid", this.displayModelErrors);
-            this.listenTo(this.model, "change:total_price", this.render);
+            //this.listenTo(this.model, "change:total_price", this.render);
             this.listenTo(this.model, "sync", this.modelSynced);
             this.listenTo(this.model, "destroy", this.removeMe);
             var tmpl =  $('#ca_order_line_tmpl').html();
             this.template = _.template(tmpl);
             this.options = options;
+            this.pricing = options.pricing;
             this.options.pricingModelJSON = this.options.pricingModel.toJSON();
 
         },
@@ -1553,18 +1523,79 @@ var caApp = (function (Backbone, $) {
         },
         
         onChangePrintSize: function(evt) {
+            var that = this;
             var sizeSelected = evt.currentTarget.value;
-            this.model.set('print_size', this.processSelects(sizeSelected));
-         },
+            this.model.set({'print_size': this.processSelects(sizeSelected), "edit_mode": "edit"});
+            var imageRatio = this.model.get("image_ratio");
+            //now we know the printSize we can get the applicable mountPrice and framePriceMatrix - get them and then re-render?
+            var xhrGetPrintPriceAndMountPriceForRatioAndSize =  app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(imageRatio, sizeSelected);
+            var xhrGetFramePriceMatrixForGivenRatioAndSize = app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(imageRatio, sizeSelected);   
+
+            $.when(xhrGetPrintPriceAndMountPriceForRatioAndSize, xhrGetFramePriceMatrixForGivenRatioAndSize).then(
+                    function(result1, result2) {
+                        that.model.set("print_price", result1[0].data.printPrice);
+                        //we also can now rerender populating the drop-downs for mounts and frames
+                        that.pricing.mountPrice = result1[0].data.mountPrice;
+                        that.pricing.framePrices =  result2;
+                        that.render();
+     
+                     },
+                     function() {
+                        //TODO actually this is more complicated we MAY BE in the popup - when we show the errorView always close the popup and hide the menu?
+                        var errorView = new ErrorView();
+                        app.layout.renderViewIntoRegion(errorView, 'main'); 
+                    }    
+             );
+             
+        },     
 
         onChangeMount: function(evt) {
             var mount = evt.currentTarget.value;
-            this.model.set('mount_style', this.processSelects(mount));
+            var mountValue = this.processSelects(mount);
+            this.model.set({'mount_style': mountValue, "edit_mode": "edit"});
+            if ((mountValue !== null) && (mountValue != "no_mount")) {
+                var that = this;
+                var xhrGetPrintPriceAndMountPriceForRatioAndSize = app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(this.model.get("image_ratio"), this.model.get("print_size"));
+                xhrGetPrintPriceAndMountPriceForRatioAndSize.then(
+                    function(result) {
+                        that.model.set({'mount_price': result.data.mountPrice, "mount_style": mountValue});
+                        that.render();    
+                    },
+                    function() {
+                        //TODO actually this is more complicated we MAY BE in the popup - when we show the errorView always close the popup and hide the menu?
+                        var errorView = new ErrorView();
+                        app.layout.renderViewIntoRegion(errorView, 'main'); 
+                    }
+                ) ;
+            } else {
+                this.model.set({'mount_price': 0, "mount_style": mountValue});
+                this.render();   
+            }
         },
         
         onChangeFrame: function(evt) {
             var frame = evt.currentTarget.value;
-            this.model.set('frame_style', this.processSelects(frame));
+            var frameValue = this.processSelects(frame);
+            this.model.set({'frame_style': frameValue, "edit_mode": "edit"});
+            
+            if ((frameValue !== null) && (frameValue != "no_frame")) {
+                var that = this;
+                var xhrGetFramePriceMatrixForGivenRatioAndSize = app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(this.model.get("image_ratio"), this.model.get("print_size"));
+                xhrGetFramePriceMatrixForGivenRatioAndSize.then(
+                    function(result) {
+                        that.model.set({'frame_price': result[frameValue], "frame_style": frameValue, "frame_display_name": that.pricing.frameStylesToDisplay[frameValue]});
+                        that.render();    
+                    },
+                    function() {
+                        //TODO actually this is more complicated we MAY BE in the popup - when we show the errorView always close the popup and hide the menu?
+                        var errorView = new ErrorView();
+                        app.layout.renderViewIntoRegion(errorView, 'main'); 
+                    }
+                )
+            } else {
+                this.model.set({'frame_price': 0, "frame_style": frameValue});   
+                this.render();  
+            }
         },
         
        onChangeQty: function(evt) {
@@ -1589,7 +1620,7 @@ var caApp = (function (Backbone, $) {
             model.set("edit_mode", "save");
         },
         
-       updateError: function(model) {
+       updateError: function(model) {  //TDOD
         },
         
         onUpdate: function() {
@@ -1611,7 +1642,6 @@ var caApp = (function (Backbone, $) {
         render: function() {
             var data = {};
             var pricingModel = this.options.pricingModelJSON;
-            data = app.pricingModel.toJSON();
             data.order = this.model.toJSON();
 
             var editMode = this.model.get("edit_mode");
@@ -1629,12 +1659,15 @@ var caApp = (function (Backbone, $) {
             data.mountPrice = null;
             data.framePrices = null;
             data.show_thumb = this.options.showThumb;             
-            data.size =  this.model.get("print_size");              //can be null
-            data.printPrice = this.model.get("print_price");      //can be null
-            data.mountPrice = this.model.get("mount_price");      //can be null
-            data.framePrices =  this.model.get("frame_prices");    //can be null
-            data.frameStylesToDisplay = this.options.pricing.frameStylesToDisplay;  //can never be null must always be passed to OrderLineView
-            data.applicableSizesGroup = this.options.pricing.applicableSizesGroup; //can never be null  must always be passed to OrderLineView
+            data.printPrice = this.model.get("print_price");      
+            data.mountPrice = this.pricing.mountPrice;    
+            data.framePrice = this.model.get("frame_price"); 
+            data.framePrices =  this.pricing.framePrices;    
+            data.frameStylesToDisplay = this.pricing.frameStylesToDisplay;  
+            data.applicableSizesGroup = this.pricing.applicableSizesGroup;
+            data.mounts = this.pricing.mounts ;
+            data.currency = this.options.pricingModelJSON.currency;
+             
             var html = this.template(data);
             this.$el.html(html);
             return this;
