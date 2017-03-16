@@ -611,7 +611,7 @@ var caApp = (function (Backbone, $) {
 
         byImage: function (ref) {
           filtered = this.filter(function (orderLine) {
-              return orderLine.get("image") === ref;
+              return orderLine.get("image_ref") === ref;
           });
           return new Backbone.Collection(filtered);
         },
@@ -1256,50 +1256,25 @@ var caApp = (function (Backbone, $) {
             pricing.mountPrice = null;  
             pricing.framePrices = null;
             pricing.frameStylesToDisplay = null;
-            pricing.applicableSizesGroup = null; 
-           //1. render existing order lines
-          this.collection.each(function(orderLine) {
-                
-                var printSize = orderLine.get("print_size");
-                var ratio = orderLine.get("image_ratio");
-                var xhrGetPrintPriceAndMountPriceForRatioAndSize =  app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(ratio, printSize);
-                var xhrGetFramePriceMatrixForGivenRatioAndSize = app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(ratio, printSize);
-                var xhrFrameStylesToDisplay =  app.pricingModel.getFrameDisplayNamesCodesLookup();
-                var xhrGetSizesForRatio = app.pricingModel.getSizesForRatio(ratio);
+            pricing.applicableSizesGroup = null;
+            pricing.currency = app.pricingModel.toJSON().currency; 
+            var that = this;
 
-                $.when(xhrGetPrintPriceAndMountPriceForRatioAndSize, xhrGetFramePriceMatrixForGivenRatioAndSize, xhrFrameStylesToDisplay, xhrGetSizesForRatio).then(
-                    function(result1, result2, result3, result4) {
-                        pricing.printPrice = result1[0].data.printPrice;
-                        pricing.mountPrice = result1[0].data.mountPrice;
-                        pricing.framePrices =  result2;
-                        pricing.frameStylesToDisplay = result3;
-                        pricing.applicableSizesGroup = result4[0].data;
-                        pricing.mounts = app.pricingModel.toJSON().mounts;
-                        var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: app.pricingModel, showThumb: false, pricing: pricing});
-                        that.childViews.push(orderLineView);
-                        that.$el.find("#ca_order_lines_container").append(orderLineView.render().$el);
-                        },
-                        function() {
-                            var errorView = new ErrorView();   
-                            app.layout.renderViewIntoRegion(errorView, 'main');  
-                        });
-	       }, this);   
-           
-           //2. render a fresh blank order line
-          var orderLine = new OrderLineModel();
-          orderLine.set("image_ref", this.options.file);
-          var ratio =  this.options.ratio;
-          orderLine.set("image_ratio", ratio);
-          orderLine.set("path", this.options.path);
-          var xhrGetSizesForRatio = app.pricingModel.getSizesForRatio(ratio);
-          var xhrFrameStylesToDisplay =  app.pricingModel.getFrameDisplayNamesCodesLookup();
-          var that = this;
-          $.when(xhrGetSizesForRatio, xhrFrameStylesToDisplay).then(
+            renderNewFreshOrderLine = function() {
+                var orderLine = new OrderLineModel();
+                orderLine.set("image_ref", that.options.file);
+                var ratio =  that.options.ratio;
+                orderLine.set("image_ratio", ratio);
+                orderLine.set("path", that.options.path);
+                var xhrGetSizesForRatio = app.pricingModel.getSizesForRatio(ratio);
+                var xhrFrameStylesToDisplay =  app.pricingModel.getFrameDisplayNamesCodesLookup();
+                
+                $.when(xhrGetSizesForRatio, xhrFrameStylesToDisplay).then(
                     function(result1, result2) {
                         pricing.applicableSizesGroup = result1[0].data;
                         pricing.frameStylesToDisplay = result2;
                         pricing.mounts = app.pricingModel.toJSON().mounts;
-                        var orderLineView = new OrderLineView({model: orderLine, mode: 'new', pricingModel: app.pricingModel, showThumb: false, pricing: pricing});  //TODO no need to pass pricingModel as well
+                        var orderLineView = new OrderLineView({model: orderLine, mode: 'new', showThumb: false, pricing: pricing});  
                         that.childViews.push(orderLineView);
                         that.$el.find("#ca_order_lines_container").append(orderLineView.render().$el); 
                        },
@@ -1307,7 +1282,49 @@ var caApp = (function (Backbone, $) {
                             var errorView = new ErrorView();   
                             app.layout.renderViewIntoRegion(errorView, 'main'); 
                        }     
-                   );
+                );
+            }
+          var itemsInBasketForThisImage = this.collection.byImage(this.options.file).length;   
+          if (itemsInBasketForThisImage < 1) {
+                renderNewFreshOrderLine();  
+          }  
+
+         //1. render existing order lines
+          
+        var i = 0;
+        this.collection.each(function(orderLine) {
+            if (orderLine.get("image_ref") == this.options.file) {   //TODO get the filtered basket to work  not just to get the length!
+                    var printSize = orderLine.get("print_size");
+                    var ratio = orderLine.get("image_ratio");
+                    var xhrGetPrintPriceAndMountPriceForRatioAndSize =  app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(ratio, printSize);
+                    var xhrGetFramePriceMatrixForGivenRatioAndSize = app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(ratio, printSize);
+                    var xhrFrameStylesToDisplay =  app.pricingModel.getFrameDisplayNamesCodesLookup();
+                    var xhrGetSizesForRatio = app.pricingModel.getSizesForRatio(ratio);
+    
+                    $.when(xhrGetPrintPriceAndMountPriceForRatioAndSize, xhrGetFramePriceMatrixForGivenRatioAndSize, xhrFrameStylesToDisplay, xhrGetSizesForRatio).then(
+                        function(result1, result2, result3, result4) {
+                            pricing.printPrice = result1[0].data.printPrice;
+                            pricing.mountPrice = result1[0].data.mountPrice;
+                            pricing.framePrices =  result2;
+                            pricing.frameStylesToDisplay = result3;
+                            pricing.applicableSizesGroup = result4[0].data;
+                            pricing.mounts = app.pricingModel.toJSON().mounts;
+                            var orderLineView = new OrderLineView({model: orderLine, mode: 'update', showThumb: false, pricing: pricing});
+                            that.childViews.push(orderLineView);
+                            that.$el.find("#ca_order_lines_container").append(orderLineView.render().$el);
+                            i++; 
+                            if (i == itemsInBasketForThisImage) {
+                                renderNewFreshOrderLine();
+                            }
+                        },
+                        function() {
+                            var errorView = new ErrorView();   
+                            app.layout.renderViewIntoRegion(errorView, 'main');  
+                        });
+                        
+                           
+               }             
+    	    }, this); 
         },  
 
         render: function() {
@@ -1389,7 +1406,7 @@ var caApp = (function (Backbone, $) {
             var file = this.model.get("file");
             var path = this.model.get("path");
             var ratio = this.model.get("ratio");
-            this.basketItemsForImage = app.basketCollection;// .byImage(this.options.file);
+            this.basketItemsForImage = app.basketCollection;//.byImage(file);
             var width =  this.model.get("width");
             var height =  this.model.get("height") ;
             var mainWidth = this.model.get("mainWidth"); 
@@ -1462,7 +1479,6 @@ var caApp = (function (Backbone, $) {
             this.template = _.template(tmpl);
             this.options = options;
             this.pricing = options.pricing;
-            this.options.pricingModelJSON = this.options.pricingModel.toJSON();
 
         },
         
@@ -1641,7 +1657,6 @@ var caApp = (function (Backbone, $) {
                     
         render: function() {
             var data = {};
-            var pricingModel = this.options.pricingModelJSON;
             data.order = this.model.toJSON();
 
             var editMode = this.model.get("edit_mode");
@@ -1666,7 +1681,7 @@ var caApp = (function (Backbone, $) {
             data.frameStylesToDisplay = this.pricing.frameStylesToDisplay;  
             data.applicableSizesGroup = this.pricing.applicableSizesGroup;
             data.mounts = this.pricing.mounts ;
-            data.currency = this.options.pricingModelJSON.currency;
+            data.currency = this.pricing.currency;
              
             var html = this.template(data);
             this.$el.html(html);
