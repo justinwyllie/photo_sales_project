@@ -285,7 +285,6 @@ var caApp = (function (Backbone, $) {
                 });
        },
        
-
        getSizeGroupForRatioAndSize: function(imageRatio, printSize) {
             var cache =  this.get("cache");
             if (1==2 && (cache.sizeGroupForRatioAndSize.hasOwnProperty(imageRatio)) && (cache.sizeGroupForRatioAndSize[imageRatio].hasOwnProperty(printSize))) {
@@ -497,7 +496,7 @@ var caApp = (function (Backbone, $) {
             "frame_price":0,
             "qty":1,
             "total_price": "0.00",
-            "edit_mode": "",
+            "edit_mode": "edit",
             "path": null
         },
         
@@ -518,7 +517,7 @@ var caApp = (function (Backbone, $) {
                 this.setTotalPrice(); 
             });
             this.on("change:qty", function() {
-                this.setPrices();    
+                this.setTotalPrice();    
             });
         },
         
@@ -552,7 +551,7 @@ var caApp = (function (Backbone, $) {
                 totalPrice = totalPrice + (qty * framePrice);     
            }
            totalPrice = totalPrice.toFixed(2);
-           this.set({"total_price": totalPrice, "edit_mode": "edit"}); 
+           this.set({"total_price": totalPrice}); 
   
         },
 
@@ -739,8 +738,17 @@ var caApp = (function (Backbone, $) {
             data.row_headers = this.headersTmpl(data);
             this.$el.html(this.tmpl(data));
             var that = this;
+            
+            var pricing = {};
+            pricing.printPrice = null; 
+            pricing.mountPrice = null;  
+            pricing.framePrices = null;
+            pricing.frameStylesToDisplay = null;
+            pricing.applicableSizesGroup = null;
+            pricing.currency = app.pricingModel.toJSON().currency; 
+            
             this.collection.each(function(orderLine) {
-                var pricing = {};
+                
                 pricing.printPrice = null; 
                 pricing.mountPrice = null;  
                 pricing.framePrices = null;
@@ -752,27 +760,25 @@ var caApp = (function (Backbone, $) {
                 var xhrGetFramePriceMatrixForGivenRatioAndSize = app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(ratio, printSize);
                 var xhrFrameStylesToDisplay =  app.pricingModel.getFrameDisplayNamesCodesLookup();
                 var xhrGetSizesForRatio = app.pricingModel.getSizesForRatio(ratio);
-                var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: app.pricingModel, showThumb: true});
-                that.childViews.push(orderLineView);
-                that.$el.find("#ca_basket_order_lines_container").append(orderLineView.render().$el);
-
-                /* think this can go
+                
                 $.when(xhrGetPrintPriceAndMountPriceForRatioAndSize, xhrGetFramePriceMatrixForGivenRatioAndSize, xhrFrameStylesToDisplay, xhrGetSizesForRatio).then(
-                    function(result1, result2, result3, result4) {
-                        pricing.printPrice = result1.data.printPrice;           
-                        pricing.mountPrice = result1.data.mountPrice;
-                        pricing.framePrices =  result2.data;
-                        pricing.frameStylesToDisplay = result3.data;
-                        pricing.applicableSizesGroup = result4.data;
-                        var orderLineView = new OrderLineView({model: orderLine, mode: 'update', pricingModel: app.pricingModel, showThumb: true, pricing: pricing});
-                        that.childViews.push(orderLineView);
-                        that.$el.find("#ca_basket_order_lines_container").append(orderLineView.render().$el);
+                        function(result1, result2, result3, result4) {
+                            pricing.printPrice = result1[0].data.printPrice;
+                            pricing.mountPrice = result1[0].data.mountPrice;
+                            pricing.framePrices =  result2;
+                            pricing.frameStylesToDisplay = result3;
+                            pricing.applicableSizesGroup = result4[0].data;
+                            pricing.mounts = app.pricingModel.toJSON().mounts;
+                            var orderLineView = new OrderLineView({model: orderLine, mode: 'update', showThumb: true, pricing: pricing});
+                            that.childViews.push(orderLineView);
+                            that.$el.find("#ca_basket_order_lines_container").append(orderLineView.render().$el);
+              
                         },
                         function() {
                             var errorView = new ErrorView();   
                             app.layout.renderViewIntoRegion(errorView, 'main');  
-                        });
-                    */    
+                });
+                        
 	       }, this); 
         },
         //TDOO instead of copying this code around can we make an ItemView and extend that?  and the childViews from the constructor
@@ -1615,10 +1621,11 @@ var caApp = (function (Backbone, $) {
         },
         
        onChangeQty: function(evt) {
-            this.clearErrors('qty');
             var qty = evt.currentTarget.value;
-            this.model.set({'qty': qty});
-        },
+            this.model.set({"edit_mode": "edit", 'qty': qty});
+            this.clearErrors('qty');
+            this.render(); 
+      },
 
         onAdd: function() {
             if (this.model.isValid()) {
@@ -1660,12 +1667,8 @@ var caApp = (function (Backbone, $) {
             data.order = this.model.toJSON();
 
             var editMode = this.model.get("edit_mode");
-            if (editMode == "") {
-                data.editStateIcon = "";    
-            }  else {
-                data.editStateIcon = "fa-" +    editMode; 
-            }
-            
+            data.editStateIcon = "fa-" +  editMode; 
+
             data.mode = this.options.mode;
             
             data.langStrings = {};
@@ -1675,14 +1678,15 @@ var caApp = (function (Backbone, $) {
             data.framePrices = null;
             data.show_thumb = this.options.showThumb;             
             data.printPrice = this.model.get("print_price");      
-            data.mountPrice = this.pricing.mountPrice;    
             data.framePrice = this.model.get("frame_price"); 
+            
+            data.mountPrice = this.pricing.mountPrice;    
             data.framePrices =  this.pricing.framePrices;    
             data.frameStylesToDisplay = this.pricing.frameStylesToDisplay;  
             data.applicableSizesGroup = this.pricing.applicableSizesGroup;
-            data.mounts = this.pricing.mounts ;
+            data.mounts = this.pricing.mounts;
             data.currency = this.pricing.currency;
-             
+            data.path = this.model.get("path");
             var html = this.template(data);
             this.$el.html(html);
             return this;

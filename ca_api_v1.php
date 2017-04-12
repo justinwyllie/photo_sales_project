@@ -514,6 +514,7 @@ class ClientAreaAPI
     {
         $newOrderLine = file_get_contents('php://input');
         $order = json_decode($newOrderLine);
+        $order->edit_mode = 'save';
         
         if (isset($_COOKIE['client_area_tracker'])) {
             $ref = $_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'];
@@ -542,6 +543,7 @@ class ClientAreaAPI
         $updatedOrderLine = file_get_contents('php://input');
         $orderId = $this->param;
         $order = json_decode($updatedOrderLine);
+        $order->edit_mode = 'save';
         if (isset($_COOKIE['client_area_tracker'])) {
             $ref = $_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'];
             $result = $this->db->updateBasket($ref, $orderId, $order);
