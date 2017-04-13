@@ -173,7 +173,6 @@ class ClientAreaPricingCalculator
         $grandTotal = 0; 
         if ($calculateDelivery)
         {
-            
             $deliveryChargesNodeList = $this->pricingModel->xpath('./deliveryCharges');
             $deliveryCharges =  $deliveryChargesNodeList[0];
         }
@@ -182,12 +181,15 @@ class ClientAreaPricingCalculator
         $perMountItem = $deliveryCharges->perMountItem . '';
         $perFrameItem = $deliveryCharges->perFrameItem . '';
         
-        
+        $perPrintItem = (float) $perPrintItem;
+        $perMountItem = (float) $perMountItem;
+        $perFrameItem = (float) $perFrameItem;
+
         foreach($basket as $orderLine)
         {
-            
-            $totalItems = $totalItems + $orderLine->confirmed_total_price;
-            $qty = $orderLine->qty;
+            $rowTotal = (float) $orderLine->total_price;
+            $totalItems = $totalItems + $rowTotal;
+            $qty = (float) $orderLine->qty;
             if ($calculateDelivery)
             {   
                 $lineDelCost = $qty * $perPrintItem;
@@ -202,7 +204,7 @@ class ClientAreaPricingCalculator
                 $deliveryCharges = $deliveryCharges + $lineDelCost;
             }
         }
-        
+
         return array(
             'totalItems' => number_format((float) $totalItems, 2),
             'deliveryCharges' =>   number_format((float) $deliveryCharges, 2),

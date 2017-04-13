@@ -94,7 +94,7 @@ function processCompletedOrder($orderRef, $paymentStatus, $ipnTrackId, $txnId) {
     }
     catch(Exception $e)
     {
-       mail('justinwyllie@hotmail.co.uk', 'Error opening DB in PayPal IPN handler', 'The confirmed order ref is: ' .  $orderRef);
+       mail('justinwyllie@hotmail.co.uk', 'Error opening DB in PayPal IPN handler', 'The confirmed order ref is: ' .  $orderRef);    //TODO email
        exit();        
     }
     

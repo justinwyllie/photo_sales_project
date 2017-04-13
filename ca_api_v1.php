@@ -139,7 +139,7 @@ class ClientAreaAPI
     public function postPaypalStandard() {
    
         $mode = $_POST['mode'];
-        $deliveryAndTotalShownToCustomer =  $_POST['order'];
+        $order =  $_POST['order'];
         $clientAreaTracker =   '';
         
         
@@ -151,7 +151,7 @@ class ClientAreaAPI
             {
                 $this->outputJson500("Unable to get basket in postPaypalStandard");        
             }
-            $pendingOrder = array('basket'=>$basket, 'deliveryAndTotalShownToCustomer'=>$deliveryAndTotalShownToCustomer);
+            $pendingOrder = array('basket'=>$basket, 'order'=>$order);
             $pendingOrder = $this->fixBackendPricingOnBasket($pendingOrder);
             $orderRef = $this->db->createPendingOrder($ref, $pendingOrder);
             if ($orderRef === false)
@@ -193,12 +193,11 @@ class ClientAreaAPI
      * obviously this is not ideal and when a single source of pricing is implemented we we will drop the client side pricing from this file. 
      * 
      * the added in block has the following structure:
-     * in the current field basket.[{}, {}] where each {} is an order line: add a field confirmed_total_price
      *      also on each order line we also lose path field and edit_mode field
      * and add a new field to the root:
-     * confirmedDeliveryAndTotal.totalItems = 20.00
-     * confirmedDeliveryAndTotal.deliveryCharges = 5.00
-     * confirmedDeliveryAndTotal.grandTotal = 25.00
+     * DeliveryAndTotal.totalItems = 20.00
+     * DeliveryAndTotal.deliveryCharges = 5.00
+     * DeliveryAndTotal.grandTotal = 25.00
      * 
      * when there is a single source of calculation then the next step is on each order line to replace the fields: image_ratio, print_price, mount_price, frame_price and total_price we ones calculated here.
      *      - they won't be different unless client had manipulated the data
@@ -224,8 +223,8 @@ class ClientAreaAPI
         $thumbsDir = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
             DIRECTORY_SEPARATOR . 'prints' . DIRECTORY_SEPARATOR . "thumbs";
          
-        $confirmedDeliveryAndTotal = new stdClass(); 
-        $confirmedDeliveryAndTotal->totalItems = 0;
+        $DeliveryAndTotal = new stdClass(); 
+        $DeliveryAndTotal->totalItems = 0;
     
         
         foreach ($pendingOrder['basket'] as &$orderLine)
@@ -256,14 +255,14 @@ class ClientAreaAPI
                 $applicableFramePrice = $framePrices[$orderLine->frame_style];
                 $rowTotal = $rowTotal + ($applicableFramePrice * $orderLine->qty);    
             }
-            $orderLine->confirmed_total_price = number_format((float) $rowTotal, 2);
+            $orderLine->total_price = number_format((float) $rowTotal, 2);
             unset($orderLine->path);
             unset($orderLine->edit_mode); 
         }
         
         //logic in calculateDeliveryAndTotals is from BasketCollection
         $calculateDelivery = $_SESSION['options']['deliveryChargesEnabled'] ;
-        $pendingOrder['confirmedDeliveryAndTotal'] = $pricingCalculator->calculateDeliveryAndTotals($pendingOrder['basket'], $calculateDelivery);
+        $pendingOrder['DeliveryAndTotal'] = $pricingCalculator->calculateDeliveryAndTotals($pendingOrder['basket'], $calculateDelivery);
         return $pendingOrder;
     
     }
@@ -450,15 +449,13 @@ class ClientAreaAPI
                     $result = $pricingCalculator->getFramePriceMatrixForGivenRatioAndSize($ratio, $printSize);  
                     break;  
                     
-                case 'getCalculateApplicableDevliveryCharges':
-                    $basket = $_POST['basket'];
+                case 'getCalculateApplicableDevliveryChargesAndTotals':
+                    $basket = $this->getBasket();
                     $calculateDelivery = $_SESSION['options']['deliveryChargesEnabled'] ;
-                    $result = $pricingCalculator->calculateDeliveryAndTotals(json_decode($basket), $calculateDelivery);
+                    $result = $pricingCalculator->calculateDeliveryAndTotals($basket, $calculateDelivery);
                     break;                
-            
             }
-            
-            
+  
             
         }
         catch(Exception $e)

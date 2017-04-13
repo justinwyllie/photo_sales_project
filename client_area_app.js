@@ -90,26 +90,10 @@ var caApp = (function (Backbone, $) {
                     
                         if (data.loggedIn) {
                             if (mode == 'thanks') {
-                                var xhr = $.ajax(
-                                {
-                                    url: '/api/v1/clearCompleteBasket',
-                                    method: 'GET',
-                                    dataType: 'json'
-                                }
-                                );
-                                xhr.then(
-                                    function() {
-                                        var paypalView = new PaypalThanksView();
-                                        var logoutMenu = new LogoutMenuView();
-                                        app.layout.renderViewIntoRegion(logoutMenu, 'menu');
-                                        app.layout.renderViewIntoRegion(paypalView, 'main');
-                                },
-                                function() {
-                                    var errorView = new ErrorView();   //TODO test this
-                                    app.layout.renderViewIntoRegion(errorView, 'main');  
-                                }
-                                );
-    
+                                var paypalView = new PaypalThanksView();
+                                var logoutMenu = new LogoutMenuView();
+                                app.layout.renderViewIntoRegion(logoutMenu, 'menu');
+                               app.layout.renderViewIntoRegion(paypalView, 'main');
                             }  else {
                                  
                                 var thumbsPerPage = parseInt(app.appData.thumbsPerPage); 
@@ -133,9 +117,7 @@ var caApp = (function (Backbone, $) {
                         } else {
                             var loginView = new LoginView({message: ''});
                             app.layout.renderViewIntoRegion(loginView, 'main');
-                        
                         }
-                    
                     },  
                     
                     notFound:function() {
@@ -468,8 +450,8 @@ var caApp = (function (Backbone, $) {
         * returns promise which will return an object with the delivery and total charges on it
         */
 
-        getCalculateApplicableDevliveryCharges: function(basketJSON) {
-            return this.proxyRequest('getCalculateApplicableDevliveryCharges', {basket: basketJSON});
+        getCalculateApplicableDevliveryChargesAndTotals: function() {
+            return this.proxyRequest('getCalculateApplicableDevliveryChargesAndTotals', {});
         }
     
     
@@ -903,13 +885,17 @@ var caApp = (function (Backbone, $) {
         //TODO     - probably show a screen with information on how to make the payment and a link to the site.
         
         } ,
-        
+      
         paypalStandard: function() {
+           var order = this.model.toJSON(); 
+           delete order.deliveryCharges;
+           delete order.totalItems;
+           delete order.grandTotal;
            var xhr = $.ajax(
                 {
                     url: '/api/v1/paypalStandard',
                     method: 'POST',
-                    data: {mode: 'online_payment', order: this.model.toJSON()},
+                    data: {mode: 'online_payment', order: order},
                     dataType: 'json'
                 }
             );
@@ -994,32 +980,24 @@ var caApp = (function (Backbone, $) {
             }
             
             data.currSymbol = app.pricingModel.get("currency").symbol;
-
             
-            
-            var showScreen = function(data, totalItems, deliveryAndTotalCharges, grandTotal) {
-                var deliveryCharges = deliveryAndTotalCharges.deliveryCharges;
-                var totalItems = deliveryAndTotalCharges.totalItems;
-                var grandTotal =  deliveryAndTotalCharges.grandTotal;
+            var showScreen = function(totalsData) {
                 this.model.set({
-                    "deliveryCharges":deliveryCharges,
-                    "totalItems": totalItems,
-                    "grandTotal": grandTotal
+                    "deliveryCharges":totalsData.deliveryCharges,
+                    "totalItems": totalsData.totalItems,
+                    "grandTotal": totalsData.grandTotal
                     });
-                    
-                data.grandTotal = grandTotal;
-                data.totalItems = totalItems;
-                data.deliveryCharges = deliveryCharges;
-                this.$el.html(this.screen2Tmpl(data)); 
+                tmplData = _.extend(totalsData, data);    
+                this.$el.html(this.screen2Tmpl(tmplData)); 
             };
             
             
             if  (data.deliveryChargesEnabled) {
-                var xhrDeliveryCharges =  app.pricingModel.getCalculateApplicableDevliveryCharges(app.basketCollection.toJSON());
+                var xhrDeliveryChargesAndTotals =  app.pricingModel.getCalculateApplicableDevliveryChargesAndTotals();
                 var that = this;
-                xhrDeliveryCharges.then(
+                xhrDeliveryChargesAndTotals.then(
                     function(result) {
-                        showScreen.call(that, data,  totalItems, result.data, grandTotal) ;
+                        showScreen.call(that, result.data) ;
                     },
                     function() {
                          var errorView = new ErrorView();   //TODO test this
