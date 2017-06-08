@@ -248,10 +248,6 @@ var caApp = (function (Backbone, $) {
             
             };
             cacheStructure.sizesForRatio = {};
-            cacheStructure.sizeGroupForRatioAndSize = {};
-            cacheStructure.printPriceAndMountPriceForRatioAndSize = {};
-            cacheStructure.framePriceMatrixForGivenRatioAndSize = {};
-            cacheStructure.frameDisplayNamesCodesLookups  = {};
             this.set("cache", cacheStructure);
        },
        //TODO - this needs to cache the promises. on first request we make the same call multiple times
@@ -266,52 +262,12 @@ var caApp = (function (Backbone, $) {
                     method: 'POST'
                 });
        },
-       
-       getSizeGroupForRatioAndSize: function(imageRatio, printSize) {
-            var cache =  this.get("cache");
-            if (1==2 && (cache.sizeGroupForRatioAndSize.hasOwnProperty(imageRatio)) && (cache.sizeGroupForRatioAndSize[imageRatio].hasOwnProperty(printSize))) {
-                var def = $.Deferred();
-                def.then(
-                  function () {
-                    return cache.sizeGroupForRatioAndSize[imageRatio][printSize];
-                  }
-                );
-                return def.promise();
-            }   else {
-                var sizeBlock = null;
-                var sizeGroupsXhr = this.getSizesForRatio(imageRatio);
-                
-                var that = this;
-                var result = sizeGroupsXhr.then(
-                    function(result) {
-                        _.each(result.data, function(size) {
-                            if (size.value == printSize) {
-                                sizeBlock = size;   
-                            }
-                         }); 
-            
-                        if (!cache.sizeGroupForRatioAndSize.hasOwnProperty(imageRatio)) {
-                            cache.sizeGroupForRatioAndSize[imageRatio] = {};    
-                        }
-                        cache.sizeGroupForRatioAndSize[imageRatio][printSize] = sizeBlock;
-                        that.set("cache", cache);
-                        return sizeBlock;
-                    },
-                    function() {
-                        var errorView = new ErrorView();
-                        app.layout.renderViewIntoRegion(errorView, 'main');
-                    }
-                );
-                return result;   
-                
-           } 
-       
-       }, 
 
+       //back-end call
        getSizesForRatio: function (imageRatio) {
             var cache =  this.get("cache");
             var that = this;
-            if (1==2 && cache.sizesForRatio.hasOwnProperty(imageRatio)) {
+            if (1==1 && cache.sizesForRatio.hasOwnProperty(imageRatio)) {
                 var def = $.Deferred();
                 def.then(
                   function () {
@@ -337,123 +293,56 @@ var caApp = (function (Backbone, $) {
             }          
        },
        
-       
-
-        getPrintPriceAndMountPriceForRatioAndSize: function(imageRatio, printSize) {
-            var cache =  this.get("cache");
-            if ((1==2) && (cache.printPriceAndMountPriceForRatioAndSize.hasOwnProperty(imageRatio)) && (cache.printPriceAndMountPriceForRatioAndSize[imageRatio].hasOwnProperty(printSize))) {
-                return cache.printPriceAndMountPriceForRatioAndSize[imageRatio][printSize];
-            } else {
-                
-               var that = this; 
-               var xhr = this.proxyRequest('getPrintPriceAndMountPriceForRatioAndSize', {imageRatio:imageRatio, printSize: printSize});
-               xhr.then(
-                        function(result)
-                        {
-                            var ret = {mountPrice: result.data.mountPrice, printPrice: result.data.printPrice};
-                            if (!cache.printPriceAndMountPriceForRatioAndSize.hasOwnProperty(imageRatio)) {
-                                cache.printPriceAndMountPriceForRatioAndSize[imageRatio] = {};    
-                            }
-                            cache.printPriceAndMountPriceForRatioAndSize[imageRatio][printSize] = ret;
-                            that.set("cache", cache); 
-                                        
-                        },
-                        function() {
-                            var errorView = new ErrorView();
-                            app.layout.renderViewIntoRegion(errorView, 'main'); 
-                        }
-                    );
-                    
-               return xhr;     
-             }
-       },
-       
-
-       getFramePriceMatrixForGivenRatioAndSizeBACKENDVERSION: function(imageRatio, printSize) {
-            var cache =  this.get("cache");
-            if (1==2 && (cache.framePriceMatrixForGivenRatioAndSize.hasOwnProperty(imageRatio)) && (cache.framePriceMatrixForGivenRatioAndSize[imageRatio].hasOwnProperty(printSize))) {
-                return  cache.framePriceMatrixForGivenRatioAndSize[imageRatio][printSize];
-            } else {
-                var that = this; 
-                var xhr = this.proxyRequest('getFramePriceMatrixForGivenRatioAndSize', {imageRatio:imageRatio, printSize: printSize});
-                xhr.then(
-                     function(result)
-                     {
-                         if (!cache.framePriceMatrixForGivenRatioAndSize.hasOwnProperty(imageRatio)) {
-                                cache.framePriceMatrixForGivenRatioAndSize[imageRatio] = {};    
-                         }
-                         cache.framePriceMatrixForGivenRatioAndSize[imageRatio][printSize] = ret;
-                         that.set("cache", cache); 
-                      },
-                      function() {
-                         var errorView = new ErrorView();
-                         app.layout.renderViewIntoRegion(errorView, 'main'); 
-                      }
-               );
-               return xhr;  
-            }
-       },
-       
-      /*
-       * PUBLIC
-       */
-      getFramePriceMatrixForGivenRatioAndSize: function(imageRatio, printSize) {
-            var cache =  this.get("cache");
-            var that = this;
-            if (1==333 && (cache.framePriceMatrixForGivenRatioAndSize.hasOwnProperty(imageRatio)) && (cache.framePriceMatrixForGivenRatioAndSize[imageRatio].hasOwnProperty(printSize))) {
-                return  cache.framePriceMatrixForGivenRatioAndSize[imageRatio][printSize];
-            } else {
-                var sizePromise = this.getSizeGroupForRatioAndSize(imageRatio, printSize);
-                var result = sizePromise.then(
-                    function(size) {
-                         var framePricesObj = {};
-                        _.each(size.framePrices.framePrice, function(framePrice) {
-                           framePricesObj[framePrice.style] = framePrice.price;
-                        });
-                        if (!cache.framePriceMatrixForGivenRatioAndSize.hasOwnProperty(imageRatio)) {
-                            cache.framePriceMatrixForGivenRatioAndSize[imageRatio] = {};    
-                        }
-                        
-                        cache.framePriceMatrixForGivenRatioAndSize[imageRatio][printSize] =  framePricesObj;
-                        that.set("cache", cache);
-                        return  framePricesObj;
-                    },
-                    function() {
-                        var errorView = new ErrorView();
-                        app.layout.renderViewIntoRegion(errorView, 'main'); 
-                    }
-                );
-                return result;
-            }
-       
-       }, 
-       /*
-       * PUBLIC returns promise which will return an object which maps frame code to frame display name or just that object
-       */        
-       getFrameDisplayNamesCodesLookup: function() {
-            var cache =  this.get("cache");
-            if (cache.frameDisplayNamesCodesLookup != undefined) {
-                return cache.frameDisplayNamesCodesLookup; 
-            } else  {
-                 var pictureFrames = this.get("frames");
-                 var framesCodeToDisplay = {};
-                 _.each(pictureFrames.frame, function(frame) {
-                    framesCodeToDisplay[frame.value] = frame.display;   
-                });
-                cache.frameDisplayNamesCodesLookup =  framesCodeToDisplay;
-                this.set("cache", cache);
-                return framesCodeToDisplay;
-            }
-       },
-       
-       /**
-        * returns promise which will return an object with the delivery and total charges on it
-        */
-
-        getCalculateApplicableDevliveryChargesAndTotals: function() {
+       //back-end call
+       getCalculateApplicableDevliveryChargesAndTotals: function() {
             return this.proxyRequest('getCalculateApplicableDevliveryChargesAndTotals', {});
-        }
+        },
     
+
+        //calculation
+        getPrintPriceAndMountPriceForSize: function(sizeBlock, printSize) {
+         
+            _.each(sizeBlock, function(size) {
+                if (size.value == printSize) {
+                    sizeBlock = size;   
+                }
+             }); 
+             
+             var  ret = {};
+             ret.mountPrice =  sizeBlock.mountPrice;
+             ret.printPrice =  sizeBlock.printPrice;
+
+            return ret;
+        },
+
+       //calculation
+        getFramePriceMatrixForSize: function(sizeBlock, printSize) {
+
+             var framePricesObj = {};
+            _.each(sizeBlock, function(size) {
+                if (size.value == printSize) {
+                    sizeBlock = size;   
+                }
+             }); 
+             
+            _.each(sizeBlock.framePrices.framePrice, function(framePrice) {
+               framePricesObj[framePrice.style] = framePrice.price;
+            });
+
+            return  framePricesObj;
+       }, 
+   
+       //data from model
+       getFrameDisplayNamesCodesLookup: function() {
+        
+             var pictureFrames = this.get("frames");
+             var framesCodeToDisplay = {};
+             _.each(pictureFrames.frame, function(frame) {
+                framesCodeToDisplay[frame.value] = frame.display;   
+            });
+            return framesCodeToDisplay;
+       }
+
     
     });
     
@@ -763,7 +652,7 @@ var caApp = (function (Backbone, $) {
                         
 	       }, this); 
         },
-        //TDOO instead of copying this code around can we make an ItemView and extend that?  and the childViews from the constructor
+        //TODO put on one shared class but see http://www.erichynds.com/blog/backbone-and-inheritance
         cleanUp: function() {
             _.invoke(this.childViews, 'remove');
             this.childViews = [];    
@@ -1277,22 +1166,28 @@ var caApp = (function (Backbone, $) {
           
         var i = 0;
         this.collection.each(function(orderLine) {
+        
             if (orderLine.get("image_ref") == this.options.file) {   //TODO get the filtered basket to work  not just to get the length!
+            
                     var printSize = orderLine.get("print_size");
                     var ratio = orderLine.get("image_ratio");
-                    var xhrGetPrintPriceAndMountPriceForRatioAndSize =  app.pricingModel.getPrintPriceAndMountPriceForRatioAndSize(ratio, printSize);
-                    var xhrGetFramePriceMatrixForGivenRatioAndSize = app.pricingModel.getFramePriceMatrixForGivenRatioAndSize(ratio, printSize);
-                    var xhrFrameStylesToDisplay =  app.pricingModel.getFrameDisplayNamesCodesLookup();
+                        
                     var xhrGetSizesForRatio = app.pricingModel.getSizesForRatio(ratio);
-    
-                    $.when(xhrGetPrintPriceAndMountPriceForRatioAndSize, xhrGetFramePriceMatrixForGivenRatioAndSize, xhrFrameStylesToDisplay, xhrGetSizesForRatio).then(
-                        function(result1, result2, result3, result4) {
-                            pricing.printPrice = result1[0].data.printPrice;
-                            pricing.mountPrice = result1[0].data.mountPrice;
-                            pricing.framePrices =  result2;
-                            pricing.frameStylesToDisplay = result3;
-                            pricing.applicableSizesGroup = result4[0].data;
+                    
+                    xhrGetSizesForRatio.then(
+                    
+                        function(result) {
                             pricing.mounts = app.pricingModel.toJSON().mounts;
+                            pricing.applicableSizesGroup = result.data;
+                            var printAndMountPriceForPrintSize =  app.pricingModel.getPrintPriceAndMountPriceForSize(result.data, printSize);
+                            pricing.printPrice = printAndMountPriceForPrintSize.printPrice;
+                            pricing.mountPrice = printAndMountPriceForPrintSize.mountPrice;
+                            
+                            var framePriceMatrixForGivenSize  = app.pricingModel.getFramePriceMatrixForSize(result.data, printSize);
+                            pricing.framePrices = framePriceMatrixForGivenSize; 
+                            
+                            pricing.frameStylesToDisplay = app.pricingModel.getFrameDisplayNamesCodesLookup()
+                        
                             var orderLineView = new OrderLineView({model: orderLine, mode: 'update', showThumb: false, pricing: pricing});
                             that.childViews.push(orderLineView);
                             that.$el.find("#ca_order_lines_container").append(orderLineView.render().$el);
@@ -1304,8 +1199,8 @@ var caApp = (function (Backbone, $) {
                         function() {
                             var errorView = new ErrorView();   
                             app.layout.renderViewIntoRegion(errorView, 'main');  
-                        });
-                        
+                        }
+                    )    
                            
                }             
     	    }, this); 
