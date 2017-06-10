@@ -450,12 +450,11 @@ var caApp = (function (Backbone, $) {
     });
     
 
-    ThumbModel = Backbone.Model.extend({
+    ThumbModel = Backbone.Model.extend({    
     
         defaults: {
-                main_dimensions: null,
-                thumb_dimensions: null,
-                ratio: null
+                main_image_dimensions: null,
+                image_ratio: null
         }
 
     });
@@ -1280,25 +1279,61 @@ var caApp = (function (Backbone, $) {
         showPopUp: function() {
             var file = this.model.get("file");
             var path = this.model.get("path");
-            var ratio = this.model.get("ratio");
-            this.basketItemsForImage = app.basketCollection;//.byImage(file);
             
-            var mainWidth = this.model.get("mainWidth"); 
-            var mainHeight = this.model.get("mainHeight"); 
+            var ratio;
+            var mainWidth; 
+            var mainHeight; 
             
+            var showPopUp = function() {
             
+                var view = new PrintPopUpView({
+                    file: file, 
+                    path: path, 
+                    ratio: ratio,
+                    pricingModel: app.pricingModel, 
+                    collection: app.basketCollection, 
+                    mainWidth: mainWidth, 
+                    mainHeight: mainHeight
+                });
+                app.layout.renderViewIntoRegion(view, 'body1');
             
+            } 
             
-            var view = new PrintPopUpView({
-                file: file, 
-                path: path, 
-                ratio: ratio,
-                pricingModel: app.pricingModel, 
-                collection: this.basketItemsForImage, 
-                mainWidth: mainWidth, 
-                mainHeight: mainHeight
-            });
-            app.layout.renderViewIntoRegion(view, 'body1');   
+            var imageRatio = this.model.get("image_ratio");
+            var mainImageDimensions = this.model.get("main_image_dimensions");
+            
+            if ((imageRatio == null) || (mainImageDimensions == null) )
+            {
+                var xhrGetImageDimensions  =  $.ajax(
+                        {
+                            url: '/api/v1/imageDimensions/'+file+'/main/prints',
+                            method: 'GET',
+                            dataType: 'json'
+                        }
+                ); 
+                var that = this;
+                xhrGetImageDimensions.then(
+                    function(result) {
+                        ratio = result.ratio;
+                        mainWidth = result.dimensions.width;
+                        mainHeight =  result.dimensions.height;
+                        that.model.set("image_ratio", ratio);     
+                        that.model.set("main_image_dimensions", result.dimensions);
+                        showPopUp();
+                    
+                    }, 
+                    function() {
+                        var errorView = new ErrorView();   //TODO test this
+                        app.layout.renderViewIntoRegion(errorView, 'main'); 
+                    }
+               ); 
+            
+            }   else {
+                ratio = imageRatio;
+                mainWidth =  mainImageDimensions.width;
+                mainHeight = mainImageDimensions.height;
+                showPopUp();
+            }
         
         },
         

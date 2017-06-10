@@ -5,6 +5,7 @@ include('ca_database.php');
 
 //see http://coreymaynard.com/blog/creating-a-restful-api-with-php/ if you want to do this properly
 
+
 $API = new ClientAreaAPI($_REQUEST['request'] );
 
 
@@ -229,7 +230,7 @@ class ClientAreaAPI
         
         foreach ($pendingOrder['basket'] as &$orderLine)
         {
-            $imageDimensions = $this->getImageDimensions($thumbsDir . DIRECTORY_SEPARATOR . $orderLine->image_ref);
+            $imageDimensions = $this->imageDimensions($thumbsDir . DIRECTORY_SEPARATOR . $orderLine->image_ref);
             
             $width = $imageDimensions['width'];
             $height = $imageDimensions['height'];
@@ -294,33 +295,7 @@ class ClientAreaAPI
                 //TODO - in a loop? or at least we should cache the results
                 $mainFile = $mainDir . DIRECTORY_SEPARATOR . $file;
                 if (file_exists($mainFile)) { 
-                
-                
-                
-                    $imageDimensionsOfMainPic = $this->getImageDimensions($mainFile);
-                    if (empty($imageDimensionsOfMainPic)) 
-                    {
-                        continue;    
-                    }
-                    else
-                    {
-                        $fileObj->mainWidth =  $imageDimensionsOfMainPic["width"];
-                        $fileObj->mainHheight =  $imageDimensionsOfMainPic["height"]; 
-                    }
-                    $imageDimensions = $this->getImageDimensions($thumbsDir . DIRECTORY_SEPARATOR . $file);
-                    if (empty($imageDimensionsOfMainPic)) 
-                    {
-                        continue;    
-                    }
-                    else
-                    {
-                        $fileObj->width =  $imageDimensions["width"];
-                        $fileObj->height =  $imageDimensions["height"];    
-                    }
-                    
-                    
-                    
-                    
+                   
                     $fileObj->path =  $this->imageProvider . '?mode=prints&size=thumbs&file=' . $file;   //TODO put imageProvider onto some init and then mode and size can be set f/e
                     $thumbs[] = $fileObj;
                 }
@@ -335,31 +310,30 @@ class ClientAreaAPI
     
     public function getImageDimensions()
     {
-                            var_dump($this->args, $this->param);      //((Math.max(width, height)) / (Math.min(width, height))).toFixed(2);
-         $obj = new stdClass();
-        
-        $file = $_GET["file"];
-        $size = $_GET["size"];
-        $mode = $_GET["mode"];
+                            
+        $obj = new stdClass();
+         
+        $file = $this->param;
+        $size = array_shift($this->args);
+        $mode = array_shift($this->args);
         
         $filePath = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
             DIRECTORY_SEPARATOR . $mode . DIRECTORY_SEPARATOR . $size . DIRECTORY_SEPARATOR . $file;   
 
         
-        $dimensions = $this->getImageDimensions($filePath)   ;
+        $dimensions = $this->imageDimensions($filePath)   ;
         if (empty($dimensions)) 
         {
             $this->outputJson500("Something has gpne wrong. Please contact support.")   ;
         }
         else
         {
-            $actualImageRatio =  max($dimensions['$width'], $dimensions['height']) /  min($dimensions['$width'], $dimensions['height']);
+            $actualImageRatio =  max($dimensions['width'], $dimensions['height']) /  min($dimensions['width'], $dimensions['height']);
             $obj->ratio = number_format((float) $actualImageRatio, 2);
             $obj->dimensions =  $dimensions;
             $this->outputJson($obj);
         }
         
-    
     }
     
     
@@ -840,7 +814,7 @@ class ClientAreaAPI
         }
     }
     
-    private function getImageDimensions($file)
+    private function imageDimensions($file)
     {
         $dimensions = getimagesize($file);
 
