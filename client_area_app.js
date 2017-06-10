@@ -451,14 +451,13 @@ var caApp = (function (Backbone, $) {
     
 
     ThumbModel = Backbone.Model.extend({
-     
-        initialize: function() {
-                var width = this.get("width");
-                var height = this.get("height");
-                var ratio = ((Math.max(width, height)) / (Math.min(width, height))).toFixed(2);
-                this.set("ratio", ratio);
-        } 
     
+        defaults: {
+                main_dimensions: null,
+                thumb_dimensions: null,
+                ratio: null
+        }
+
     });
     
     //COLLECTIONS
@@ -501,15 +500,9 @@ var caApp = (function (Backbone, $) {
         * this ensures that the rows are of equal height when the actual heights of the thumbs differ
         */
         setMaxHeight: function() {
-            var maxHeight = 0;
-            _.each(this.models, function(thumb) {
-                var width = thumb.get('width');
-                if ( width >= maxHeight) {
-                    maxHeight = width;    
-                }    
-            })
             this.labelHeight = app.labelHeight;
-            this.maxHeight = (maxHeight + this.labelHeight);
+            this.maxHeight = app.appData.thumbMaxHeight + (2 * this.labelHeight); 
+            this.thumbImageMaxHeight =  app.appData.thumbMaxHeight;
         },
         
         //TODO share this with  ProofsThumbsCollection
@@ -548,7 +541,8 @@ var caApp = (function (Backbone, $) {
         },
         
         setMaxHeight: function() {
-            this.maxHeight = '120';
+            this.maxHeight = app.appData.thumbMaxHeight + (2 * this.labelHeight);      //TODOD check
+            this.thumbImageMaxHeight =  app.appData.thumbMaxHeight;
         }
     });
     
@@ -1054,7 +1048,7 @@ var caApp = (function (Backbone, $) {
             var targetPage = $(evt.currentTarget).data('index');
             var pageModelsJSON = app.printsThumbsCollection.pagination(45, targetPage);
             var pagedCollection = new  Backbone.Collection(pageModelsJSON);
-            var thumbsView = new ThumbsView({collection: pagedCollection, mode: 'prints', maxHeight: app.printsThumbsCollection.maxHeight, labelHeight: app.printsThumbsCollection.labelHeight });
+            var thumbsView = new ThumbsView({collection: pagedCollection, mode: 'prints', maxHeight: app.printsThumbsCollection.maxHeight, thumbImageMaxHeight: app.printsThumbsCollection.thumbImageMaxHeight, labelHeight: app.printsThumbsCollection.labelHeight });
             app.layout.renderViewIntoRegion(thumbsView, 'main');
             this.options.active = targetPage;
             this.render();
@@ -1080,9 +1074,9 @@ var caApp = (function (Backbone, $) {
              var mode = this.options.mode;
              this.collection.each(function(thumb) {
                 if (mode == 'prints') {
-                    var thumbView = new PrintThumbView({model: thumb, maxHeight: this.options.maxHeight, labelHeight: this.options.labelHeight}) ;
+                    var thumbView = new PrintThumbView({model: thumb, maxHeight: this.options.maxHeight, thumbImageMaxHeight: this.options.thumbImageMaxHeight, labelHeight: this.options.labelHeight}) ;
                 }  else {
-                    var thumbView = new ProofsThumbView({model: thumb, maxHeight: this.options.maxHeight, labelHeight: this.options.labelHeight}) ;    
+                    var thumbView = new ProofsThumbView({model: thumb, maxHeight: this.options.maxHeight, thumbImageMaxHeight: this.options.thumbImageMaxHeight, labelHeight: this.options.labelHeight}) ;    
                 }
                 
                 this.$el.append(thumbView.render().$el);        //TODO height row equalisation  
@@ -1288,10 +1282,13 @@ var caApp = (function (Backbone, $) {
             var path = this.model.get("path");
             var ratio = this.model.get("ratio");
             this.basketItemsForImage = app.basketCollection;//.byImage(file);
-            var width =  this.model.get("width");
-            var height =  this.model.get("height") ;
+            
             var mainWidth = this.model.get("mainWidth"); 
             var mainHeight = this.model.get("mainHeight"); 
+            
+            
+            
+            
             var view = new PrintPopUpView({
                 file: file, 
                 path: path, 
@@ -1309,6 +1306,7 @@ var caApp = (function (Backbone, $) {
             var data = this.model.toJSON();
             data.in_basket_class = "";
             data.thumbStyle = "height: " + this.options.maxHeight + "px";
+            data.thumbImageMaxHeight =  "max-height: " + this.options.thumbImageMaxHeight + "px";
             data.labelStyle = "font-size: " +  this.options.labelHeight + "px";
             data.alt_text = "";
             data.label = data.file;
@@ -1617,7 +1615,7 @@ var caApp = (function (Backbone, $) {
                                     var pageModelsJSON = app.printsThumbsCollection.pagination(thumbsPerPage, 1);
                                     var pagedCollection = new  Backbone.Collection(pageModelsJSON);
                 
-                                    var thumbsView = new ThumbsView({collection: pagedCollection, mode: mode, maxHeight: app.printsThumbsCollection.maxHeight, labelHeight: app.printsThumbsCollection.labelHeight });
+                                    var thumbsView = new ThumbsView({collection: pagedCollection, mode: mode, maxHeight: app.printsThumbsCollection.maxHeight, thumbImageMaxHeight: app.printsThumbsCollection.thumbImageMaxHeight, labelHeight: app.printsThumbsCollection.labelHeight });
                                     app.layout.renderViewIntoRegion(thumbsView, 'main');
                                     var menuView = new PrintsMenuView({totalThumbs: app.printsThumbsCollection.length, thumbsPerPage: thumbsPerPage, active: 1});
                                     app.layout.renderViewIntoRegion(menuView, 'menu');
@@ -1648,7 +1646,7 @@ var caApp = (function (Backbone, $) {
                             var pageModelsJSON = app.proofsThumbsCollection.pagination(thumbsPerPage, 1);
                             var pagedCollection = new  Backbone.Collection(pageModelsJSON);
         
-                            var thumbsView = new ThumbsView({collection: pagedCollection, mode: mode, maxHeight: app.proofsThumbsCollection.maxHeight, labelHeight: app.proofsThumbsCollection.labelHeight });
+                            var thumbsView = new ThumbsView({collection: pagedCollection, mode: mode, maxHeight: app.proofsThumbsCollection.maxHeight, thumbImageMaxHeight: app.proofsThumbsCollection.thumbImageMaxHeight, labelHeight: app.proofsThumbsCollection.labelHeight });
                             app.layout.renderViewIntoRegion(thumbsView, 'main');
                             var menuView = new ProofssMenuView({totalThumbs: app.proofsThumbsCollection.length, thumbsPerPage: thumbsPerPage, active: 1});
                             app.layout.renderViewIntoRegion(menuView, 'menu');

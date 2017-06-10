@@ -1355,7 +1355,7 @@ EOF;
         </script>
         <script type="text/html" id="ca_print_thumb_tmpl">           
             <div class="ca_thumb_pic ca_print_thumb_pic_event <%= in_basket_class %>" style="<%= thumbStyle %>">
-                <img src="<%= path %>" alt="<%= alt_text %>" >
+                <img src="<%= path %>" alt="<%= alt_text %>" style="<%= thumbImageMaxHeight %>" >
                 <span style="<%= labelStyle %>" ><%= label %></span>
             </div>
         </script>

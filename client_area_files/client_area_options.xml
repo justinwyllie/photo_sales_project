@@ -53,6 +53,8 @@
                     just repeat the tag in that file with the setting for the user  -->
         <userOverrideable>
             <thumbsPerPage>50</thumbsPerPage>
+            <!-- max row height when thumbnails are displayed - if images are higher they will be clipped -->
+            <thumbMaxHeight>120</thumbMaxHeight>
             <!-- true / false -->
             <proofsShowLabels>true</proofsShowLabels>
             <!-- true / false -->

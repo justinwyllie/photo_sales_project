@@ -233,7 +233,7 @@ class ClientAreaAPI
             
             $width = $imageDimensions['width'];
             $height = $imageDimensions['height'];
-            //JS replicated ((Math.max(width, height)) / (Math.min(width, height))).toFixed(2);
+            
             $actualImageRatio =   max($width, $height) /  min($width, $height);
             $actualImageRatio = number_format((float) $actualImageRatio, 2);
 
@@ -294,6 +294,9 @@ class ClientAreaAPI
                 //TODO - in a loop? or at least we should cache the results
                 $mainFile = $mainDir . DIRECTORY_SEPARATOR . $file;
                 if (file_exists($mainFile)) { 
+                
+                
+                
                     $imageDimensionsOfMainPic = $this->getImageDimensions($mainFile);
                     if (empty($imageDimensionsOfMainPic)) 
                     {
@@ -314,6 +317,10 @@ class ClientAreaAPI
                         $fileObj->width =  $imageDimensions["width"];
                         $fileObj->height =  $imageDimensions["height"];    
                     }
+                    
+                    
+                    
+                    
                     $fileObj->path =  $this->imageProvider . '?mode=prints&size=thumbs&file=' . $file;   //TODO put imageProvider onto some init and then mode and size can be set f/e
                     $thumbs[] = $fileObj;
                 }
@@ -324,6 +331,35 @@ class ClientAreaAPI
             }
         }
         $this->outputJson($thumbs);
+    }       
+    
+    public function getImageDimensions()
+    {
+                            var_dump($this->args, $this->param);      //((Math.max(width, height)) / (Math.min(width, height))).toFixed(2);
+         $obj = new stdClass();
+        
+        $file = $_GET["file"];
+        $size = $_GET["size"];
+        $mode = $_GET["mode"];
+        
+        $filePath = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
+            DIRECTORY_SEPARATOR . $mode . DIRECTORY_SEPARATOR . $size . DIRECTORY_SEPARATOR . $file;   
+
+        
+        $dimensions = $this->getImageDimensions($filePath)   ;
+        if (empty($dimensions)) 
+        {
+            $this->outputJson500("Something has gpne wrong. Please contact support.")   ;
+        }
+        else
+        {
+            $actualImageRatio =  max($dimensions['$width'], $dimensions['height']) /  min($dimensions['$width'], $dimensions['height']);
+            $obj->ratio = number_format((float) $actualImageRatio, 2);
+            $obj->dimensions =  $dimensions;
+            $this->outputJson($obj);
+        }
+        
+    
     }
     
     
@@ -690,6 +726,10 @@ class ClientAreaAPI
         if (!empty($userOptions->thumbsPerPage)) {
            $this->options["thumbsPerPage"]   = (int) $userOptions->thumbsPerPage;  
         }
+        
+        if (!empty($userOptions->thumbMaxHeight)) {
+           $this->options["thumbMaxHeight"]   = (int) $userOptions->thumbMaxHeight;  
+        }
 
         if (!empty($userOptions->enableOnlinePayments)) {
             $this->options["enableOnlinePayments"]   = $userOptions->enableOnlinePayments == 'true' ? true: false; 
@@ -735,6 +775,7 @@ class ClientAreaAPI
 
         $options = array();
         $options["thumbsPerPage"] = (int) $userOptions->thumbsPerPage;
+        $options["thumbMaxHeight"] = (int) $userOptions->thumbMaxHeight;
         $options["proofsShowLabels"] = $userOptions->proofsShowLabels == 'true' ? true: false;
         $options["showNannyingMessageAboutMoreThanOnePage"] =  $userOptions->showNannyingMessageAboutMoreThanOnePage == 'true' ? true: false;
         $options["enableOnlinePayments"] = $userOptions->enableOnlinePayments == 'true' ? true: false;
