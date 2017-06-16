@@ -1359,6 +1359,12 @@ EOF;
                 <span style="<%= labelStyle %>" ><%= label %></span>
             </div>
         </script>
+        <script type="text/html" id="ca_proofs_thumb_tmpl">           
+            <div class="ca_thumb_pic ca_proof_thumb_pic_event" style="<%= thumbStyle %>">
+                <img src="<%= path %>" alt="<%= alt_text %>" style="<%= thumbImageMaxHeight %>" >
+                <span style="<%= labelStyle %>" ><%= label %></span>
+            </div>
+        </script>
         <script type="text/html" id="ca_pagination_buttons"> 
             <div class="ca_page_buttons">
                 <% for (i=1; i <= total_pages; i++) { %>         
@@ -1373,7 +1379,18 @@ EOF;
                     <button class="ca_basket_event <% if (active == 'basket') { %>ca_highlighted_pagination<% } %>"><%= basket_label %></button>
                     <button class="ca_checkout_event"><%= checkout_label %></button>
                     <button class="ca_logout_event"><%= langStrings.logout %></button>
-                    
+                </div>
+            </div>    
+        </script>
+        <script type="text/html" id="ca_proofs_menu"> 
+            <div class="ca_menu_bar">
+                <%= buttons %>
+                <div class="ca_menu_buttons">                       
+                        <span class="ca_counter_box ca_counter_label ca_label">
+                            <span><%= langStrings.chosen %>:</span><span class="ca_counter">TODO</span>
+                        </span>
+                       <button class="ca_proof_event"><%= langStrings.done %></button>
+                       <button class="ca_logout_event"><%= langStrings.logout %></button>
                 </div>
             </div>    
         </script>

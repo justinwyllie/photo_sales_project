@@ -487,7 +487,7 @@ var caApp = (function (Backbone, $) {
     
     PrintsThumbsCollection =  Backbone.Collection.extend({
         model: ThumbModel,    
-        url: "/api/v1/printThumbs",
+        url: "/api/v1/Thumbs/prints",
         
         initialize: function() {
             this.on("reset", function() {
@@ -504,7 +504,7 @@ var caApp = (function (Backbone, $) {
             this.thumbImageMaxHeight =  app.appData.thumbMaxHeight;
         },
         
-        //TODO share this with  ProofsThumbsCollection
+        //TODO put on one shared class but see http://www.erichynds.com/blog/backbone-and-inheritance
         /*
         * return the JSON of the given page to use to create a new instance of this collection for the page
         */
@@ -520,8 +520,6 @@ var caApp = (function (Backbone, $) {
             });
             
             return jsonPages;  
-            
-           
         }
         
        
@@ -530,7 +528,7 @@ var caApp = (function (Backbone, $) {
     
     ProofsThumbsCollection =  Backbone.Collection.extend({
         model: ThumbModel,    
-        url: "/api/v1/proofsThumbs", 
+        url: "/api/v1/Thumbs/proofs", 
         
        //TODO same as  PrintsThumbsCollection
        initialize: function() {
@@ -538,9 +536,24 @@ var caApp = (function (Backbone, $) {
                this.setMaxHeight();    
             });
         },
+       //TODO put on one shared class but see http://www.erichynds.com/blog/backbone-and-inheritance 
+       pagination: function(perPage, page) {
+            var start = (page - 1) * perPage;
+            var end = (perPage * page);
+            
+            var pageModels =  this.slice(start, end);
+            
+            //see http://stackoverflow.com/questions/41771742/do-i-need-to-destroy-a-backbone-collection for why we do this. esp. my last comment
+            var jsonPages = _.map(pageModels, function(model) {
+               return model.toJSON();
+            });
+            
+            return jsonPages;  
+        },
         
         setMaxHeight: function() {
-            this.maxHeight = app.appData.thumbMaxHeight + (2 * this.labelHeight);      //TODOD check
+            this.labelHeight = app.labelHeight;
+            this.maxHeight = app.appData.thumbMaxHeight + (2 * this.labelHeight); 
             this.thumbImageMaxHeight =  app.appData.thumbMaxHeight;
         }
     });
@@ -1045,15 +1058,67 @@ var caApp = (function (Backbone, $) {
         
         changePage: function(evt) {
             var targetPage = $(evt.currentTarget).data('index');
-            var pageModelsJSON = app.printsThumbsCollection.pagination(45, targetPage);
+            var thumbsPerPage = parseInt(app.appData.thumbsPerPage);
+            var pageModelsJSON = app.printsThumbsCollection.pagination(thumbsPerPage, targetPage);
             var pagedCollection = new  Backbone.Collection(pageModelsJSON);
             var thumbsView = new ThumbsView({collection: pagedCollection, mode: 'prints', maxHeight: app.printsThumbsCollection.maxHeight, thumbImageMaxHeight: app.printsThumbsCollection.thumbImageMaxHeight, labelHeight: app.printsThumbsCollection.labelHeight });
             app.layout.renderViewIntoRegion(thumbsView, 'main');
             this.options.active = targetPage;
             this.render();
         } 
-
+    
+    })
+    
+    
+    ProofsMenuView =  Backbone.View.extend({
+    
+        initialize: function(options) {
+            this.options = options;
+            var buttonsTemplate =  $('#ca_pagination_buttons').html(); 
+            this.buttonsTmpl = _.template(buttonsTemplate);
+            var menuTemplate = $('#ca_proofs_menu').html(); 
+            this.menuTmpl =  _.template(menuTemplate);
+        },    
+       
+        render: function() {
+            var buttonData = {};
+            buttonData.total_pages = Math.ceil(this.options.totalThumbs / this.options.thumbsPerPage);
+            buttonData.active = this.options.active;
+            buttons = this.buttonsTmpl(buttonData);
+            var data = {};
+            data.active =  this.options.active;
+            data.langStrings = app.langStrings.toJSON();
+            var menu = this.menuTmpl(data)
+            this.$el.html(menu);
+        },
         
+        events: {
+            'click .ca_page_number_event': 'changePage',
+            'click .ca_proof_event': 'showDone',
+            'click .ca_logout_event': 'showLogout'
+        
+        },
+        
+       showLogout: function() {
+            var logoutView =  new LogoutView();
+            app.layout.renderViewIntoRegion(logoutView, 'main'); 
+        } ,
+            
+        showDone: function() {
+            console.log("showDone");
+        },
+        
+        changePage: function(evt) {
+            var targetPage = $(evt.currentTarget).data('index');
+            var thumbsPerPage = parseInt(app.appData.thumbsPerPage);
+            var pageModelsJSON = app.proofsThumbsCollection.pagination(thumbsPerPage, targetPage);
+            var pagedCollection = new  Backbone.Collection(pageModelsJSON);
+            console.log("check", app.proofsThumbsCollection.maxHeight, app.proofsThumbsCollection.thumbImageMaxHeight, app.proofsThumbsCollection.labelHeight )   ;
+            var thumbsView = new ThumbsView({collection: pagedCollection, mode: 'proofs', maxHeight: app.proofsThumbsCollection.maxHeight, thumbImageMaxHeight: app.proofsThumbsCollection.thumbImageMaxHeight, labelHeight: app.proofsThumbsCollection.labelHeight });
+            app.layout.renderViewIntoRegion(thumbsView, 'main');
+            this.options.active = targetPage;
+            this.render();
+        } 
     
     })
     
@@ -1260,7 +1325,94 @@ var caApp = (function (Backbone, $) {
     
     })
     
+    ProofsThumbView =  Backbone.View.extend({
+        tag: 'div',
+   
+        initialize: function(options) {
+                this.options = options;   
+                var template =  $('#ca_proofs_thumb_tmpl').html(); 
+                this.tmpl = _.template(template);
+        },
+        
+        events: {
+            'click .ca_proofs_thumb_pic_event': 'showPopUp'
+        
+        },
 
+        showPopUp: function() {
+            var file = this.model.get("file");
+            var path = this.model.get("path");
+            
+            var ratio;
+            var mainWidth; 
+            var mainHeight; 
+            
+            var showPopUp = function() {
+            
+                var view = new PrintPopUpView({
+                    file: file, 
+                    path: path, 
+                    ratio: ratio,
+                    pricingModel: app.pricingModel, 
+                    collection: app.basketCollection, 
+                    mainWidth: mainWidth, 
+                    mainHeight: mainHeight
+                });
+                app.layout.renderViewIntoRegion(view, 'body1');
+            
+            } 
+            
+            var imageRatio = this.model.get("image_ratio");
+            var mainImageDimensions = this.model.get("main_image_dimensions");
+            
+            if ((imageRatio == null) || (mainImageDimensions == null) )
+            {
+                var xhrGetImageDimensions  =  $.ajax(
+                        {
+                            url: '/api/v1/imageDimensions/'+file+'/main/prints',
+                            method: 'GET',
+                            dataType: 'json'
+                        }
+                ); 
+                var that = this;
+                xhrGetImageDimensions.then(
+                    function(result) {
+                        ratio = result.ratio;
+                        mainWidth = result.dimensions.width;
+                        mainHeight =  result.dimensions.height;
+                        that.model.set("image_ratio", ratio);     
+                        that.model.set("main_image_dimensions", result.dimensions);
+                        showPopUp();
+                    
+                    }, 
+                    function() {
+                        var errorView = new ErrorView();   //TODO test this
+                        app.layout.renderViewIntoRegion(errorView, 'main'); 
+                    }
+               ); 
+            
+            }   else {
+                ratio = imageRatio;
+                mainWidth =  mainImageDimensions.width;
+                mainHeight = mainImageDimensions.height;
+                showPopUp();
+            }
+        
+        },
+        
+        render: function() {
+            var data = this.model.toJSON();
+            data.thumbStyle = "height: " + this.options.maxHeight + "px";
+            data.thumbImageMaxHeight =  "max-height: " + this.options.thumbImageMaxHeight + "px";
+            data.labelStyle = "font-size: " +  this.options.labelHeight + "px";
+            data.alt_text = "";
+            data.label = data.file;
+            var html = this.tmpl(data);
+            this.$el.html(html);
+            return this; 
+        },
+
+    })  
     
     PrintThumbView =  Backbone.View.extend({
         tag: 'div',
@@ -1683,7 +1835,7 @@ var caApp = (function (Backbone, $) {
         
                             var thumbsView = new ThumbsView({collection: pagedCollection, mode: mode, maxHeight: app.proofsThumbsCollection.maxHeight, thumbImageMaxHeight: app.proofsThumbsCollection.thumbImageMaxHeight, labelHeight: app.proofsThumbsCollection.labelHeight });
                             app.layout.renderViewIntoRegion(thumbsView, 'main');
-                            var menuView = new ProofssMenuView({totalThumbs: app.proofsThumbsCollection.length, thumbsPerPage: thumbsPerPage, active: 1});
+                            var menuView = new ProofsMenuView({totalThumbs: app.proofsThumbsCollection.length, thumbsPerPage: thumbsPerPage, active: 1});
                             app.layout.renderViewIntoRegion(menuView, 'menu');
                         },
                         function() {

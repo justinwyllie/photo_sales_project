@@ -2,7 +2,7 @@
 <options>
     <eventName>Wedding_2016</eventName>
     <!-- true / false -->
-    <proofsOn>false</proofsOn>
+    <proofsOn>true</proofsOn>
     <!-- true / false -->
     <printsOn>true</printsOn>
     <!-- only needs to be populated if prints mode is being used. when ordering this will be offered as the default dispatch address. -->
@@ -15,8 +15,9 @@
        <country>UK</country>
     </clientAddress>
     <!-- below this line one can add the tags from the <display> section in client_area_options.xml to override them for this user -->
-    <thumbsPerPage>45</thumbsPerPage>
+    <thumbsPerPage>30</thumbsPerPage>
     <thumbMaxHeight>120</thumbMaxHeight>
  
             
 </options>
+        

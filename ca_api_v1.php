@@ -267,19 +267,19 @@ class ClientAreaAPI
         return $pendingOrder;
     
     }
+   
     
-
-    
-    
-    public function getPrintThumbs()
+    public function getThumbs()
     {
         $obj = new stdClass();
+        $mode = $this->param;
+     
         
         $thumbsDir = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
-            DIRECTORY_SEPARATOR . 'prints' . DIRECTORY_SEPARATOR . "thumbs";
+            DIRECTORY_SEPARATOR . $mode . DIRECTORY_SEPARATOR . "thumbs";
             
         $mainDir = $this->clientAreaDirectory . DIRECTORY_SEPARATOR . $_SESSION['user'] .
-            DIRECTORY_SEPARATOR . 'prints' . DIRECTORY_SEPARATOR . "main";     
+            DIRECTORY_SEPARATOR . $mode . DIRECTORY_SEPARATOR . "main";     
             
             
         $files = scandir($thumbsDir);
@@ -292,11 +292,11 @@ class ClientAreaAPI
             if ( ($file !== ".")  && ($file !== "..") && (is_file($thumbsDir . DIRECTORY_SEPARATOR . $file)) )
             {
                 $fileObj->file = $file;
-                //TODO - in a loop? or at least we should cache the results
+                //check that the main file exists and don't send the thumb if it is missing
                 $mainFile = $mainDir . DIRECTORY_SEPARATOR . $file;
                 if (file_exists($mainFile)) { 
                    
-                    $fileObj->path =  $this->imageProvider . '?mode=prints&size=thumbs&file=' . $file;   //TODO put imageProvider onto some init and then mode and size can be set f/e
+                    $fileObj->path =  $this->imageProvider . '?mode=' . $mode . '&size=thumbs&file=' . $file;  
                     $thumbs[] = $fileObj;
                 }
                 else
@@ -312,7 +312,7 @@ class ClientAreaAPI
     {
                             
         $obj = new stdClass();
-         
+                                                                 
         $file = $this->param;
         $size = array_shift($this->args);
         $mode = array_shift($this->args);
