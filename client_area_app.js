@@ -6,7 +6,7 @@
  *  iv. watch out for collections built using models from other collections: the models maintain a reference to the first collection
  */
 
-var caApp = (function (Backbone, $) {
+var caApp = (function (Backbone, $) {                                                                                                                                                                                                                                                      
 	var app = {};
     //TODO - don't need to attach things to app. unless they are being exported.... and nothing is
     
@@ -48,6 +48,7 @@ var caApp = (function (Backbone, $) {
         
                                                                                                                                       
         app.basketCollection = new BasketCollection();
+        app.proofsBasketCollection = new ProofsBasketCollection();
         app.printsThumbsCollection = new PrintsThumbsCollection();
         app.proofsThumbsCollection = new ProofsThumbsCollection();
         app.langStrings = new LangStrings();
@@ -349,6 +350,20 @@ var caApp = (function (Backbone, $) {
     
     }); 
     
+    ProofOrderLineModel = Backbone.Model.extend({
+        idAttribute: 'file_ref',
+        defaults: {
+            "file_ref": null,
+            "image_ref": null
+            }  ,
+            
+        initialize: function() {
+        
+        
+        }    
+            
+    });
+    
     //OrderLine model
     OrderLineModel = Backbone.Model.extend({
         defaults: {
@@ -454,7 +469,9 @@ var caApp = (function (Backbone, $) {
     
         defaults: {
                 main_image_dimensions: null,
-                image_ratio: null
+                image_ratio: null,
+                file: "",
+                path: ""
         }
 
     });
@@ -470,7 +487,7 @@ var caApp = (function (Backbone, $) {
         initialize: function(options) {
             this.on("add", function(newModel) {
                 newModel.set("edit_mode", "save"); 
-                var clientAreaStorage = new ClientAreaStorage(app.appData.username, _);  
+                //var clientAreaStorage = new ClientAreaStorage(app.appData.username, _);  TODO aren't we deleteing all of     ClientAreaStorage
             });    
         },
 
@@ -482,6 +499,17 @@ var caApp = (function (Backbone, $) {
         },
     
     });
+    
+   ProofsBasketCollection =  Backbone.Collection.extend({
+        model: ProofOrderLineModel,
+        url: "/api/v1/proofsBasket",
+        
+        initialize: function(options) {
+            
+        },
+   
+    });
+    
     
     
     
@@ -1109,6 +1137,7 @@ var caApp = (function (Backbone, $) {
         },
         
         changePage: function(evt) {
+            console.log("called1");
             var targetPage = $(evt.currentTarget).data('index');
             var thumbsPerPage = parseInt(app.appData.thumbsPerPage);
             var pageModelsJSON = app.proofsThumbsCollection.pagination(thumbsPerPage, targetPage);
@@ -1125,10 +1154,10 @@ var caApp = (function (Backbone, $) {
     //in Marionette this would be an ItemViewCollection
     ThumbsView =  Backbone.View.extend({
         initialize: function(options) {
+            console.log("here1");
             this.options = options;
             this.childViews = new Array();
-            this.render();
-        
+            
         },
         
         render: function()
@@ -1140,6 +1169,7 @@ var caApp = (function (Backbone, $) {
                 if (mode == 'prints') {
                     var thumbView = new PrintThumbView({model: thumb, maxHeight: this.options.maxHeight, thumbImageMaxHeight: this.options.thumbImageMaxHeight, labelHeight: this.options.labelHeight}) ;
                 }  else {
+                    console.log("here thumb", thumb);
                     var thumbView = new ProofsThumbView({model: thumb, maxHeight: this.options.maxHeight, thumbImageMaxHeight: this.options.thumbImageMaxHeight, labelHeight: this.options.labelHeight}) ;    
                 }
                 
@@ -1332,6 +1362,8 @@ var caApp = (function (Backbone, $) {
                 this.options = options;   
                 var template =  $('#ca_proofs_thumb_tmpl').html(); 
                 this.tmpl = _.template(template);
+                this.proofsBasket = app.proofsBasketCollection;
+                console.log("this.proofsBasket", this.proofsBasket)    ;
         },
         
         events: {
@@ -1401,12 +1433,24 @@ var caApp = (function (Backbone, $) {
         },
         
         render: function() {
+            console.log("rendering ProofsThumbView");
             var data = this.model.toJSON();
             data.thumbStyle = "height: " + this.options.maxHeight + "px";
             data.thumbImageMaxHeight =  "max-height: " + this.options.thumbImageMaxHeight + "px";
             data.labelStyle = "font-size: " +  this.options.labelHeight + "px";
             data.alt_text = "";
             data.label = data.file;
+            console.log("data", data);
+            
+          
+            var thumbInProofsBasket = this.proofsBasket.find(function(model) {return model.get('file_ref') == data.file});
+     
+            if (thumbInProofsBasket != undefined) {
+                data.checked = true;     
+            }     else {
+                data.checked = false;
+            }
+            
             var html = this.tmpl(data);
             this.$el.html(html);
             return this; 
@@ -1491,7 +1535,7 @@ var caApp = (function (Backbone, $) {
         
         render: function() {
             var data = this.model.toJSON();
-            data.in_basket_class = "";
+            data.in_basket_class = "";         //TODO - we don't know unless we look at the   app.basketCollection
             data.thumbStyle = "height: " + this.options.maxHeight + "px";
             data.thumbImageMaxHeight =  "max-height: " + this.options.thumbImageMaxHeight + "px";
             data.labelStyle = "font-size: " +  this.options.labelHeight + "px";
@@ -1780,15 +1824,19 @@ var caApp = (function (Backbone, $) {
             var mode = this.$el.find("#ca_activity_choice").val();
             if (mode != "--") {
                 var thumbsPerPage = parseInt(app.appData.thumbsPerPage);
-                if (mode == 'prints') {
-                    //reset true in case there are 2 mode choices in session. 
-                    var xhrCreateBasket = $.ajax(
+                
+                var xhrCreateBasket = $.ajax(
                         {
-                            url: '/api/v1/createBasket',
+                            url: '/api/v1/createBasket/'+mode,
                             method: 'GET',
                             dataType: 'json'
                         }
-                    );
+              );
+                
+                
+                if (mode == 'prints') {
+                    //reset true in case there are 2 mode choices in session. 
+                    
                     
                     xhrCreateBasket.then(
                         function() {
@@ -1822,30 +1870,40 @@ var caApp = (function (Backbone, $) {
                     
                     
                     )
-         
+                                                                              
                     
                 } else {
-                    var xhrProofsThumbsCollection = app.proofsThumbsCollection.fetch({reset: true}) ; 
-                    xhrProofsThumbsCollection.then(
-                        function() {
-                            //we aren't re-setting proofs here as we are prints. be consistent. TODO
-                            
-                            var pageModelsJSON = app.proofsThumbsCollection.pagination(thumbsPerPage, 1);
-                            var pagedCollection = new  Backbone.Collection(pageModelsJSON);
-        
-                            var thumbsView = new ThumbsView({collection: pagedCollection, mode: mode, maxHeight: app.proofsThumbsCollection.maxHeight, thumbImageMaxHeight: app.proofsThumbsCollection.thumbImageMaxHeight, labelHeight: app.proofsThumbsCollection.labelHeight });
-                            app.layout.renderViewIntoRegion(thumbsView, 'main');
-                            var menuView = new ProofsMenuView({totalThumbs: app.proofsThumbsCollection.length, thumbsPerPage: thumbsPerPage, active: 1});
-                            app.layout.renderViewIntoRegion(menuView, 'menu');
+                    xhrCreateBasket.then(
+                        function()
+                        {
+                               
+                            var xhrProofsThumbsCollection = app.proofsThumbsCollection.fetch({reset: true}) ; 
+                            var xhrProofsBasketCollection = app.proofsBasketCollection.fetch({reset: true});
+                            $.when(xhrProofsThumbsCollection, xhrProofsBasketCollection).then(
+                            function(result1, result2) {
+                                                          
+                                var pageModelsJSON = app.proofsThumbsCollection.pagination(thumbsPerPage, 1);
+                                var pagedCollection = new  Backbone.Collection(pageModelsJSON);
+            
+                                var thumbsView = new ThumbsView({collection: pagedCollection, mode: mode, maxHeight: app.proofsThumbsCollection.maxHeight, thumbImageMaxHeight: app.proofsThumbsCollection.thumbImageMaxHeight, labelHeight: app.proofsThumbsCollection.labelHeight });
+                                app.layout.renderViewIntoRegion(thumbsView, 'main');
+                                var menuView = new ProofsMenuView({totalThumbs: app.proofsThumbsCollection.length, thumbsPerPage: thumbsPerPage, active: 1});
+                                app.layout.renderViewIntoRegion(menuView, 'menu');
+                            },
+                            function() {
+                                var errorView = new ErrorView();   //TODO test this
+                                app.layout.renderViewIntoRegion(errorView, 'main');
+                            }
+                        );   
                         },
-                        function() {
+                        function()
+                        {
                             var errorView = new ErrorView();   //TODO test this
-                            app.layout.renderViewIntoRegion(errorView, 'main');
+                            app.layout.renderViewIntoRegion(errorView, 'main'); 
                         }
-                    );     
-                      
+                    )
+ 
                 }
-  
             }
         }, 
         

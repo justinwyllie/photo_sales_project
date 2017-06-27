@@ -1362,6 +1362,7 @@ EOF;
         <script type="text/html" id="ca_proofs_thumb_tmpl">           
             <div class="ca_thumb_pic ca_proof_thumb_pic_event" style="<%= thumbStyle %>">
                 <img src="<%= path %>" alt="<%= alt_text %>" style="<%= thumbImageMaxHeight %>" >
+                <input class="ca_proof_checkbox_event" type="checkbox" <% if (checked) { %> checked <% } %>>
                 <span style="<%= labelStyle %>" ><%= label %></span>
             </div>
         </script>

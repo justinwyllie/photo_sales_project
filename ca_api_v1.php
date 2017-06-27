@@ -70,8 +70,13 @@ class ClientAreaAPI
     public function getCreateBasket()
     {
     
+        $mode = $this->param;
+    
         if (isset($_COOKIE['client_area_tracker'])) {
-            $result =  $this->createBasket($_SESSION['user'] . '_' . $_COOKIE['client_area_tracker']);
+
+            $result =  $this->createBasket($_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'], $mode);
+
+            
             if ($result === false) {
                   $this->outputJson500("Error calling createBasket in getCreateBasket");           
             }
@@ -85,7 +90,7 @@ class ClientAreaAPI
         }
         else
         {
-            $this->outputJson500("Tracking cookie not set in getCreateBasket");     
+            $this->outputJson500("Tracking cookie not set in getCreateBasket called with '" . $param . "'");     
         }
          
     
@@ -494,6 +499,74 @@ class ClientAreaAPI
   
   
     //COLLECTION METHODS
+    public function getProofsBasket()
+    {
+        $result = new stdClass();
+        if (isset($_COOKIE['client_area_tracker'])) {
+            $ref = $_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'];
+            $proofsBasket = $this->db->getProofsBasket($ref);
+            if ($proofsBasket === false) 
+            {
+                $this->outputJson500("Error getting basket in getProofsBasket");
+            }
+            else
+            {
+                return $proofsBasket;
+            }
+        }
+        else
+        {
+            $this->outputJson500("Tracking cookie not sent in call to getProofsBasket");
+        }
+    
+    }
+    
+    public function postProofsBasket()
+    {
+        $data = file_get_contents('php://input');
+        $dataObj = json_decode($data);
+        $fileRef = $dataObj->file_ref;
+           
+        if (isset($_COOKIE['client_area_tracker'])) {
+            $ref = $_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'];
+            $result = $this->db->addToProofsBasket($ref, $fileRef);
+            if ($result === false) 
+            {
+                $this->outputJson500("Error calling db->addToProofsBasket in postProofsBasket");
+            }
+            else
+            {
+                return $dataObj;
+            }
+        }
+        else
+        {
+            $this->outputJson500("Tracking cookie not sent in call to postProofsBasket");
+        }
+    }
+    
+    public function deleteProofsBasket()
+    {
+        $fileRef = $this->param;      //probably not.... 
+        if (isset($_COOKIE['client_area_tracker'])) {
+            $ref = $_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'];
+            $result = $this->db->removeFromProofsBasket($ref);
+            if ($result === false) 
+            {
+                $this->outputJson500("Error calling db->removeFromProofsBasket in deleteProofsBasket");
+            }
+            else
+            {
+                return "";   
+            }
+        }
+        else
+        {
+            $this->outputJson500("Tracking cookie not sent in call to deleteProofsBasket");
+        }
+    
+    }
+
     public function getBasket() 
     {
          
@@ -571,20 +644,20 @@ class ClientAreaAPI
       
 
     }
-    
+    //remove an order line from the basket
     public function deleteBasket()
     {
         $orderId = $this->param;
         if (isset($_COOKIE['client_area_tracker'])) {
             $ref = $_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'];
-            $result = $this->db->clearBasket($ref);
+            $result = $this->db->removeFromBasket($ref, $orderId);
             if ($result === false) 
             {
-                $this->outputJson500("Error calling db->clearBasket in deleteBasket");
+                $this->outputJson500("Error calling db->removeFromBasket in deleteBasket");
             }
             else
             {
-                return "";   
+                return true;   
             }
         }
         else
@@ -605,9 +678,18 @@ class ClientAreaAPI
     }
     
    
-    private function createBasket($trackerId)
+    private function createBasket($trackerId, $mode)
     {
-        return $this->db->createBasket($trackerId);
+        if ($mode == 'prints')
+        {
+            $ret =  $this->db->createBasket($trackerId);
+        }
+        else
+        {
+            $ret =  $this->db->createProofsBasket($trackerId);
+        }
+        
+        return $ret;
     }
     
  

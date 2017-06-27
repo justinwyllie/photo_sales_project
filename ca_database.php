@@ -45,14 +45,28 @@ class ClientAreaTextDB
         {
             mkdir($this->completedDir, 0744);    
         }
+        $this->proofsBasketDir =  $this->path . DIRECTORY_SEPARATOR . 'proofs_basket';
+        if (!file_exists($this->proofsBasketDir))
+        {
+            mkdir($this->proofsBasketDir, 0744);    
+        }
     }
     
-    private function cleanUpFiles()
+    private function cleanUpFiles($mode)
     {
         $threeMonthsInSeconds = 60 * 60 * 24 * 90;
-        $this->cleanUp($this->basketDir, $threeMonthsInSeconds); 
-        $this->cleanUp($this->pendingDir, $threeMonthsInSeconds);
-        $this->cleanUp($this->completedDir, $threeMonthsInSeconds); 
+        if ($mode == 'prints')
+        {
+            $this->cleanUp($this->basketDir, $threeMonthsInSeconds); 
+            $this->cleanUp($this->pendingDir, $threeMonthsInSeconds);
+            $this->cleanUp($this->completedDir, $threeMonthsInSeconds); 
+        }
+        else
+        {
+            $this->cleanUp($this->proofsBasketDir, $threeMonthsInSeconds);
+        }
+        
+        
     }
     
     private function cleanUp($dir, $age)
@@ -74,7 +88,7 @@ class ClientAreaTextDB
     public function createBasket($ref)
     {
     
-        $this->cleanUpFiles();
+        $this->cleanUpFiles('prints');
         $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref ;
         if (file_exists($basketFile))
         {
@@ -117,6 +131,31 @@ class ClientAreaTextDB
         return unlink($basketFile);       
     }
     
+    public function removeFromBasket($ref, $orderId)
+    {
+        $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref;
+        $basket = $this->getBasket($ref);
+        $updatedBasket = array();
+
+        foreach ($basket as $orderLine)
+        {   
+            if ($orderLine->id != $orderId) {
+                $updatedBasket[] = $orderLine;    
+                     
+            }
+        }
+        $result = file_put_contents($basketFile, json_encode($updatedBasket)) ; 
+        if ($result === false)
+        {
+            return false;
+        }   
+        else
+        {
+            return true;
+        } 
+    
+    }
+    
     /**
      * @return $orderId
      *
@@ -140,13 +179,12 @@ class ClientAreaTextDB
         }  
     }
     
-    public function updateFieldToBasket($ref, $fieldName, $fieldValue)
+    public function updateFieldToBasket($ref, $fieldName, $fieldValue)                 //TODO???
     {
         $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref;
         $basket = $this->getBasket($ref);
         
-    
-    
+   
     }
     
     public function updateBasket($ref, $orderId, $order)
@@ -176,6 +214,76 @@ class ClientAreaTextDB
             return true;
         }  
     }
+    
+    
+    public function createProofsBasket($ref)   
+    {
+    
+        $this->cleanUpFiles('proofs');
+        $proofsBasketFile = $this->proofsBasketDir . DIRECTORY_SEPARATOR . $ref ;
+        if (file_exists($proofsBasketFile))
+        {
+            return true;
+        }
+        else
+        {
+            $proofsBasketFile = $this->proofsBasketDir . DIRECTORY_SEPARATOR . $ref;
+            $result = file_put_contents($proofsBasketFile, json_encode(array())) ;
+            if ($result === false)
+            {
+                return false;
+            }   
+            else
+            {
+                return true;
+            }   
+        }
+    }
+    
+    public function getProofsBasket($ref)
+    {
+        $proofsBasketFile = $this->proofsBasketDir . DIRECTORY_SEPARATOR . $ref ;
+        
+        if (file_exists($proofsBasketFile))
+        {
+            $proofsBasketString = file_get_contents($proofsBasketFile);  
+            $objProofsBasket = json_decode($proofsBasketString);
+            return $objProofsBasket;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    
+    public function addToProofsBasket($ref, $fileRef)
+    {
+        $proofsBasketFile = $this->proofsBasketDir . DIRECTORY_SEPARATOR . $ref;
+        $proofsBasket = $this->getProofsBasket($ref);
+        if (!in_array($fileRef, $proofsBasket))
+        {
+            $proofsBasket[] = $fileRef;
+        }
+        $result = file_put_contents($proofsBasketFile, json_encode($proofsBasket)) ; //TODO we have no backup?
+        return $result;  
+    }
+    
+    public function removeFromProofsBasket($ref, $fileRef)
+    {
+        $proofsBasketFile = $this->proofsBasketDir . DIRECTORY_SEPARATOR . $ref;
+        $proofsBasket = $this->getProofsBasket($ref);
+        unset($proofsBasket[$fileRef]);
+        $result = file_put_contents($proofsBasketFile, json_encode($proofsBasket)) ; //TODO we have no backup?
+        return $result;  
+    }
+    
+    public function clearProofsBasket($ref)
+    {
+        $proofsBasketFile = $this->proofsBasketDir . DIRECTORY_SEPARATOR . $ref ;
+        return unlink($proofsBasketFile);       
+    }
+    
+    
     
     private function generateUniqueOrderId($basket)
     {
