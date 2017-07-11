@@ -350,19 +350,7 @@ var caApp = (function (Backbone, $) {
     
     }); 
     
-    ProofOrderLineModel = Backbone.Model.extend({
-        idAttribute: 'file_ref',
-        defaults: {
-            "file_ref": null,
-            "image_ref": null
-            }  ,
-            
-        initialize: function() {
-        
-        
-        }    
-            
-    });
+
     
     //OrderLine model
     OrderLineModel = Backbone.Model.extend({
@@ -500,15 +488,24 @@ var caApp = (function (Backbone, $) {
     
     });
     
+   ProofOrderLineModel = Backbone.Model.extend({
+        initialize: function() {
+
+        }    
+ 
+    });  
+    
    ProofsBasketCollection =  Backbone.Collection.extend({
+       
         model: ProofOrderLineModel,
         url: "/api/v1/proofsBasket",
-        
         initialize: function(options) {
             
-        },
+        },                                  
    
     });
+    
+
     
     
     
@@ -829,7 +826,6 @@ var caApp = (function (Backbone, $) {
             xhr.then(
                 function(result) {
                     
-                        console.log("proceedd to paypal form");
                         var data = {};
                         if (app.appData.mode == "prod") {
                             data.action = 'https://www.paypal.com/cgi-bin/webscr';    
@@ -859,10 +855,8 @@ var caApp = (function (Backbone, $) {
                         }
                         data.custom = result.orderRef;
                         data.item_name = app.appData.eventName;
-                        console.log(data);
                         var html = that.paypalTmpl(data);
                         that.$el.find('#ca_paypal_form').remove();
-                        console.log(html);
                         that.$el.append(html);
                         that.$el.find('#ca_paypal_form').submit();
 
@@ -1133,16 +1127,15 @@ var caApp = (function (Backbone, $) {
         } ,
             
         showDone: function() {
-            console.log("showDone");
+ 
         },
         
         changePage: function(evt) {
-            console.log("called1");
+
             var targetPage = $(evt.currentTarget).data('index');
             var thumbsPerPage = parseInt(app.appData.thumbsPerPage);
             var pageModelsJSON = app.proofsThumbsCollection.pagination(thumbsPerPage, targetPage);
             var pagedCollection = new  Backbone.Collection(pageModelsJSON);
-            console.log("check", app.proofsThumbsCollection.maxHeight, app.proofsThumbsCollection.thumbImageMaxHeight, app.proofsThumbsCollection.labelHeight )   ;
             var thumbsView = new ThumbsView({collection: pagedCollection, mode: 'proofs', maxHeight: app.proofsThumbsCollection.maxHeight, thumbImageMaxHeight: app.proofsThumbsCollection.thumbImageMaxHeight, labelHeight: app.proofsThumbsCollection.labelHeight });
             app.layout.renderViewIntoRegion(thumbsView, 'main');
             this.options.active = targetPage;
@@ -1154,7 +1147,7 @@ var caApp = (function (Backbone, $) {
     //in Marionette this would be an ItemViewCollection
     ThumbsView =  Backbone.View.extend({
         initialize: function(options) {
-            console.log("here1");
+
             this.options = options;
             this.childViews = new Array();
             
@@ -1169,7 +1162,6 @@ var caApp = (function (Backbone, $) {
                 if (mode == 'prints') {
                     var thumbView = new PrintThumbView({model: thumb, maxHeight: this.options.maxHeight, thumbImageMaxHeight: this.options.thumbImageMaxHeight, labelHeight: this.options.labelHeight}) ;
                 }  else {
-                    console.log("here thumb", thumb);
                     var thumbView = new ProofsThumbView({model: thumb, maxHeight: this.options.maxHeight, thumbImageMaxHeight: this.options.thumbImageMaxHeight, labelHeight: this.options.labelHeight}) ;    
                 }
                 
@@ -1362,16 +1354,42 @@ var caApp = (function (Backbone, $) {
                 this.options = options;   
                 var template =  $('#ca_proofs_thumb_tmpl').html(); 
                 this.tmpl = _.template(template);
-                this.proofsBasket = app.proofsBasketCollection;
-                console.log("this.proofsBasket", this.proofsBasket)    ;
+                this.proofsBasket = app.proofsBasketCollection; 
+                this.listenTo(this.proofsBasket, "add", this.renderThisOne);
+                this.listenTo(this.proofsBasket, "remove", this.renderThisOne);
         },
         
         events: {
-            'click .ca_proofs_thumb_pic_event': 'showPopUp'
+            'click .ca_proof_thumb_pic_event': 'showPopUp'    ,
+            'click .ca_proof_checkbox_event': 'toggleSelected'
         
+        },
+        
+       renderThisOne: function(model)
+       {
+            if (model.get("file_ref") == this.model.get("file")) {
+                this.render();
+            }
+       
+       },
+        
+        toggleSelected: function() {
+            
+            var file = this.model.get("file");
+            var thumbInProofsBasket = this.proofsBasket.find(function(model) {return model.get('file_ref') == file});
+                
+            if (thumbInProofsBasket != undefined) {
+                thumbInProofsBasket.destroy({wait: true});  
+            } else {
+                var newOrderLine = new  ProofOrderLineModel();
+                newOrderLine.set({"file_ref": file});
+                this.proofsBasket.create(newOrderLine, {wait: true});
+            }
         },
 
         showPopUp: function() {
+            console.log("show proof pop up");
+            return;
             var file = this.model.get("file");
             var path = this.model.get("path");
             
@@ -1433,14 +1451,13 @@ var caApp = (function (Backbone, $) {
         },
         
         render: function() {
-            console.log("rendering ProofsThumbView");
+            console.log("rrr");
             var data = this.model.toJSON();
             data.thumbStyle = "height: " + this.options.maxHeight + "px";
             data.thumbImageMaxHeight =  "max-height: " + this.options.thumbImageMaxHeight + "px";
             data.labelStyle = "font-size: " +  this.options.labelHeight + "px";
             data.alt_text = "";
             data.label = data.file;
-            console.log("data", data);
             
           
             var thumbInProofsBasket = this.proofsBasket.find(function(model) {return model.get('file_ref') == data.file});

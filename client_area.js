@@ -182,11 +182,11 @@
   
   
       $("body").on("click", ".ca_proof_lightbox_checkbox_event", function() {
-          proofSelected.call(this);
+          //proofSelected.call(this);
       });
   
       $("#ca_content_area").on("click", ".ca_proof_checkbox_event", function() {
-          proofSelected.call(this);
+          //proofSelected.call(this);
       });
       
   

@@ -260,9 +260,23 @@ class ClientAreaTextDB
     {
         $proofsBasketFile = $this->proofsBasketDir . DIRECTORY_SEPARATOR . $ref;
         $proofsBasket = $this->getProofsBasket($ref);
-        if (!in_array($fileRef, $proofsBasket))
+
+        $inBasket = false;
+        foreach ($proofsBasket as $proof)
         {
-            $proofsBasket[] = $fileRef;
+            if ($proof->file_ref == $fileRef)
+            {   
+                $inBasket = true;
+                break;
+            }
+        }
+
+        if (!$inBasket)
+        {
+            $newProof = new stdClass();
+            $newProof->id = $fileRef;
+            $newProof->file_ref = $fileRef; 
+            $proofsBasket[] = $newProof;
         }
         $result = file_put_contents($proofsBasketFile, json_encode($proofsBasket)) ; //TODO we have no backup?
         return $result;  
@@ -272,8 +286,16 @@ class ClientAreaTextDB
     {
         $proofsBasketFile = $this->proofsBasketDir . DIRECTORY_SEPARATOR . $ref;
         $proofsBasket = $this->getProofsBasket($ref);
-        unset($proofsBasket[$fileRef]);
-        $result = file_put_contents($proofsBasketFile, json_encode($proofsBasket)) ; //TODO we have no backup?
+        $newProofsBasket = array();
+        foreach ($proofsBasket as $proof)
+        {
+            if ($proof->file_ref != $fileRef)
+            {   
+                $newProofsBasket[] = $proof;
+            }
+        }
+        
+        $result = file_put_contents($proofsBasketFile, json_encode($newProofsBasket)) ; //TODO we have no backup?
         return $result;  
     }
     

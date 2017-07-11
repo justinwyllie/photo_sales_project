@@ -536,6 +536,7 @@ class ClientAreaAPI
             }
             else
             {
+                $dataObj->id = $fileRef;
                 return $dataObj;
             }
         }
@@ -550,7 +551,7 @@ class ClientAreaAPI
         $fileRef = $this->param;      //probably not.... 
         if (isset($_COOKIE['client_area_tracker'])) {
             $ref = $_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'];
-            $result = $this->db->removeFromProofsBasket($ref);
+            $result = $this->db->removeFromProofsBasket($ref, $fileRef);
             if ($result === false) 
             {
                 $this->outputJson500("Error calling db->removeFromProofsBasket in deleteProofsBasket");
