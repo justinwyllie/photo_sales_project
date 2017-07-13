@@ -1182,6 +1182,105 @@ var caApp = (function (Backbone, $) {
         }
     });     
     
+    
+    ProofPopUpView = Backbone.View.extend({
+        initialize: function(options) {
+            this.options = options;
+            var tmpl = $('#ca_proof_popup_tmpl').html(); 
+            this.tmpl = _.template(tmpl);
+            this.listenTo(this.proofsBasket, "add", this.render);
+            this.listenTo(this.proofsBasket, "remove", this.render);    
+            this.proofsBasket = app.proofsBasketCollection;   
+            
+        },
+        
+        events: {
+            'click .ca_lightbox_close_event': 'close' ,
+            'click .ca_proof_lightbox_checkbox_event': 'toggleSelected'
+        },
+       
+        close: function() {
+            app.layout.renderViewIntoRegion(null, 'body1');
+            app.layout.renderViewIntoRegion(null, 'body2');     
+        }, 
+        
+        toggleSelected: function() {
+            
+            var file = this.options.file;
+            var thumbInProofsBasket = this.proofsBasket.find(function(model) {return model.get('file_ref') == file});
+                
+            if (thumbInProofsBasket != undefined) {
+                thumbInProofsBasket.destroy({wait: true});  
+            } else {
+                var newOrderLine = new  ProofOrderLineModel();
+                newOrderLine.set({"file_ref": file});
+               this.proofsBasket.create(newOrderLine, {wait: true});
+            }
+        }, 
+        
+        render: function() {
+                   
+            var data = {};
+            data.path = this.options.path.replace("thumbs", "main");
+            data.langStrings = app.langStrings.toJSON();
+            
+            var showLabel = app.appData.proofsShowLabels;
+            if (showLabel) {
+                data.label =  this.options.file;
+            } else {
+                data.label =  '';
+            }
+            var file = this.options.file;
+            var thumbInProofsBasket = this.proofsBasket.find(function(model) {return model.get('file_ref') == file });
+     
+            if (thumbInProofsBasket != undefined) {
+                data.checked = true;     
+            }     else {
+                data.checked = false;
+            }
+            
+                
+            //set the overlay element hmm... needs to be apenned to the body as well... body1 and body2????
+            var overlay = new OverlayView();
+            app.layout.renderViewIntoRegion(overlay, 'body2');  
+            
+            var html = this.tmpl(data);
+            this.$el.html(html); 
+            
+            //deal with sizing.... 
+            var actualImageWidth = this.options.mainWidth;
+            var actualImageHeight  = this.options.mainHeight;
+            var maxPopupWidth = app.maxPopupWidth;
+            var lightBoxWidthFraction = app.lightBoxWidthFraction;
+            var lightBoxWidthPercent = (100*lightBoxWidthFraction)  + '%';
+            var lightBoxWidth = maxPopupWidth + 'px'; 
+            var safeImageHeight = $(window).height() - 100;
+            this.$el.css({'max-width': lightBoxWidth ,'width': lightBoxWidthPercent}); 
+            
+            var usedWidth;
+            if (actualImageHeight > (safeImageHeight)) //height is too big (portrait images on landscape orientation phones)
+            {
+                var heightExceedsRatio = actualImageHeight /  safeImageHeight;
+                var modifiedWidth = Math.floor(actualImageWidth /  heightExceedsRatio);
+                usedWidth = modifiedWidth;
+                this.$el.find("img").css({"max-width": modifiedWidth + "px", "width": "100%"});   
+            }
+            else
+            {
+                usedWidth = Math.floor(actualImageWidth);
+                this.$el.find("img").css({"max-width": usedWidth + "px", "width": "100%", "height": "auto"});
+            }
+            
+            
+            var viewportWidth = $(window).width();
+            var offset = Math.floor((viewportWidth / 2)  - (usedWidth / 2));
+            this.$el.find(".ca_prints_popup").css("margin-left", offset + "px"); 
+            //hack alert
+            $("body").scrollTop(0); 
+        }
+    
+    });
+    
     PrintPopUpView = Backbone.View.extend({
        
         initialize: function(options) {
@@ -1312,16 +1411,27 @@ var caApp = (function (Backbone, $) {
             var safeImageHeight = $(window).height() - 100;
             this.$el.css({'max-width': lightBoxWidth ,'width': lightBoxWidthPercent}); 
             
+            var usedWidth;
             if (actualImageHeight > (safeImageHeight)) //height is too big (portrait images on landscape orientation phones)
             {
                 var heightExceedsRatio = actualImageHeight /  safeImageHeight;
-                var modifiedWidth = actualImageWidth /  heightExceedsRatio;
-                this.$el.find("img").css({"max-width": Math.floor(modifiedWidth) + "px", "width": "100%"});   
+                var modifiedWidth = Math.floor(actualImageWidth /  heightExceedsRatio);
+                usedWidth = modifiedWidth;
+                this.$el.find("img").css({"max-width": modifiedWidth + "px", "width": "100%"});   
             }
             else
             {
-                this.$el.find("img").css({"max-width": Math.floor(actualImageWidth) + "px", "width": "100%", "height": "auto"});
+                usedWidth = Math.floor(actualImageWidth);
+                this.$el.find("img").css({"max-width": usedWidth + "px", "width": "100%", "height": "auto"});
             }
+            
+            
+            var viewportWidth = $(window).width();
+            var offset = Math.floor((viewportWidth / 2)  - (usedWidth / 2));
+            this.$el.find(".ca_prints_popup").css("margin-left", offset + "px");  
+            //hack alert
+            $("body").scrollTop(0);
+            
             this.renderOrderLines();
       
         },
@@ -1388,10 +1498,10 @@ var caApp = (function (Backbone, $) {
         },
 
         showPopUp: function() {
-            console.log("show proof pop up");
-            return;
+           
             var file = this.model.get("file");
             var path = this.model.get("path");
+       
             
             var ratio;
             var mainWidth; 
@@ -1399,14 +1509,13 @@ var caApp = (function (Backbone, $) {
             
             var showPopUp = function() {
             
-                var view = new PrintPopUpView({
+                var view = new ProofPopUpView({
                     file: file, 
                     path: path, 
                     ratio: ratio,
-                    pricingModel: app.pricingModel, 
-                    collection: app.basketCollection, 
                     mainWidth: mainWidth, 
                     mainHeight: mainHeight
+
                 });
                 app.layout.renderViewIntoRegion(view, 'body1');
             
@@ -1451,7 +1560,6 @@ var caApp = (function (Backbone, $) {
         },
         
         render: function() {
-            console.log("rrr");
             var data = this.model.toJSON();
             data.thumbStyle = "height: " + this.options.maxHeight + "px";
             data.thumbImageMaxHeight =  "max-height: " + this.options.thumbImageMaxHeight + "px";

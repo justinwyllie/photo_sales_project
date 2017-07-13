@@ -1215,7 +1215,7 @@ EOF;
                     
             
             
-            </script>
+            </script>                                                       
         
         
             <script type="text/html" id="ca_thumb_title">
@@ -1234,6 +1234,24 @@ EOF;
                         <div id="ca_order_lines_container" class="ca_form" >
                              
                         </div>
+                    </div>    
+                </div>
+            </script>
+            
+           <script type="text/html" id="ca_proof_popup_tmpl">
+                <div class="ca_prints_popup">
+                    <div class="ca_popup_close_bar">
+                        <button class="ca_popup_close ca_lightbox_close_event">x</button>    
+                    </div>
+                    <div class="ca_lightbox_image">
+                        <img src="<%= path %>">
+                    </div>
+                    <div class="ca_container_fluid">
+                        <div class="ca_lightbox_controls">
+                            <input class="ca_proof_lightbox_checkbox_event" type="checkbox" <% if (checked) { %> checked <% } %>>
+                            <div class="ca_lightbox_label"><%= label %></div>
+                        </div>
+                        
                     </div>    
                 </div>
             </script>
