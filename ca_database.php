@@ -388,7 +388,9 @@ class ClientAreaTextDB
         $completedFile = $this->completedDir . DIRECTORY_SEPARATOR . $orderRef;
         if (file_exists($pendingFile))
         {
-            $moveResult = rename($pendingFile, $completedFile);
+        
+            $targetFile =  $this->generateUniqueFile($this->completedDir, $orderRef);
+            $moveResult = rename($pendingFile, $this->completedDir . DIRECTORY_SEPARATOR . $targetFile);
             if ($moveResult) {
                  $completedString = file_get_contents($completedFile);
                 $completed = json_decode($completedString);
