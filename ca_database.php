@@ -314,8 +314,10 @@ class ClientAreaTextDB
     public function getAndClearProofs($ref)
     {
         $proofsBasketFile = $this->proofsBasketDir . DIRECTORY_SEPARATOR . $ref;
-        $proofsBasketFileCompleted = $this->proofsBasketCompletedDir . DIRECTORY_SEPARATOR . $ref;
+        $targetFile =  $this->generateUniqueFile($this->proofsBasketCompletedDir, $ref);
+        $proofsBasketFileCompleted = $this->proofsBasketCompletedDir . DIRECTORY_SEPARATOR . $targetFile;
         $proofsBasket = $this->getProofsBasket($ref);
+        
         $result = rename($proofsBasketFile, $proofsBasketFileCompleted);
         if ($result)
         {
@@ -325,6 +327,24 @@ class ClientAreaTextDB
         {
             return false;
         }
+        
+              
+    
+    }
+    
+    private function generateUniqueFile($dir, $file)
+    {
+           
+       $finalName = $file; 
+       $i = 1; 
+ 
+       while(file_exists($dir . DIRECTORY_SEPARATOR . $finalName))
+       {        
+ 
+            $finalName = $file . "_" . $i;
+            $i++;
+        }
+        return $finalName;
     
     }
     
