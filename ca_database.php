@@ -340,7 +340,6 @@ class ClientAreaTextDB
  
        while(file_exists($dir . DIRECTORY_SEPARATOR . $finalName))
        {        
- 
             $finalName = $file . "_" . $i;
             $i++;
         }
@@ -387,10 +386,8 @@ class ClientAreaTextDB
         $pendingFile = $this->pendingDir . DIRECTORY_SEPARATOR . $orderRef;
         $completedFile = $this->completedDir . DIRECTORY_SEPARATOR . $orderRef;
         if (file_exists($pendingFile))
-        {
-        
-            $targetFile =  $this->generateUniqueFile($this->completedDir, $orderRef);
-            $moveResult = rename($pendingFile, $this->completedDir . DIRECTORY_SEPARATOR . $targetFile);
+        {     
+            $moveResult = rename($pendingFile, $completedFile);
             if ($moveResult) {
                  $completedString = file_get_contents($completedFile);
                 $completed = json_decode($completedString);
