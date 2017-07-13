@@ -1131,7 +1131,7 @@ EOF;
                             </div>  
                             <div class="ca_row">
                                 <div class="col-xs-12">
-                                    <button id="ca_complete_order">
+                                    <button id="ca_complete_order" class="ca_action_button">
                                         <%= payButtonText %>
                                     </button>
                                 </div>
@@ -1210,7 +1210,7 @@ EOF;
                      <div class="ca_spacer"></div>
                      
                      <div>
-                        <button id="ca_checkout_next1"><%= langStrings.next %></button>
+                        <button id="ca_checkout_next1" class="ca_action_button"><%= langStrings.next %></button>
                      </div>
                     
             
@@ -1224,7 +1224,7 @@ EOF;
             <script type="text/html" id="ca_print_popup_tmpl">
                 <div class="ca_prints_popup">
                     <div class="ca_popup_close_bar">
-                        <button class="ca_popup_close ca_lightbox_close_event">x</button>    
+                        <button class="ca_popup_close ca_action_button ca_lightbox_close_event">x</button>    
                     </div>
                     <div class="ca_lightbox_image">
                         <img src="<%= path %>">
@@ -1241,7 +1241,7 @@ EOF;
            <script type="text/html" id="ca_proof_popup_tmpl">
                 <div class="ca_prints_popup">
                     <div class="ca_popup_close_bar">
-                        <button class="ca_popup_close ca_lightbox_close_event">x</button>    
+                        <button class="ca_popup_close ca_action_button ca_lightbox_close_event">x</button>           
                     </div>
                     <div class="ca_lightbox_image">
                         <img src="<%= path %>">
@@ -1315,8 +1315,8 @@ EOF;
                               <button type="button" class="ca_action_button ca_add_event"><%= langStrings.add %></button>
                           <% } else { %>
                               <span class="ca_edit_icon fa <%= editStateIcon %>"></span>  
-                              <button type="button" class="ca_update_event"><%= langStrings.update %></button>
-                              <button type="button" class="ca_remove_event"><%= langStrings.removeSymbol %></button>
+                              <button type="button" class="ca_update_event ca_action_button"><%= langStrings.update %></button>
+                              <button type="button" class="ca_remove_event ca_action_button"><%= langStrings.removeSymbol %></button>                    
                           <% } %>
                           <div class="ca_order_info"></div>
                           
@@ -1352,7 +1352,7 @@ EOF;
                     <span class="ca_your_print_label" ><%= langStrings.password %></span>
                     <input class="ca_your_print_field" type="password" name="password" id="ca_login_password">
                     <br class="clear">
-                    <button class="ca_standard_button ca_login_button ca_login_button_event" id="login" type="button"><%= langStrings.login %></button>
+                    <button class="ca_standard_button ca_login_button ca_login_button_event ca_action_button" id="login" type="button"><%= langStrings.login %></button>
                 </form>
             </div>
         </script>
@@ -1366,7 +1366,7 @@ EOF;
                         <option value="proofs" <%= proofsOn %>><%= langStrings.viewProofs %></option>
                         <option value="prints" <%= printsOn %>><%= langStrings.orderPrints %></option>
                     </select><br>
-                    <button class="ca_large_button ca_choose_activity_event"
+                    <button class="ca_large_button ca_choose_activity_event ca_action_button"
                         type="button"><%= langStrings.go %></button>
                 </form>
             </div>
@@ -1395,9 +1395,9 @@ EOF;
             <div class="ca_menu_bar">
                 <%= buttons %>
                 <div class="ca_menu_buttons">
-                    <button class="ca_basket_event <% if (active == 'basket') { %>ca_highlighted_pagination<% } %>"><%= basket_label %></button>
-                    <button class="ca_checkout_event"><%= checkout_label %></button>
-                    <button class="ca_logout_event"><%= langStrings.logout %></button>
+                    <button class="ca_basket_event ca_action_button <% if (active == 'basket') { %>ca_highlighted_pagination<% } %>"><%= basket_label %></button>
+                    <button class="ca_checkout_event ca_action_button"><%= checkout_label %></button>
+                    <button class="ca_logout_event ca_action_button"><%= langStrings.logout %></button>
                 </div>
             </div>    
         </script>
@@ -1408,15 +1408,15 @@ EOF;
                         <span class="ca_counter_box ca_counter_label ca_label">
                             <span><%= langStrings.chosen %>:</span><span class="ca_counter">TODO</span>
                         </span>
-                       <button class="ca_proof_event"><%= langStrings.done %></button>
-                       <button class="ca_logout_event"><%= langStrings.logout %></button>
+                       <button class="ca_proof_event ca_action_button"><%= langStrings.done %></button>
+                       <button class="ca_logout_event ca_action_button"><%= langStrings.logout %></button>
                 </div>
             </div>    
         </script>
         <script type="text/html" id="ca_logout_menu">
             <div class="ca_menu_bar">
                 <div class="ca_menu_buttons">
-                    <button class="ca_logout_event"><%= langStrings.logout %></button>
+                    <button class="ca_logout_event ca_action_button"><%= langStrings.logout %></button>
                 </div>
             </div> 
         </script>
@@ -1427,6 +1427,25 @@ EOF;
                 </div>
             </div>
         </script>
+        <script type="text/html" id="ca_confirm_proofs">
+            <div class="ca_container_fluid">
+                <div class="ca_proofs_confirm">
+                    <div><%= langStrings.finaliseProofChoices %></div>
+                    <div class="ca_label"><%= langStrings.yourInstructions %>:</div>
+                    <textarea class="ca_proofs_box"></textarea>
+                    <button class="ca_action_button order_proofs_event"><%= langStrings.submit %></button>
+                </div>
+            </div>
+        </script>
+         <script type="text/html" id="ca_confirm_proofs_thanks">
+            <div class="ca_container_fluid">
+                <div class="ca_proofs_confirm">
+                    <div>
+                        <%= langStrings.proofsSuccess %>
+                    </div>
+                </div>    
+            </div>
+        </script>        
  
 EOF;
         return $html;    

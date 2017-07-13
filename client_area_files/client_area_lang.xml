@@ -45,7 +45,7 @@
     </field>
     <field name="chooseOption">
         What do you want to do?
-    </field>
+    </field>                                                                                                                                                   
     <field name="go">
         Go
     </field>
@@ -86,7 +86,7 @@
         Sorry. A critical error has occurred.
     </field>
     <field name="finaliseProofChoices">
-        Please enter any additional message in the box below and then press
+        Please enter any additional message in the box below and then press submit
     </field>
     <field name="submit">
         Submit

@@ -147,7 +147,7 @@
       })
   
       $("#ca_content_area").on("click", ".ca_proof_event", function(evt) {
-  
+          return;
           var allPagesVisited = $(".ca_menu_bar").data("all-proofs-pages-visited");
           var okText = $(".ca_menu_bar").data("ok-text");
   

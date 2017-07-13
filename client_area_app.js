@@ -1092,6 +1092,59 @@ var caApp = (function (Backbone, $) {
     })
     
     
+    ConfirmProofOrderView =  Backbone.View.extend({
+    
+        initialize: function(options) {
+            var tmpl = $('#ca_confirm_proofs').html(); 
+            this.tmpl =  _.template(tmpl);
+            var thanksTmpl = $('#ca_confirm_proofs_thanks').html(); 
+            this.thanksTmpl =  _.template(thanksTmpl);
+        } ,
+        
+       events: {
+            'click .ca_page_number_event': 'changePage',
+            'click .order_proofs_event' : 'orderProofs'
+        } ,
+        
+        orderProofs: function() {
+             var that = this;
+             var msg = this.$el.find(".ca_proofs_box").val();
+             var xhrProcessProofs = $.ajax(
+                        {
+                            url: '/api/v1/processProofs',
+                            method: 'POST',
+                            data: {"message": msg}, 
+                            dataType: 'json'
+                        }
+              );
+                    
+              xhrProcessProofs.then(
+                    function(result) {
+                        that.renderThanks();
+                       },
+                       function() { 
+                            var errorView = new ErrorView();   
+                            app.layout.renderViewIntoRegion(errorView, 'main'); 
+                       }     
+                );
+        },   
+        
+        render: function() {
+            var data = {};
+            data.langStrings = app.langStrings.toJSON();
+            var html = this.tmpl(data)
+            this.$el.html(html);
+        },
+        
+        renderThanks: function() {
+            var data = {};
+            data.langStrings = app.langStrings.toJSON();
+            var html = this.thanksTmpl(data)
+            this.$el.html(html);
+        }
+    });
+    
+    
     ProofsMenuView =  Backbone.View.extend({
     
         initialize: function(options) {
@@ -1127,7 +1180,8 @@ var caApp = (function (Backbone, $) {
         } ,
             
         showDone: function() {
- 
+            var confirmProofOrder =  new ConfirmProofOrderView();
+            app.layout.renderViewIntoRegion(confirmProofOrder, 'main')
         },
         
         changePage: function(evt) {

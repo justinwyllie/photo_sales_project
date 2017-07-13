@@ -96,6 +96,34 @@ class ClientAreaAPI
     
     }
     
+    public function postProcessProofs()
+    {
+      
+      if (isset($_COOKIE['client_area_tracker'])) {
+
+            $result =  $this->db->getAndClearProofs($_SESSION['user'] . '_' . $_COOKIE['client_area_tracker']);
+            
+            if ($result === false) {
+                  $this->outputJson500("Error calling getAndClearProofs in getProcessProofs");           
+            }
+            else
+            {
+                  $data = "PROOFS ORDER for: " .  $_SESSION['user']  . "\n\n" . json_encode($result) . "\n\nThe user additionally said\n\n" . $_POST["message"];
+                  $this->mailAdmin($data, "Proofs Order on Website.");
+                  $obj = new stdClass();
+                  $obj->status = "success";
+                  $obj->message = "";
+                  $this->outputJson($obj);
+            }
+        }
+        else
+        {
+            $this->outputJson500("Tracking cookie not set in getProcessProofs called with");     
+        }
+
+    }
+    
+    
     public function getClearCompleteBasket() 
     {
         if (isset($_COOKIE['client_area_tracker'])) {

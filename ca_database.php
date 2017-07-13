@@ -50,6 +50,11 @@ class ClientAreaTextDB
         {
             mkdir($this->proofsBasketDir, 0744);    
         }
+        $this->proofsBasketCompletedDir =  $this->path . DIRECTORY_SEPARATOR . 'proofs_basket_completed';
+        if (!file_exists($this->proofsBasketCompletedDir))
+        {
+            mkdir($this->proofsBasketCompletedDir, 0744);    
+        }
     }
     
     private function cleanUpFiles($mode)
@@ -305,6 +310,23 @@ class ClientAreaTextDB
         return unlink($proofsBasketFile);       
     }
     
+    
+    public function getAndClearProofs($ref)
+    {
+        $proofsBasketFile = $this->proofsBasketDir . DIRECTORY_SEPARATOR . $ref;
+        $proofsBasketFileCompleted = $this->proofsBasketCompletedDir . DIRECTORY_SEPARATOR . $ref;
+        $proofsBasket = $this->getProofsBasket($ref);
+        $result = rename($proofsBasketFile, $proofsBasketFileCompleted);
+        if ($result)
+        {
+            return $proofsBasket; 
+        }
+        else
+        {
+            return false;
+        }
+    
+    }
     
     
     private function generateUniqueOrderId($basket)
