@@ -6,6 +6,8 @@
             <appName>Photo ordering system.</appName>
             <!-- full domain with http: o https:// where this app is hosted. no need for a trailing / -->
             <domain>http://jwp.mms-oxford.com</domain>
+            <!-- path where this lives - the path after the domain which is called to execute the app's 'home page' -->
+            <appRoute>/client_area</appRoute>
             <!-- enter either dev or prod. in dev mode if PayPal is enabled it will use the Sandbox -->
             <mode>dev</mode>
             <!-- system path to where the client images are stored. -->

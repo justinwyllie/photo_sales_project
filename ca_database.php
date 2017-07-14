@@ -375,7 +375,7 @@ class ClientAreaTextDB
  
        while(file_exists($dir . DIRECTORY_SEPARATOR . $finalName))
        {        
-            $finalName = $file . "_" . $i;
+            $finalName = $file . "-" . $i;
             $i++;
         }
         return $finalName;
@@ -399,8 +399,7 @@ class ClientAreaTextDB
 
     public function createPendingOrder($ref, $basketWithBackendPricingDelAndTotals)
     {
-        $orderId = time(); //TODO how close are we getting to 255 max length?
-        $orderRef = $ref . '_' . $orderId;
+        $orderRef = $this->generateUniqueFile($this->pendingDir, $ref);
         $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref ;
         $pendingFile =   $this->pendingDir . DIRECTORY_SEPARATOR . $orderRef;
         $result = file_put_contents($pendingFile, json_encode($basketWithBackendPricingDelAndTotals)) ;
@@ -410,7 +409,6 @@ class ClientAreaTextDB
         }
         else
         {
-            $this->clearBasket($ref);
             return $orderRef;
         }
        

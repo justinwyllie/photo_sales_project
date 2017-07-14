@@ -890,6 +890,7 @@ class ClientAreaAPI
         $options["adminEmail"]  =  $client_area_options->options->system->adminEmail . "";
         $options["mode"]  =  $client_area_options->options->system->mode . "";
         $options["domain"]  =  $client_area_options->options->system->domain . "";
+        $options["appRoute"]  =  $client_area_options->options->system->appRoute . "";
         $options["paypalPaymentDescription"]  =  $client_area_options->options->system->paypalStandard->paypalPaymentDescription . "";
         $options["sessId"]  =  session_id();
 

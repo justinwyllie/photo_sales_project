@@ -128,8 +128,8 @@ var caApp = (function (Backbone, $) {
              
             app.router = new AppRouter();
             //TODO - this meanst that the app has to be run in the web root?
-            //e.g. domain.com/something/client_area/thanks won't match because the root won't work. should this be dynamic?
-            Backbone.history.start({pushState:true, root: "/client_area"});
+            //e.g. domain.com/something/client_area/thanks won't match because the route won't work. should this be dynamic?
+            Backbone.history.start({pushState:true, root: app.appData.appRoute});
         } 
          
             
@@ -836,13 +836,15 @@ var caApp = (function (Backbone, $) {
                         }
                         
                         var loc = document.location;
+                        var thanks = loc.protocol + '//' + loc.host + app.appData.appRoute + '/thanks';
+                        var canx = loc.protocol + '//' + loc.host + app.appData.appRoute + '/cancel';
                         
                         data.payment_title = app.appData.paypalPaymentDescription;
                         data.amount = that.model.get("grandTotal");
                         data.paypal_code = app.pricingModel.get("currency").payPayCode;
-                        data.thanks_url =   loc.href + '/thanks';
+                        data.thanks_url =   thanks
                         data.charset = 'UTF-8';
-                        data.cancel_url =   loc.href + '/cancel';
+                        data.cancel_url =   canx;
                         if (app.appData.paypalIPNSSL) {
                             var protocol = 'https://';    
                         }  else {

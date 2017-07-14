@@ -84,7 +84,7 @@ if (strcmp ($res, "VERIFIED") == 0) {
 } else if (strcmp ($res, "INVALID") == 0) {
   // IPN invalid, log for manual investigation
 }
-
+//TODO what other statuses do we need to handle?
 function processCompletedOrder($orderRef, $paymentStatus, $ipnTrackId, $txnId) {
     include('ca_database.php');
     include('ca_utilities.php');
@@ -100,6 +100,16 @@ function processCompletedOrder($orderRef, $paymentStatus, $ipnTrackId, $txnId) {
     
     if ($paymentStatus === 'Completed') {
         $completedOrder = $db->movePendingOrdertoCompleted($orderRef, $ipnTrackId, $txnId);
+        if (substr_count($orderRef, "-") >= 1)
+        {
+            $pos = strrpos($orderRef, '-') ;
+            $actualBasketFileRef =  substr($orderRef, 0, ($pos));
+        }
+        else
+        {
+            $actualBasketFileRef = $orderRef;
+        }
+        $db->clearBasket($actualBasketFileRef);
         $formattedOrder =  ClientAreaUtilities::formatBasketJsonObjectToHumanReadable($completedOrder);
     
          $data = 'The confirmed order ref is: ' . $orderRef . "\n\n";
@@ -115,7 +125,7 @@ function processCompletedOrder($orderRef, $paymentStatus, $ipnTrackId, $txnId) {
         //TODO 
         mail('justinwyllie@hotmail.co.uk', 'Confirmed Order on Web Site', $data);
     
-    }    //TODO what other statuses do we need to handle?
+    }    
     
 }
 
