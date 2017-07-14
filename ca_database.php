@@ -55,6 +55,21 @@ class ClientAreaTextDB
         {
             mkdir($this->proofsBasketCompletedDir, 0744);    
         }
+        $this->backupsDir =  $this->path . DIRECTORY_SEPARATOR . 'backups';
+        if (!file_exists($this->backupsDir))
+        {
+            mkdir($this->backupsDir, 0744);    
+        }
+        $this->proofsBackupsDir =  $this->path . DIRECTORY_SEPARATOR . 'backups' . DIRECTORY_SEPARATOR . 'proofs';
+        if (!file_exists($this->proofsBackupsDir))
+        {
+            mkdir($this->proofsBackupsDir, 0744);    
+        }
+        $this->basketBackupsDir =  $this->path . DIRECTORY_SEPARATOR . 'backups' . DIRECTORY_SEPARATOR . 'basket';
+        if (!file_exists($this->basketBackupsDir))
+        {
+            mkdir($this->basketBackupsDir, 0744);    
+        }
     }
     
     private function cleanUpFiles($mode)
@@ -70,9 +85,10 @@ class ClientAreaTextDB
         {
             $this->cleanUp($this->proofsBasketDir, $threeMonthsInSeconds);
         }
-        
-        
+  
     }
+    
+     
     
     private function cleanUp($dir, $age)
     {
@@ -88,6 +104,25 @@ class ClientAreaTextDB
                 unlink($path);
             }
         }   
+    }
+    
+    public function makeBackups($ref)
+    {
+    
+        $possibleProofsBasketFile = $this->proofsBasketDir . DIRECTORY_SEPARATOR . $ref;
+        if (file_exists($possibleProofsBasketFile))
+        {
+            $targetFile =  $this->generateUniqueFile($this->proofsBackupsDir, $ref); 
+            copy($possibleProofsBasketFile, $this->proofsBackupsDir . DIRECTORY_SEPARATOR . $targetFile);   
+        } 
+        
+        $possibleBasketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref;
+        if (file_exists($possibleBasketFile))
+        {
+            $targetFile =  $this->generateUniqueFile($this->basketBackupsDir, $ref); 
+            copy($possibleBasketFile, $this->basketBackupsDir . DIRECTORY_SEPARATOR . $targetFile);   
+        } 
+    
     }
     
     public function createBasket($ref)

@@ -373,10 +373,10 @@ class ClientAreaAPI
     public function postLogin()
     {       
         $obj = new stdClass();
-                                                             
+                                                         
         $user = $_POST['name'];
         $password = $_POST['password'];
-        //TODO are we using any of these?
+        //TODO are we using any of these?                  NO LOSE
         $restoredProofs = $_POST['restoredProofs'];                  
         $restoredProofsPagesVisited = $_POST['restoredProofsPagesVisited'];
         $restoredPrintsPagesVisited = $_POST['restoredPrintsPagesVisited'];
@@ -417,11 +417,16 @@ class ClientAreaAPI
           
             $cookie = null;
            //if this user (identified by browser cookie) has an order in /baskets regenerate from that
-            if (!isset($_COOKIE['client_area_tracker'])) {
+            if (!isset($_COOKIE['client_area_tracker'])) {           //TDOO set this onto a class property in the constructor
                 $expires =  time() + (10 * 365 * 24 * 60 * 60);
                 $rand = time() . rand(0, 1000000);
                 $cookie = array('name'=>'client_area_tracker', 'value'=>$rand, 'expires'=>$expires);
              } 
+             else
+             {
+                $ref = $user . '_' . $_COOKIE['client_area_tracker'];
+                $this->db->makeBackups($ref) ;
+             }
           
             
             //If the user is logging in try to restore the prints pages visited chosen based on what was stored in html data if it is available  
@@ -432,6 +437,8 @@ class ClientAreaAPI
                     $_SESSION["printsPagesVisited"] = $restoredPrintsPagesVisitedArray;
                 }
             }
+            
+            
                                      
             $obj->status = "success";
             $obj->message = "";
