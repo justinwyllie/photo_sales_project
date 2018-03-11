@@ -1227,7 +1227,9 @@ EOF;
                         <button class="ca_popup_close ca_action_button ca_lightbox_close_event">x</button>    
                     </div>
                     <div class="ca_lightbox_image">
+                        <div class="ca_nav_icons ca_light_box_left ca_popup_left_event <%= leftNavShowHide %>"><span class="fa fa-3x fa-angle-left"></span></div>
                         <img src="<%= path %>">
+                        <div class="ca_nav_icons ca_light_box_right ca_popup_right_event <%= rightNavShowHide %>"><span class="fa fa-3x fa-angle-right"></span></div>
                     </div>
                     <div class="ca_container_fluid">
                         <%= row_headers %>
@@ -1244,7 +1246,9 @@ EOF;
                         <button class="ca_popup_close ca_action_button ca_lightbox_close_event">x</button>           
                     </div>
                     <div class="ca_lightbox_image">
+                        <div class="ca_nav_icons ca_light_box_left ca_popup_left_event <%= leftNavShowHide %>"><span class="fa fa-3x fa-angle-left"></span></div>
                         <img src="<%= path %>">
+                        <div class="ca_nav_icons ca_light_box_right ca_popup_right_event <%= rightNavShowHide %>"><span class="fa fa-3x fa-angle-right"></span></div>
                     </div>
                     <div class="ca_container_fluid">
                         <div class="ca_lightbox_controls">
