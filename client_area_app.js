@@ -129,7 +129,8 @@ var caApp = (function (Backbone, $) {
             app.router = new AppRouter();
             //TODO - this meanst that the app has to be run in the web root?
             //e.g. domain.com/something/client_area/thanks won't match because the route won't work. should this be dynamic?
-            Backbone.history.start({pushState:true, root: app.appData.appRoute});
+            //app.appData.appRoute not yet available?? TODO
+            Backbone.history.start({pushState:true, root: '/client_area' });
         } 
          
             
@@ -1211,9 +1212,10 @@ var caApp = (function (Backbone, $) {
         
         render: function()
         {
-            //loop through collection and display the page.
+            //loop through collection and build an array of the thumbs for this page
             //first take - just display them all
              var mode = this.options.mode;
+             var thumbs = [];
              this.collection.each(function(thumb) {
                 if (mode == 'prints') {
                     var thumbView = new PrintThumbView({model: thumb, maxHeight: this.options.maxHeight, thumbImageMaxHeight: this.options.thumbImageMaxHeight, labelHeight: this.options.labelHeight}) ;
@@ -1221,10 +1223,42 @@ var caApp = (function (Backbone, $) {
                     var thumbView = new ProofsThumbView({model: thumb, maxHeight: this.options.maxHeight, thumbImageMaxHeight: this.options.thumbImageMaxHeight, labelHeight: this.options.labelHeight}) ;    
                 }
                 
-                this.$el.append(thumbView.render().$el);        //TODO height row equalisation  
-                this.childViews.push(thumbView);//TODO consider all the places we need to cleanly remove this view
+                thumbs.push(thumbView);
+
 	       }, this);
-        } ,
+           
+           //now go thru the array again adding refs to prev and next views which we need for navigation
+           //and having done that append them
+           var i = 0;
+           var firstIndex = 0;  
+           var lastIndex = thumbs.length - 1;
+           var thisView = this;
+           $.each(thumbs, function(idx, thumbViewInList) {
+                if (i == firstIndex) {
+                    thumbViewInList.prev = null;
+                    if (lastIndex > firstIndex) {
+                        thumbViewInList.next = thumbs[i+1];    
+                    } else {
+                        thumbViewInList.next = null;      
+                    }       
+                } else if (i == lastIndex) {
+                    thumbViewInList.next = null; 
+                    if (lastIndex > firstIndex) {
+                        thumbViewInList.prev = thumbs[i-1];    
+                    } else {
+                        thumbViewInList.prev = null;      
+                    }   
+                 } else {
+                    thumbViewInList.prev = thumbs[i-1]; 
+                    thumbViewInList.next = thumbs[i+1];    
+                 }
+              
+                thisView.$el.append(thumbViewInList.render().$el);        //TODO height row equalisation  
+                thisView.childViews.push(thumbViewInList);//TODO consider all the places we need to cleanly remove this view 
+                i++;
+            });
+                                           ``
+        },
         
         cleanUp: function() {
             _.invoke(this.childViews, 'remove');
@@ -1252,9 +1286,28 @@ var caApp = (function (Backbone, $) {
         
         events: {
             'click .ca_lightbox_close_event': 'close' ,
-            'click .ca_proof_lightbox_checkbox_event': 'toggleSelected'
+            'click .ca_proof_lightbox_checkbox_event': 'toggleSelected' ,
+            'click .ca_popup_left_event' : 'navLeft',
+            'click .ca_popup_right_event' : 'navRight',
+            
         },
-       
+        
+        navLeft: function() {
+            var prev =  this.options.parent.prev;
+            if (prev != null) {
+                prev.trigger("showPopUp");    
+            }
+          
+        },
+        
+        navRight: function() {
+            var next =  this.options.parent.next;
+            if (next != null) {
+                next.trigger("showPopUp"); 
+            }
+            
+        },
+
         close: function() {
             app.layout.renderViewIntoRegion(null, 'body1');
             app.layout.renderViewIntoRegion(null, 'body2');     
@@ -1279,6 +1332,18 @@ var caApp = (function (Backbone, $) {
             var data = {};
             data.path = this.options.path.replace("thumbs", "main");
             data.langStrings = app.langStrings.toJSON();
+            
+            if (this.options.parent.prev != null) {
+                data.leftNavShowHide = "ca_show";
+            }  else {
+                data.leftNavShowHide = "ca_hide";   
+            }
+            
+            if (this.options.parent.next != null) {
+                data.rightNavShowHide = "ca_show";
+            }  else {
+                data.rightNavShowHide = "ca_hide";   
+            }
             
             var showLabel = app.appData.proofsShowLabels;
             if (showLabel) {
@@ -1350,7 +1415,25 @@ var caApp = (function (Backbone, $) {
         },
         
         events: {
-            'click .ca_lightbox_close_event': 'close'
+            'click .ca_lightbox_close_event': 'close' ,
+            'click .ca_popup_left_event' : 'navLeft',
+            'click .ca_popup_right_event' : 'navRight'
+        },
+        
+       navLeft: function() {
+            var prev =  this.options.parent.prev;
+            if (prev != null) {
+                prev.trigger("showPopUp");    
+            }
+          
+        },
+        
+        navRight: function() {
+            var next =  this.options.parent.next;
+            if (next != null) {
+                next.trigger("showPopUp"); 
+            }
+            
         },
        
         close: function() {
@@ -1450,6 +1533,18 @@ var caApp = (function (Backbone, $) {
             data.langStrings = app.langStrings.toJSON();
             data.row_headers = this.tmplRoWHead(data);
             
+            if (this.options.parent.prev != null) {
+                data.leftNavShowHide = "ca_show";
+            }  else {
+                data.leftNavShowHide = "ca_hide";   
+            }
+            
+            if (this.options.parent.next != null) {
+                data.rightNavShowHide = "ca_show";
+            }  else {
+                data.rightNavShowHide = "ca_hide";   
+            }
+            
             //set the overlay element hmm... needs to be apenned to the body as well... body1 and body2????
             var overlay = new OverlayView();
             app.layout.renderViewIntoRegion(overlay, 'body2');  
@@ -1523,11 +1618,13 @@ var caApp = (function (Backbone, $) {
                 this.proofsBasket = app.proofsBasketCollection; 
                 this.listenTo(this.proofsBasket, "add", this.renderThisOne);
                 this.listenTo(this.proofsBasket, "remove", this.renderThisOne);
+                this.listenTo(this, "showPopUp", this.showPopUp);
         },
         
         events: {
             'click .ca_proof_thumb_pic_event': 'showPopUp'    ,
             'click .ca_proof_checkbox_event': 'toggleSelected'
+
         
         },
         
@@ -1554,23 +1651,23 @@ var caApp = (function (Backbone, $) {
         },
 
         showPopUp: function() {
-           
+            var thisView = this;
             var file = this.model.get("file");
             var path = this.model.get("path");
-       
             
             var ratio;
             var mainWidth; 
             var mainHeight; 
             
             var showPopUp = function() {
-            
+                console.log("test2", thisView);
                 var view = new ProofPopUpView({
                     file: file, 
                     path: path, 
                     ratio: ratio,
                     mainWidth: mainWidth, 
-                    mainHeight: mainHeight
+                    mainHeight: mainHeight,
+                    parent: thisView
 
                 });
                 app.layout.renderViewIntoRegion(view, 'body1');
@@ -1646,6 +1743,7 @@ var caApp = (function (Backbone, $) {
                 this.options = options;   
                 var template =  $('#ca_print_thumb_tmpl').html(); 
                 this.tmpl = _.template(template);
+                this.listenTo(this, "showPopUp", this.showPopUp);
         },
         
         events: {
@@ -1660,7 +1758,7 @@ var caApp = (function (Backbone, $) {
             var ratio;
             var mainWidth; 
             var mainHeight; 
-            
+            var thisView = this;
             var showPopUp = function() {
             
                 var view = new PrintPopUpView({
@@ -1670,7 +1768,8 @@ var caApp = (function (Backbone, $) {
                     pricingModel: app.pricingModel, 
                     collection: app.basketCollection, 
                     mainWidth: mainWidth, 
-                    mainHeight: mainHeight
+                    mainHeight: mainHeight,
+                    parent: thisView
                 });
                 app.layout.renderViewIntoRegion(view, 'body1');
             
