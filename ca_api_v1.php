@@ -418,7 +418,7 @@ class ClientAreaAPI
             $cookie = null;
            //if this user (identified by browser cookie) has an order in /baskets regenerate from that
             if (!isset($_COOKIE['client_area_tracker'])) {           //TDOO set this onto a class property in the constructor
-                $expires =  time() + (10 * 365 * 24 * 60 * 60);
+                $expires =  time() + (10 * 365 * 24 * 60 * 60); //when is this??????? 10 years
                 $rand = time() . rand(0, 1000000);
                 $cookie = array('name'=>'client_area_tracker', 'value'=>$rand, 'expires'=>$expires);
              } 

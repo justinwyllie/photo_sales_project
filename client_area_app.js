@@ -1229,6 +1229,9 @@ var caApp = (function (Backbone, $) {
            
            //now go thru the array again adding refs to prev and next views which we need for navigation
            //and having done that append them
+           //so each thumb view has a ref to the one to the left and right of it
+           //when we call new PrintPopUpView({.. in PrintThumbView (or Proofs)  we pass it a ref to the view it is shwoing and in the popup we can now trigger navLeft and navRight on this view
+           //which will in effect call ShowPopUp   on the next/prev view.
            var i = 0;
            var firstIndex = 0;  
            var lastIndex = thumbs.length - 1;
