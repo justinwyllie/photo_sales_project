@@ -1228,7 +1228,7 @@ EOF;
                     </div>
                     <div class="ca_lightbox_image">
                         <div class="ca_nav_icons ca_light_box_left ca_popup_left_event <%= leftNavShowHide %>"><span class="fa fa-3x fa-angle-left"></span></div>
-                        <img src="<%= path %>">
+                        <div class="main_image" style="background-image: url('<%= path %>');"> </div>
                         <div class="ca_nav_icons ca_light_box_right ca_popup_right_event <%= rightNavShowHide %>"><span class="fa fa-3x fa-angle-right"></span></div>
                     </div>
                     <div class="ca_container_fluid">
@@ -1241,13 +1241,13 @@ EOF;
             </script>
             
            <script type="text/html" id="ca_proof_popup_tmpl">
-                <div class="ca_prints_popup">
+                <div class="ca_proofs_popup">
                     <div class="ca_popup_close_bar">
                         <button class="ca_popup_close ca_action_button ca_lightbox_close_event">x</button>           
                     </div>
                     <div class="ca_lightbox_image">
                         <div class="ca_nav_icons ca_light_box_left ca_popup_left_event <%= leftNavShowHide %>"><span class="fa fa-3x fa-angle-left"></span></div>
-                        <img src="<%= path %>">
+                        <div class="main_image" style="background-image: url('<%= path %>');"> </div>
                         <div class="ca_nav_icons ca_light_box_right ca_popup_right_event <%= rightNavShowHide %>"><span class="fa fa-3x fa-angle-right"></span></div>
                     </div>
                     <div class="ca_container_fluid">

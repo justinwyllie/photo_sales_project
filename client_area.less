@@ -447,10 +447,8 @@ NB. For responsiveness to work as expected your container page should include so
     margin-top: 10px;
 }
 
-.ca_lightbox_image
-{
-    text-align: left;
-}
+
+
 
 .ca_form_control
 {
@@ -473,9 +471,9 @@ NB. For responsiveness to work as expected your container page should include so
     width: 15px;
 }
 
-.ca_prints_popup
+.ca_proofs_popup, .ca_prints_popup
 {
-    text-align: left;
+    text-align: center;
     left: 0px;
     top: 0px; 
     border: 1px solid #000000;  
@@ -483,10 +481,36 @@ NB. For responsiveness to work as expected your container page should include so
     z-index: 1001;
     position:absolute;
     padding-bottom: 10px;
-    
-    
-     
- 
+    width: 50%;
+    height: 90%;
+    margin-left: 25%;
+
+}
+
+.ca_prints_popup .ca_container_fluid
+{
+    height: 90px;
+    overflow-y: scroll;
+}
+
+.ca_prints_popup .ca_lightbox_image
+{
+    height: ~"calc(90% - 100px)";    
+}
+
+.ca_proofs_popup .ca_lightbox_image
+{
+    height: ~"calc(90% - 20px)";
+}
+
+.ca_prints_popup .main_image, .ca_proofs_popup .main_image
+{
+    background-size: contain;
+    width: 100%;
+    height: 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+   
 }
 
 .ca_form select, .ca_form input, .ca_form_label, .ca_breadcrumbs
@@ -610,7 +634,7 @@ NB. For responsiveness to work as expected your container page should include so
     cursor: pointer;
     padding: 0px 5px;
     border-radius: 5px;
-    background-color: rgba(238, 238, 238, 0.5);
+    background-color: (125,125,125,0.2)
     
 }
 

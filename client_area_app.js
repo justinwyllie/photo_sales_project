@@ -1370,35 +1370,6 @@ var caApp = (function (Backbone, $) {
             
             var html = this.tmpl(data);
             this.$el.html(html); 
-            
-            //deal with sizing.... 
-            var actualImageWidth = this.options.mainWidth;
-            var actualImageHeight  = this.options.mainHeight;
-            var maxPopupWidth = app.maxPopupWidth;
-            var lightBoxWidthFraction = app.lightBoxWidthFraction;
-            var lightBoxWidthPercent = (100*lightBoxWidthFraction)  + '%';
-            var lightBoxWidth = maxPopupWidth + 'px'; 
-            var safeImageHeight = $(window).height() - 100;
-            this.$el.css({'max-width': lightBoxWidth ,'width': lightBoxWidthPercent}); 
-            
-            var usedWidth;
-            if (actualImageHeight > (safeImageHeight)) //height is too big (portrait images on landscape orientation phones)
-            {
-                var heightExceedsRatio = actualImageHeight /  safeImageHeight;
-                var modifiedWidth = Math.floor(actualImageWidth /  heightExceedsRatio);
-                usedWidth = modifiedWidth;
-                this.$el.find("img").css({"max-width": modifiedWidth + "px", "width": "100%"});   
-            }
-            else
-            {
-                usedWidth = Math.floor(actualImageWidth);
-                this.$el.find("img").css({"max-width": usedWidth + "px", "width": "100%", "height": "auto"});
-            }
-            
-            
-            var viewportWidth = $(window).width();
-            var offset = Math.floor((viewportWidth / 2)  - (usedWidth / 2));
-            this.$el.find(".ca_prints_popup").css("margin-left", offset + "px"); 
             //hack alert
             $("body").scrollTop(0); 
         }
@@ -1554,35 +1525,7 @@ var caApp = (function (Backbone, $) {
             
             var html = this.containerTmpl(data);
             this.$el.html(html); 
-            
-            //deal with sizing.... 
-            var actualImageWidth = this.options.mainWidth;
-            var actualImageHeight  = this.options.mainHeight;
-            var maxPopupWidth = app.maxPopupWidth;
-            var lightBoxWidthFraction = app.lightBoxWidthFraction;
-            var lightBoxWidthPercent = (100*lightBoxWidthFraction)  + '%';
-            var lightBoxWidth = maxPopupWidth + 'px'; 
-            var safeImageHeight = $(window).height() - 100;
-            this.$el.css({'max-width': lightBoxWidth ,'width': lightBoxWidthPercent}); 
-            
-            var usedWidth;
-            if (actualImageHeight > (safeImageHeight)) //height is too big (portrait images on landscape orientation phones)
-            {
-                var heightExceedsRatio = actualImageHeight /  safeImageHeight;
-                var modifiedWidth = Math.floor(actualImageWidth /  heightExceedsRatio);
-                usedWidth = modifiedWidth;
-                this.$el.find("img").css({"max-width": modifiedWidth + "px", "width": "100%"});   
-            }
-            else
-            {
-                usedWidth = Math.floor(actualImageWidth);
-                this.$el.find("img").css({"max-width": usedWidth + "px", "width": "100%", "height": "auto"});
-            }
-            
-            
-            var viewportWidth = $(window).width();
-            var offset = Math.floor((viewportWidth / 2)  - (usedWidth / 2));
-            this.$el.find(".ca_prints_popup").css("margin-left", offset + "px");  
+
             //hack alert
             $("body").scrollTop(0);
             
@@ -1663,7 +1606,7 @@ var caApp = (function (Backbone, $) {
             var mainHeight; 
             
             var showPopUp = function() {
-                console.log("test2", thisView);
+                
                 var view = new ProofPopUpView({
                     file: file, 
                     path: path, 
@@ -1677,41 +1620,8 @@ var caApp = (function (Backbone, $) {
             
             } 
             
-            var imageRatio = this.model.get("image_ratio");
-            var mainImageDimensions = this.model.get("main_image_dimensions");
-            
-            if ((imageRatio == null) || (mainImageDimensions == null) )
-            {
-                var xhrGetImageDimensions  =  $.ajax(
-                        {
-                            url: '/api/v1/imageDimensions/'+file+'/main/prints',
-                            method: 'GET',
-                            dataType: 'json'
-                        }
-                ); 
-                var that = this;
-                xhrGetImageDimensions.then(
-                    function(result) {
-                        ratio = result.ratio;
-                        mainWidth = result.dimensions.width;
-                        mainHeight =  result.dimensions.height;
-                        that.model.set("image_ratio", ratio);     
-                        that.model.set("main_image_dimensions", result.dimensions);
-                        showPopUp();
-                    
-                    }, 
-                    function() {
-                        var errorView = new ErrorView();   //TODO test this
-                        app.layout.renderViewIntoRegion(errorView, 'main'); 
-                    }
-               ); 
-            
-            }   else {
-                ratio = imageRatio;
-                mainWidth =  mainImageDimensions.width;
-                mainHeight = mainImageDimensions.height;
-                showPopUp();
-            }
+            showPopUp();
+
         
         },
         
