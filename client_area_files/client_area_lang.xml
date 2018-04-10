@@ -248,5 +248,9 @@
    <field name="continue">
         Continue...
    </field>
+   <field name="loggedOut">
+        You have been successfully logged out. 
+   </field>
+
 
 </strings>

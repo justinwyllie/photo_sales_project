@@ -1010,8 +1010,14 @@ var caApp = (function (Backbone, $) {
      
     LogoutView =   Backbone.View.extend({
     
+        initialize: function(options) {
+            this.options = options;
+            var template =  $('#ca_logout').html(); 
+            this.tmpl = _.template(template);
+        },
         render: function() {
-            this.$el.html('logout');    
+            var html = this.tmpl(this.options);
+            this.$el.html(html);    
         }
     
     });
@@ -1173,13 +1179,29 @@ var caApp = (function (Backbone, $) {
         events: {
             'click .ca_page_number_event': 'changePage',
             'click .ca_proof_event': 'showDone',
-            'click .ca_logout_event': 'showLogout'
+            'click .ca_logout_event': 'doLogout'
         
         },
         
-       showLogout: function() {
-            var logoutView =  new LogoutView();
-            app.layout.renderViewIntoRegion(logoutView, 'main'); 
+       doLogout: function() {
+             var logoutXhr = $.ajax(
+                        {
+                            url: '/api/v1/logout',
+                            method: 'GET',
+                            dataType: 'json'
+                        }
+                ); 
+       
+       
+            logoutXhr.then(function(result) {
+                var logoutView =  new LogoutView({message: result.message});
+                app.layout.renderViewIntoRegion(logoutView, 'main'); 
+            },
+            function() {
+                var errorView = new ErrorView();   
+                app.layout.renderViewIntoRegion(errorView, 'main');     
+            });
+            
         } ,
             
         showDone: function() {

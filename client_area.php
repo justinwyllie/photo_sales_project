@@ -1240,6 +1240,12 @@ EOF;
                 </div>
             </script>
             
+            <script type="text/html" id="ca_logout">
+                <div class="ca_padded_box">
+                      <span><%= message %></span>
+                </div>
+            </script>
+            
            <script type="text/html" id="ca_proof_popup_tmpl">
                 <div class="ca_proofs_popup">
                     <div class="ca_popup_close_bar">

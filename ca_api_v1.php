@@ -369,6 +369,15 @@ class ClientAreaAPI
         
     }
     
+    public function getLogout()
+    {
+        session_unset();
+        $obj = new stdClass();
+        $obj->status = "success";
+        $obj->message = $this->lang('loggedOut');
+        $this->outputJson($obj);
+    
+    }
     
     public function postLogin()
     {       
