@@ -318,6 +318,7 @@ class ClientAreaTextDB
             $newProof->file_ref = $fileRef; 
             $proofsBasket[] = $newProof;
         }
+        //this will create the basket if it does not exist.
         $result = file_put_contents($proofsBasketFile, json_encode($proofsBasket)) ; //TODO we have no backup?
         return $result;  
     }
@@ -334,7 +335,7 @@ class ClientAreaTextDB
                 $newProofsBasket[] = $proof;
             }
         }
-        
+         //this will create the basket if it does not exist.
         $result = file_put_contents($proofsBasketFile, json_encode($newProofsBasket)) ; //TODO we have no backup?
         return $result;  
     }
@@ -351,20 +352,27 @@ class ClientAreaTextDB
         $proofsBasketFile = $this->proofsBasketDir . DIRECTORY_SEPARATOR . $ref;
         $targetFile =  $this->generateUniqueFile($this->proofsBasketCompletedDir, $ref);
         $proofsBasketFileCompleted = $this->proofsBasketCompletedDir . DIRECTORY_SEPARATOR . $targetFile;
-        $proofsBasket = $this->getProofsBasket($ref);
+         
         
-        $result = rename($proofsBasketFile, $proofsBasketFileCompleted);
-        if ($result)
-        {
-            return $proofsBasket; 
-        }
-        else
+        //the test is for the case that the basket has been cleared by an order but no new basket has been created by the user
+        //logging in again and/or just adding one more item and then they try to order again
+        if (file_exists($proofsBasketFile)) {
+            $proofsBasket = $this->getProofsBasket($ref);
+            $result = rename($proofsBasketFile, $proofsBasketFileCompleted);
+            if ($result)
+            {      
+                return $proofsBasket; 
+            }
+            else
+            {
+                return false;
+            }
+        } 
+        else 
         {
             return false;
         }
-        
-              
-    
+
     }
     
     private function generateUniqueFile($dir, $file)

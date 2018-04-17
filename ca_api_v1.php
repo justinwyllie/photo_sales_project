@@ -102,9 +102,13 @@ class ClientAreaAPI
       if (isset($_COOKIE['client_area_tracker'])) {
 
             $result =  $this->db->getAndClearProofs($_SESSION['user'] . '_' . $_COOKIE['client_area_tracker']);
-            
+      
             if ($result === false) {
-                  $this->outputJson500("Error calling getAndClearProofs in getProcessProofs");           
+                  $obj = new stdClass();
+                  $obj->status = "error";
+                  $obj->message = $this->lang('proofsFailure');
+                  $this->outputJson($obj);      
+                   //$this->logToAdmin("Error calling getAndClearProofs in getProcessProofs");  TODO   
             }
             else
             {
@@ -723,15 +727,15 @@ class ClientAreaAPI
     }
     
    
-    private function createBasket($trackerId, $mode)
+    private function createBasket($ref, $mode)
     {
         if ($mode == 'prints')
         {
-            $ret =  $this->db->createBasket($trackerId);
+            $ret =  $this->db->createBasket($ref);
         }
         else
         {
-            $ret =  $this->db->createProofsBasket($trackerId);
+            $ret =  $this->db->createProofsBasket($ref);
         }
         
         return $ret;

@@ -1416,7 +1416,7 @@ EOF;
                 <%= buttons %>
                 <div class="ca_menu_buttons">                       
                         <span class="ca_counter_box ca_counter_label ca_label">
-                            <span><%= langStrings.chosen %>:</span><span class="ca_counter">TODO</span>
+                            <span><%= langStrings.chosen %>:</span><span class="ca_counter"><%= count %></span>
                         </span>
                        <button class="ca_proof_event ca_action_button"><%= langStrings.done %></button>
                        <button class="ca_logout_event ca_action_button"><%= langStrings.logout %></button>

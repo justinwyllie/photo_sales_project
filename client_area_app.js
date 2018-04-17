@@ -970,8 +970,13 @@ var caApp = (function (Backbone, $) {
     
     ErrorView =   Backbone.View.extend({
         //either called with message on the options in which case display that or with nothing (from a 500) in which case we need a standard message)
+        
+        initialize: function(options) {
+            this.options = options;
+        },
+        
         render: function() {
-            this.$el.html('error TODO');    
+            this.$el.html(this.options.message);    
         }
     
     });  
@@ -1129,7 +1134,14 @@ var caApp = (function (Backbone, $) {
                     
               xhrProcessProofs.then(
                     function(result) {
-                        that.renderThanks();
+                        if (result.status == "success") {
+                            app.proofsBasketCollection.reset();
+                            that.renderThanks();
+                        } else {
+                            var errorView = new ErrorView({message: result.message});   
+                            app.layout.renderViewIntoRegion(errorView, 'main');    
+                        }
+                        
                        },
                        function() { 
                             var errorView = new ErrorView();   
@@ -1157,14 +1169,19 @@ var caApp = (function (Backbone, $) {
     ProofsMenuView =  Backbone.View.extend({
     
         initialize: function(options) {
+            this.proofsBasket = app.proofsBasketCollection; 
+            this.listenTo(this.proofsBasket, "add", this.render);
+            this.listenTo(this.proofsBasket, "remove", this.render);
+            this.listenTo(this.proofsBasket, "reset", this.render);
             this.options = options;
             var buttonsTemplate =  $('#ca_pagination_buttons').html(); 
             this.buttonsTmpl = _.template(buttonsTemplate);
             var menuTemplate = $('#ca_proofs_menu').html(); 
             this.menuTmpl =  _.template(menuTemplate);
         },    
-       
+
         render: function() {
+            
             var buttonData = {};
             buttonData.total_pages = Math.ceil(this.options.totalThumbs / this.options.thumbsPerPage);
             buttonData.active = this.options.active;
@@ -1172,6 +1189,7 @@ var caApp = (function (Backbone, $) {
             var data = {};
             data.active =  this.options.active;
             data.langStrings = app.langStrings.toJSON();
+            data.count = this.proofsBasket.length;
             var menu = this.menuTmpl(data)
             this.$el.html(menu);
         },
