@@ -30,7 +30,7 @@ foreach ($myPost as $key => $value) {
     $custom = $value;
   }
   if ($key == 'test_ipn') {
-    $testIpn = $value;
+    $testIpn = $value;                                          
   }
   if ($key == 'payment_status') {
     $paymentStatus = $value;

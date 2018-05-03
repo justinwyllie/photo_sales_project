@@ -72,85 +72,52 @@ class ClientAreaAPI
     
         $mode = $this->param;
     
-        if (isset($_COOKIE['client_area_tracker'])) {
+  
 
-            $result =  $this->createBasket($_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'], $mode);
+        $result =  $this->createBasket($_SESSION['user'], $mode);
 
-            
-            if ($result === false) {
-                  $this->outputJson500("Error calling createBasket in getCreateBasket");           
-            }
-            else
-            {
-                  $obj = new stdClass();
-                  $obj->status = "success";
-                  $obj->message = "";
-                  $this->outputJson($obj);
-            }
+        
+        if ($result === false) {
+              $this->outputJson500("Error calling createBasket in getCreateBasket");           
         }
         else
         {
-            $this->outputJson500("Tracking cookie not set in getCreateBasket called with '" . $param . "'");     
+              $obj = new stdClass();
+              $obj->status = "success";
+              $obj->message = "";
+              $this->outputJson($obj);
         }
+   
          
     
     }
     
     public function postProcessProofs()
     {
-      
-      if (isset($_COOKIE['client_area_tracker'])) {
 
-            $result =  $this->db->getAndClearProofs($_SESSION['user'] . '_' . $_COOKIE['client_area_tracker']);
-      
-            if ($result === false) {
-                  $obj = new stdClass();
-                  $obj->status = "error";
-                  $obj->message = $this->lang('proofsFailure');
-                  $this->outputJson($obj);      
-                   //$this->logToAdmin("Error calling getAndClearProofs in getProcessProofs");  TODO   
-            }
-            else
-            {
-                  $data = "PROOFS ORDER for: " .  $_SESSION['user']  . "\n\n" . json_encode($result) . "\n\nThe user additionally said\n\n" . $_POST["message"];
-                  $this->mailAdmin($data, "Proofs Order on Website.");
-                  $obj = new stdClass();
-                  $obj->status = "success";
-                  $obj->message = "";
-                  $this->outputJson($obj);
-            }
+        $result =  $this->db->getAndClearProofs($_SESSION['user']);
+  
+        if ($result === false) {
+              $obj = new stdClass();
+              $obj->status = "error";
+              $obj->message = $this->lang('proofsFailure');
+              $this->outputJson($obj);      
+               //$this->logToAdmin("Error calling getAndClearProofs in getProcessProofs");  TODO   
         }
         else
         {
-            $this->outputJson500("Tracking cookie not set in getProcessProofs called with");     
+              $data = "PROOFS ORDER for: " .  $_SESSION['user']  . "\n\n" . json_encode($result) . "\n\nThe user additionally said\n\n" . $_POST["message"];
+              $this->mailAdmin($data, "Proofs Order on Website.");
+              $obj = new stdClass();
+              $obj->status = "success";
+              $obj->message = "";
+              $this->outputJson($obj);
         }
+  
 
     }
     
-    
-    public function getClearCompleteBasket() 
-    {
-        if (isset($_COOKIE['client_area_tracker'])) {
-            $result =  $this->clearBasket($_COOKIE['client_area_tracker']);
-            if ($result === false) {
-                  $this->outputJson500("Error calling clearBasket in getClearCompleteBasket");           
-            }
-            else
-            {
-                  $obj = new stdClass();
-                  $obj->status = "success";
-                  $obj->message = "";
-                  $this->outputJson($obj);
-            }
-        }
-        else
-        {
-            $this->outputJson500("Tracking cookie not set in getClearCompleteBasket");     
-        }
-         
-        
-    
-    }
+
     
     public function getSessionStatus()
     {
@@ -178,42 +145,35 @@ class ClientAreaAPI
    
         $mode = $_POST['mode'];
         $order =  $_POST['order'];
-        $clientAreaTracker =   '';
+         
+        $ref = $_SESSION['user'];
+        $basket = $this->db->getBasket($ref);
         
-        
-        if (isset($_COOKIE['client_area_tracker'])) {
-            $ref = $_SESSION['user'] . '_' .  $_COOKIE['client_area_tracker'];
-            $basket = $this->db->getBasket($ref);
-            
-            if ($basket === false)
-            {
-                $this->outputJson500("Unable to get basket in postPaypalStandard");        
-            }
-            $pendingOrder = array('basket'=>$basket, 'order'=>$order);
-            $pendingOrder = $this->fixBackendPricingOnBasket($pendingOrder);
-            $orderRef = $this->db->createPendingOrder($ref, $pendingOrder);
-            if ($orderRef === false)
-            {
-                $this->outputJson500("error calling createPendingOrder in postPaypalStandard");
-            }
-            else
-            {
-                include_once('ca_utilities.php');
-                $formattedPendingOrder =  ClientAreaUtilities::formatBasketJsonObjectToHumanReadable($pendingOrder);
-                $data = $this->packageOrderForEmail($orderRef, $formattedPendingOrder, $mode, 'paypalStandard');
-                $data = "ORDER REF: $orderRef \n\n" . $data;
-                $this->mailAdmin($data, "Provisional Order on Website.");
-                $obj = new stdClass();
-                $obj->status = "success";
-                $obj->message = "";
-                $obj->orderRef = $orderRef;
-                $this->outputJson($obj); 
-            }
+        if ($basket === false)
+        {
+            $this->outputJson500("Unable to get basket in postPaypalStandard");        
+        }
+        $pendingOrder = array('basket'=>$basket, 'order'=>$order);
+        $pendingOrder = $this->fixBackendPricingOnBasket($pendingOrder);
+        $orderRef = $this->db->createPendingOrder($ref, $pendingOrder);
+        if ($orderRef === false)
+        {
+            $this->outputJson500("error calling createPendingOrder in postPaypalStandard");
         }
         else
         {
-            $this->outputJson500("Tracking cookie not set in postPaypalStandard");    
-        }
+            include_once('ca_utilities.php');
+            $formattedPendingOrder =  ClientAreaUtilities::formatBasketJsonObjectToHumanReadable($pendingOrder);
+            $data = $this->packageOrderForEmail($orderRef, $formattedPendingOrder, $mode, 'paypalStandard');
+            $data = "ORDER REF: $orderRef \n\n" . $data;
+            $this->mailAdmin($data, "Provisional Order on Website.");
+            $obj = new stdClass();
+            $obj->status = "success";
+            $obj->message = "";
+            $obj->orderRef = $orderRef;
+            $this->outputJson($obj); 
+       }
+       
     }
     
     /**
@@ -388,71 +348,31 @@ class ClientAreaAPI
         $obj = new stdClass();
                                                          
         $user = $_POST['name'];
-        $password = $_POST['password'];
-        //TODO are we using any of these?                  NO LOSE
-        $restoredProofs = $_POST['restoredProofs'];                  
-        $restoredProofsPagesVisited = $_POST['restoredProofsPagesVisited'];
-        $restoredPrintsPagesVisited = $_POST['restoredPrintsPagesVisited'];
+        $password = $_POST['password']; 
+ 
 
         if (!empty($this->accounts[$user]) && !empty($password) && ($this->accounts[$user]["password"] === $password)) {
             session_unset();
             
             $this->setOptions();
-            $this->setUserOptions($user);
+            $this->setUserOptions($user);  
             
 
             $_SESSION["user"] = $user;
-            $_SESSION["proofsPagesVisited"] = array();
-            $_SESSION["proofsChosen"] = array();
-            $_SESSION["printsPagesVisited"] = array();
-            $_SESSION["printsChosen"] = array();
-            $_SESSION["basket"] = array();
-            $_SESSION["order"] = array();
             $_SESSION["options"] = $this->options;
 
-            //If the user is logging in try to restore the proofs chosen based on what was stored in html data if it is available
-            if (!empty($restoredProofs)) {
-                $restoredProofsArray = json_decode($restoredProofs);
-                if (is_array($restoredProofsArray)) {
-                    $_SESSION["proofsChosen"] = $restoredProofsArray;
-                }
-            }
-                
-            //If the user is logging in try to restore the proof pages visited chosen based on what was stored in html data if it is available    
-            if (!empty($restoredProofsPagesVisited)) {
-                $restoredProofsPagesVisitedArray = json_decode($restoredProofsPagesVisited);
-                if (is_array($restoredProofsPagesVisitedArray)) {
-
-                    $_SESSION["proofsPagesVisited"] = $restoredProofsPagesVisitedArray;
-                }
-            }
-            
-          
             $cookie = null;
-           //if this user (identified by browser cookie) has an order in /baskets regenerate from that
-            if (!isset($_COOKIE['client_area_tracker'])) {           //TDOO set this onto a class property in the constructor
+           //set a cookie - not currently used.
+            if (!isset($_COOKIE['client_area_tracker'])) {           
                 $expires =  time() + (10 * 365 * 24 * 60 * 60); //when is this??????? 10 years
                 $rand = time() . rand(0, 1000000);
                 $cookie = array('name'=>'client_area_tracker', 'value'=>$rand, 'expires'=>$expires);
              } 
              else
              {
-                $ref = $user . '_' . $_COOKIE['client_area_tracker'];
-                $this->db->makeBackups($ref) ;
+                $this->db->makeBackups($user) ;
              }
-          
-            
-            //If the user is logging in try to restore the prints pages visited chosen based on what was stored in html data if it is available  
-            //TODO not sure if we are using this?
-            if (!empty($restoredPrintsPagesVisited)) {
-                $restoredPrintsPagesVisitedArray = json_decode($restoredPrintsPagesVisited);
-                if (is_array($restoredPrintsPagesVisitedArray)) {
-                    $_SESSION["printsPagesVisited"] = $restoredPrintsPagesVisitedArray;
-                }
-            }
-            
-            
-                                     
+                           
             $obj->status = "success";
             $obj->message = "";
             $obj->appData = $this->options;
@@ -460,8 +380,7 @@ class ClientAreaAPI
             $obj->status = "error";
             $obj->message = $this->lang('loginError');
         }
-        
-  
+
         $this->outputJson($obj, $cookie);
 
     }
@@ -550,23 +469,18 @@ class ClientAreaAPI
     public function getProofsBasket()
     {
         $result = new stdClass();
-        if (isset($_COOKIE['client_area_tracker'])) {
-            $ref = $_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'];
-            $proofsBasket = $this->db->getProofsBasket($ref);
-            if ($proofsBasket === false) 
-            {
-                $this->outputJson500("Error getting basket in getProofsBasket");
-            }
-            else
-            {
-                return $proofsBasket;
-            }
+       
+        $ref = $_SESSION['user'] ;
+        $proofsBasket = $this->db->getProofsBasket($ref);
+        if ($proofsBasket === false) 
+        {
+            $this->outputJson500("Error getting basket in getProofsBasket");
         }
         else
         {
-            $this->outputJson500("Tracking cookie not sent in call to getProofsBasket");
+            return $proofsBasket;
         }
-    
+ 
     }
     
     public function postProofsBasket()
@@ -575,68 +489,53 @@ class ClientAreaAPI
         $dataObj = json_decode($data);
         $fileRef = $dataObj->file_ref;
            
-        if (isset($_COOKIE['client_area_tracker'])) {
-            $ref = $_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'];
-            $result = $this->db->addToProofsBasket($ref, $fileRef);
-            if ($result === false) 
-            {
-                $this->outputJson500("Error calling db->addToProofsBasket in postProofsBasket");
-            }
-            else
-            {
-                $dataObj->id = $fileRef;
-                return $dataObj;
-            }
+      
+        $ref = $_SESSION['user'];
+        $result = $this->db->addToProofsBasket($ref, $fileRef);
+        if ($result === false) 
+        {
+            $this->outputJson500("Error calling db->addToProofsBasket in postProofsBasket");
         }
         else
         {
-            $this->outputJson500("Tracking cookie not sent in call to postProofsBasket");
+            $dataObj->id = $fileRef;
+            return $dataObj;
         }
+       
     }
     
     public function deleteProofsBasket()
     {
         $fileRef = $this->param;      //probably not.... 
-        if (isset($_COOKIE['client_area_tracker'])) {
-            $ref = $_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'];
-            $result = $this->db->removeFromProofsBasket($ref, $fileRef);
-            if ($result === false) 
-            {
-                $this->outputJson500("Error calling db->removeFromProofsBasket in deleteProofsBasket");
-            }
-            else
-            {
-                return "";   
-            }
+       
+        $result = $this->db->removeFromProofsBasket($_SESSION['user'], $fileRef);
+        if ($result === false) 
+        {
+            $this->outputJson500("Error calling db->removeFromProofsBasket in deleteProofsBasket");
         }
         else
         {
-            $this->outputJson500("Tracking cookie not sent in call to deleteProofsBasket");
+            return "";   
         }
-    
+
     }
 
     public function getBasket() 
     {
          
         $result = new stdClass();
-        if (isset($_COOKIE['client_area_tracker'])) {
-            $ref = $_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'];
-            $basket = $this->db->getBasket($ref);
-            if ($basket === false) 
-            {
-                $this->outputJson500("Error getting basket in getBasket");
-            }
-            else
-            {
-                return $basket;
-            }
+    
+          
+        $basket = $this->db->getBasket($_SESSION['user']);
+        if ($basket === false) 
+        {
+            $this->outputJson500("Error getting basket in getBasket");
         }
         else
         {
-            $this->outputJson500("Tracking cookie not sent in call to getBasket");
+            return $basket;
         }
-        
+ 
     }
     
     public function postBasket()
@@ -645,25 +544,19 @@ class ClientAreaAPI
         $order = json_decode($newOrderLine);
         $order->edit_mode = 'save';
         
-        if (isset($_COOKIE['client_area_tracker'])) {
-            $ref = $_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'];
-            $result = $this->db->addToBasket($ref, $order);
-            if ($result === false) 
-            {
-                $this->outputJson500("Error calling db->addToBasket in postBasket");
-            }
-            else
-            {
-                $newId = $result;
-                $order->id = $newId;
-                return $order;
-                    
-            }
+        $result = $this->db->addToBasket($_SESSION['user'], $order);
+        if ($result === false) 
+        {
+            $this->outputJson500("Error calling db->addToBasket in postBasket");
         }
         else
         {
-            $this->outputJson500("Tracking cookie not sent in call to postBasket");
+            $newId = $result;
+            $order->id = $newId;
+            return $order;
+                
         }
+
 
     }
     
@@ -673,46 +566,33 @@ class ClientAreaAPI
         $orderId = $this->param;
         $order = json_decode($updatedOrderLine);
         $order->edit_mode = 'save';
-        if (isset($_COOKIE['client_area_tracker'])) {
-            $ref = $_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'];
-            $result = $this->db->updateBasket($ref, $orderId, $order);
-            if ($result === false) 
-            {
-                $this->outputJson500("Error calling db->updateBasket in putBasket");
-            }
-            else
-            {
-                return $order;    
-            }
+
+        $result = $this->db->updateBasket($_SESSION['user'], $orderId, $order);
+        if ($result === false) 
+        {
+            $this->outputJson500("Error calling db->updateBasket in putBasket");
         }
         else
         {
-            $this->outputJson500("Tracking cookie not sent in call to putBasket");
+            return $order;    
         }
-      
-      
 
     }
     //remove an order line from the basket
     public function deleteBasket()
     {
         $orderId = $this->param;
-        if (isset($_COOKIE['client_area_tracker'])) {
-            $ref = $_SESSION['user'] . '_' . $_COOKIE['client_area_tracker'];
-            $result = $this->db->removeFromBasket($ref, $orderId);
-            if ($result === false) 
-            {
-                $this->outputJson500("Error calling db->removeFromBasket in deleteBasket");
-            }
-            else
-            {
-                return true;   
-            }
+
+        $result = $this->db->removeFromBasket($_SESSION['user'], $orderId);
+        if ($result === false) 
+        {
+            $this->outputJson500("Error calling db->removeFromBasket in deleteBasket");
         }
         else
         {
-            $this->outputJson500("Tracking cookie not sent in call to deleteBasket");
+            return true;   
         }
+     
     
     }
     
@@ -720,12 +600,6 @@ class ClientAreaAPI
   
     //HELPERS
 
-   
-    private function clearBasket($trackerId)
-    {
-          return $this->db->clearBasket($trackerId);    
-    }
-    
    
     private function createBasket($ref, $mode)
     {

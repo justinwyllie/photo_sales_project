@@ -106,6 +106,11 @@ class ClientAreaTextDB
         }   
     }
     
+    /**
+     * This seems to be about making backup copies of the proofs and basket and is currently
+     * called every time the user logs in
+     *
+     */
     public function makeBackups($ref)
     {
     
@@ -175,6 +180,12 @@ class ClientAreaTextDB
     {
         $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref;
         $basket = $this->getBasket($ref);
+        
+        if ($basket === false)
+        {
+            return false;
+        }
+        
         $updatedBasket = array();
 
         foreach ($basket as $orderLine)
@@ -204,6 +215,10 @@ class ClientAreaTextDB
     {
         $basketFile = $this->basketDir . DIRECTORY_SEPARATOR . $ref;
         $basket = $this->getBasket($ref);
+        if ($basket === false)
+        {
+            return false;
+        }
         $newOrderId = $this->generateUniqueOrderId($basket);
         $order->id = $newOrderId;
         $basket[] = $order;
@@ -299,7 +314,7 @@ class ClientAreaTextDB
     public function addToProofsBasket($ref, $fileRef)
     {
         $proofsBasketFile = $this->proofsBasketDir . DIRECTORY_SEPARATOR . $ref;
-        $proofsBasket = $this->getProofsBasket($ref);
+        $proofsBasket = $this->getProofsBasket($ref); 
 
         $inBasket = false;
         foreach ($proofsBasket as $proof)
