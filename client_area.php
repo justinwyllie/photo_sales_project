@@ -9,8 +9,10 @@
  *
  *
  * TODO LIST
- * store the chosen proofs somewhere so that if user logs in again we can restore them
- * - cld we just seralise the SESSION data and put that in a file?
+ * I think we store the user choices in html data and then try to restore a session from that
+ * which obviously means they have to be using the same browser.
+ * but i haven't looked at this in a few years so nothing is guranteed
+ * obv. better to store on the server  - so not tied to one browser....
  *
  */
 
